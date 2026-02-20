@@ -1,6 +1,6 @@
 # Agent Board Demo
 
-This demonstrates the new lively-agent-board component that visualizes TODOs from opencode sessions.
+This demonstrates the lively-agent-board component that visualizes TODOs and session links from opencode sessions.
 
 ## Basic Example
 
@@ -9,9 +9,18 @@ import "src/ai-workspace/components/lively-agent-board.js";
 
 const board = await lively.create("lively-agent-board");
 board.style.width = "600px";
-board.style.height = "400px";
+board.style.height = "500px";
 board.style.display = "block";
 board.style.border = "1px solid #ccc";
+
+// Set project focus
+board.setProjectFocus("src/ai-workspace/index.md");
+
+// Add file operations
+board.addFileRead("src/ai-workspace/components/lively-agent-board.js");
+board.addFileRead("src/ai-workspace/components/lively-opencode.js");
+board.addFileWritten("src/ai-workspace/components/lively-agent-board.html");
+board.addFileWritten("src/ai-workspace/components/lively-agent-board.js");
 
 // Add example TODOs
 board.updateTodos([
@@ -51,6 +60,12 @@ TODOs come from the opencode server at `/session/:sessionID/todo`:
 
 ## Features
 
+**Session Links:**
+- Project Focus with editable index.md link
+- Files read during session (browse:// links)
+- Files written during session (edit:// links)
+
+**TODOs:**
 - Grouped by status (In Progress, Pending, Completed, Cancelled)
 - Color-coded by priority (high=red, medium=orange, low=blue)
 - Status icons (⊙ in progress, ☐ pending, ✓ completed, ✗ cancelled)

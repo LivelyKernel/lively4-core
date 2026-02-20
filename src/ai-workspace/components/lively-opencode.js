@@ -760,13 +760,22 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Update board with TODOs
+   * Update board with TODOs and session links
    * @param {Array} todos - Array of TODO items
    */
   updateBoard(todos) {
     const board = this.get('#agentBoard');
-    if (board && board.updateTodos) {
+    if (!board) return;
+    
+    // Update TODOs
+    if (board.updateTodos) {
       board.updateTodos(todos);
+    }
+    
+    // Update project focus link
+    if (board.setProjectFocus && this.currentProject) {
+      const indexUrl = this.currentProject.url ? this.currentProject.url + 'index.md' : `${this.currentProject.path}/index.md`;
+      board.setProjectFocus(indexUrl);
     }
   }
 
@@ -811,6 +820,7 @@ export default class LivelyOpencode extends LivelyChat {
 
     const project = {
       path: projectPath,
+      url: this.buildProjectUrl(projectPath),
       name: projectPath.split('/').pop(),
       indexContent: content // null if no index.md exists
     };
@@ -891,6 +901,7 @@ export default class LivelyOpencode extends LivelyChat {
       const content = await this.tryFetchProjectFile(storedPath, 'index.md');
       this.currentProject = {
         path: storedPath,
+        url: this.buildProjectUrl(storedPath),
         name: storedPath.split('/').pop(),
         indexContent: content
       };
@@ -993,6 +1004,30 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
+   * Build a full URL for a project path using the configured URL base.
+   * e.g. buildProjectUrl('src/ai-workspace') → 'http://localhost:9005/lively4-core/src/ai-workspace/'
+   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace'
+   * @returns {string} Full URL with trailing slash
+   */
+  buildProjectUrl(projectPath) {
+    const storedBase = this.loadProjectUrlBase();
+    let base;
+    if (storedBase) {
+      // Ensure trailing slash
+      base = storedBase.endsWith('/') ? storedBase : storedBase + '/';
+    } else {
+      // Fallback: derive from lively4url browser global if available
+      if (typeof lively4url !== 'undefined') {
+        base = lively4url.replace(/[^/]+$/, '');
+      } else {
+        // No URL base configured and no browser global - return path as-is
+        return projectPath + '/';
+      }
+    }
+    return base + projectPath + '/';
+  }
+
+  /**
    * Try to load a file from a path relative to the lively4 web root.
    * Uses the configured URL base (e.g. "http://localhost:9005/lively4-core/")
    * to map the subproject path to a fetchable URL.
@@ -1029,17 +1064,20 @@ export default class LivelyOpencode extends LivelyChat {
   buildProjectContextMessage(message) {
     if (!this.currentProject) return message;
 
+    const projectUrl = this.currentProject.url || this.currentProject.path;
+    const indexUrl = projectUrl + 'index.md';
+    
     const contextParts = [
-      `We are focusing on subproject \`${this.currentProject.path}\`.`
+      `We are focusing on subproject [${projectUrl}](${projectUrl})`
     ];
 
     if (this.currentProject.indexContent) {
       contextParts.push(
-        `\nThe \`${this.currentProject.path}/index.md\` file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
+        `\nThe [${indexUrl}](${indexUrl}) file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
       );
     } else {
       contextParts.push(
-        `\nNote: \`${this.currentProject.path}/index.md\` can be used to store project-focus-specific insights, conventions, and context (like a second-level CLAUDE.md). No index.md found yet.`
+        `\nNote: [${indexUrl}](${indexUrl}) can be used to store project-focus-specific insights, conventions, and context (like a second-level CLAUDE.md). No index.md found yet.`
       );
     }
 
