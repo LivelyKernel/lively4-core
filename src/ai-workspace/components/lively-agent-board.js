@@ -50,6 +50,10 @@ export default class LivelyAgentBoard extends Morph {
       filesRead: [],
       filesWritten: []
     };
+    // Context for building URLs and shortening paths
+    this.workingDirectory = null;
+    this.projectPath = null;
+    this.urlBase = null;
   }
 
   /**
@@ -67,6 +71,17 @@ export default class LivelyAgentBoard extends Morph {
    */
   setProjectFocus(path) {
     this.links.projectFocus = path;
+    this.render();
+  }
+
+  /**
+   * Set context for URL building and path shortening
+   * @param {Object} context - { workingDirectory, projectPath, urlBase }
+   */
+  setContext(context) {
+    this.workingDirectory = context.workingDirectory;
+    this.projectPath = context.projectPath;
+    this.urlBase = context.urlBase;
     this.render();
   }
 
@@ -90,6 +105,81 @@ export default class LivelyAgentBoard extends Morph {
       this.links.filesWritten.push(path);
       this.render();
     }
+  }
+
+  /**
+   * Clear all file links (reads and writes)
+   */
+  clearFileLinks() {
+    this.links.filesRead = [];
+    this.links.filesWritten = [];
+    this.render();
+  }
+
+  /**
+   * Clear everything (TODOs and file links)
+   */
+  clearAll() {
+    this.todos = [];
+    this.links.projectFocus = null;
+    this.links.filesRead = [];
+    this.links.filesWritten = [];
+    this.render();
+  }
+
+  /**
+   * Build a full URL for opening a file in browser
+   * @param {string} filePath - Absolute file path
+   * @returns {string} Full URL for lively.openBrowser
+   */
+  buildFileUrl(filePath) {
+    if (!this.urlBase || !this.workingDirectory) {
+      // No context - return path as-is
+      return filePath;
+    }
+
+    // Remove working directory prefix to get relative path
+    let relativePath = filePath;
+    if (filePath.startsWith(this.workingDirectory)) {
+      relativePath = filePath.substring(this.workingDirectory.length);
+      // Remove leading slash if present
+      if (relativePath.startsWith('/')) {
+        relativePath = relativePath.substring(1);
+      }
+    }
+
+    // Build full URL
+    const base = this.urlBase.endsWith('/') ? this.urlBase : this.urlBase + '/';
+    return base + relativePath;
+  }
+
+  /**
+   * Shorten a file path for display by removing working directory and project path prefixes
+   * @param {string} filePath - Absolute file path
+   * @returns {string} Shortened path for display
+   */
+  shortenPath(filePath) {
+    let displayPath = filePath;
+
+    // Remove working directory prefix
+    if (this.workingDirectory && filePath.startsWith(this.workingDirectory)) {
+      displayPath = filePath.substring(this.workingDirectory.length);
+      // Remove leading slash
+      if (displayPath.startsWith('/')) {
+        displayPath = displayPath.substring(1);
+      }
+    }
+
+    // Remove project path prefix if it exists
+    if (this.projectPath && displayPath.startsWith(this.projectPath)) {
+      displayPath = displayPath.substring(this.projectPath.length);
+      // Remove leading slash
+      if (displayPath.startsWith('/')) {
+        displayPath = displayPath.substring(1);
+      }
+    }
+
+    return displayPath;
   }
 
   /**
@@ -139,12 +229,11 @@ export default class LivelyAgentBoard extends Morph {
       section.appendChild(
         <div class="link-item">
           <span class="link-icon">📁</span>
-          <span class="link-label">Project Focus:</span>
           <a class="link-path" click={() => {
               debugger
               lively.openBrowser(this.links.projectFocus, true)
-            }}>
-            {this.links.projectFocus}
+            }} title={this.links.projectFocus}>
+            Project Focus
           </a>
         </div>
       );
@@ -157,11 +246,13 @@ export default class LivelyAgentBoard extends Morph {
       );
       
       this.links.filesRead.forEach(path => {
+        const url = this.buildFileUrl(path);
+        const displayPath = this.shortenPath(path);
         section.appendChild(
           <div class="link-item file-read">
             <span class="link-icon">📖</span>
-            <a class="link-path" click={() => lively.openBrowser(path)}>
-              {path}
+            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+              {displayPath}
             </a>
           </div>
         );
@@ -175,11 +266,13 @@ export default class LivelyAgentBoard extends Morph {
       );
       
       this.links.filesWritten.forEach(path => {
+        const url = this.buildFileUrl(path);
+        const displayPath = this.shortenPath(path);
         section.appendChild(
           <div class="link-item file-written">
             <span class="link-icon">✏️</span>
-            <a class="link-path" click={() => lively.openBrowser(path, true)}>
-              {path}
+            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+              {displayPath}
             </a>
           </div>
         );
@@ -251,13 +344,22 @@ export default class LivelyAgentBoard extends Morph {
    * Example for testing
    */
   livelyExample() {
+    // Set context for URL building and path shortening
+    this.setContext({
+      workingDirectory: '/home/jens/lively4/lively4-core',
+      projectPath: 'src/ai-workspace',
+      urlBase: 'http://localhost:9005/lively4-core'
+    });
+    
     // Set project focus
     this.setProjectFocus("src/ai-workspace/index.md");
     
-    // Add some file reads/writes
-    this.addFileRead("src/ai-workspace/components/lively-agent-board.js");
-    this.addFileRead("src/ai-workspace/components/lively-opencode.js");
-    this.addFileWritten("src/ai-workspace/components/lively-agent-board.html");
+    // Add some file reads/writes with full paths
+    // These will be shortened to just the relative path within the project
+    this.addFileRead("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.js");
+    this.addFileRead("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-opencode.js");
+    this.addFileWritten("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.html");
+    this.addFileWritten("/home/jens/lively4/lively4-core/src/ai-workspace/test/lively-agent-board-test.js");
     
     // Add TODOs
     this.updateTodos([

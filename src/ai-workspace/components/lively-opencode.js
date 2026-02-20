@@ -767,6 +767,15 @@ export default class LivelyOpencode extends LivelyChat {
     const board = this.get('#agentBoard');
     if (!board) return;
     
+    // Update context for URL building and path shortening
+    if (board.setContext) {
+      board.setContext({
+        workingDirectory: this.workingDirectory,
+        projectPath: this.currentProject?.path,
+        urlBase: this.loadProjectUrlBase()
+      });
+    }
+    
     // Update TODOs
     if (board.updateTodos) {
       board.updateTodos(todos);
@@ -776,6 +785,63 @@ export default class LivelyOpencode extends LivelyChat {
     if (board.setProjectFocus && this.currentProject) {
       const indexUrl = this.currentProject.url ? this.currentProject.url + 'index.md' : `${this.currentProject.path}/index.md`;
       board.setProjectFocus(indexUrl);
+    }
+  }
+
+  /**
+   * Scan message parts for Read/Write tool uses and update the board
+   * @param {Object} message - OpenCode message object with parts
+   */
+  updateBoardWithFileOperations(message) {
+    const board = this.get('#agentBoard');
+    if (!board) return;
+    
+    // Update context for URL building and path shortening
+    if (board.setContext) {
+      board.setContext({
+        workingDirectory: this.workingDirectory,
+        projectPath: this.currentProject?.path,
+        urlBase: this.loadProjectUrlBase()
+      });
+    }
+    
+    const parts = message.parts || [];
+    
+    for (const part of parts) {
+      const toolName = part.name || part.tool;
+      const input = part.input || part.state?.input || {};
+      const filePath = input.filePath || input.path;
+      
+      if (!filePath) continue;
+      
+      // Check for Read tools
+      if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
+        if (board.addFileRead) {
+          board.addFileRead(filePath);
+        }
+      }
+      
+      // Check for Write tools  
+      if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
+          toolName === 'mcp_edit' || toolName === 'edit') {
+        if (board.addFileWritten) {
+          board.addFileWritten(filePath);
+        }
+      }
+    }
+  }
+
+  /**
+   * Scan all messages for a session and update board with file operations
+   * @param {string} sessionId - Session ID to scan messages for
+   */
+  updateBoardWithAllMessages(sessionId) {
+    const messages = this.messages.get(sessionId);
+    if (!messages) return;
+    
+    // Scan all messages for file operations
+    for (const message of messages) {
+      this.updateBoardWithFileOperations(message);
     }
   }
 
@@ -1320,12 +1386,21 @@ export default class LivelyOpencode extends LivelyChat {
     const input = this.get('#messageInput');
     if (input) input.disabled = false;
 
+    // Clear board before loading new session data
+    const board = this.get('#agentBoard');
+    if (board && board.clearAll) {
+      board.clearAll();
+    }
+
     // Restore project focus for this session
     await this.applyProjectForSession(session.id);
     
     // Load TODOs for this session
     const todos = await this.fetchTodosForSession(session.id);
     this.updateBoard(todos);
+    
+    // Update board with file operations from all messages
+    this.updateBoardWithAllMessages(session.id);
 
     // Display messages
     this.displayMessages();
@@ -1370,6 +1445,8 @@ export default class LivelyOpencode extends LivelyChat {
         msg.parts = eventParts;
         this.log(`[opencode] message.updated with ${eventParts.length} parts for ${msgId}, re-rendering`);
         await this.updateOpenCodeMessage(messageInfo.id, msg);
+        // Update board with file operations from this message
+        this.updateBoardWithFileOperations(msg);
       } else if (messageInfo.error) {
         // Server error with no parts - re-render to show the error
         this.log(`[opencode] message.updated with error for ${msgId}: ${messageInfo.error.name}`);
@@ -1571,6 +1648,11 @@ export default class LivelyOpencode extends LivelyChat {
           if (subagentSessionId && sessionId) {
             this.recordSubagentSession(subagentSessionId, sessionId);
           }
+        }
+        
+        // Update board with file operations when tool completes
+        if (part.state?.status === 'completed') {
+          this.updateBoardWithFileOperations(msg);
         }
       } 
     }

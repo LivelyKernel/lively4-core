@@ -476,4 +476,203 @@ describe('OpenCode Chat Event Replay', () => {
       expect(component.currentSession.id).to.equal('new-session');
     });
   });
+
+  describe('Agent Board Updates', () => {
+    let mockBoard;
+
+    beforeEach(() => {
+      // Create mock board with tracking
+      mockBoard = {
+        filesRead: [],
+        filesWritten: [],
+        workingDirectory: null,
+        projectPath: null,
+        urlBase: null,
+        addFileRead(path) {
+          if (!this.filesRead.includes(path)) {
+            this.filesRead.push(path);
+          }
+        },
+        addFileWritten(path) {
+          if (!this.filesWritten.includes(path)) {
+            this.filesWritten.push(path);
+          }
+        },
+        setContext(context) {
+          this.workingDirectory = context.workingDirectory;
+          this.projectPath = context.projectPath;
+          this.urlBase = context.urlBase;
+        },
+        clearFileLinks() {
+          this.filesRead = [];
+          this.filesWritten = [];
+        },
+        clearAll() {
+          this.filesRead = [];
+          this.filesWritten = [];
+        }
+      };
+
+      // Stub get('#agentBoard') to return our mock
+      const originalGet = component.get.bind(component);
+      component.get = function(selector) {
+        if (selector === '#agentBoard') {
+          return mockBoard;
+        }
+        return originalGet(selector);
+      };
+    });
+
+    it('should update board with Read tool usage', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          {
+            type: 'tool_use',
+            name: 'mcp_read',
+            input: { filePath: '/path/to/file.js' }
+          }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.deep.equal(['/path/to/file.js']);
+      expect(mockBoard.filesWritten).to.be.empty;
+    });
+
+    it('should update board with Write tool usage', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          {
+            type: 'tool_use',
+            name: 'mcp_write',
+            input: { filePath: '/path/to/output.js' }
+          }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.be.empty;
+      expect(mockBoard.filesWritten).to.deep.equal(['/path/to/output.js']);
+    });
+
+    it('should update board with Edit tool usage', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          {
+            type: 'tool_use',
+            name: 'mcp_edit',
+            input: { filePath: '/path/to/edit.js' }
+          }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.be.empty;
+      expect(mockBoard.filesWritten).to.deep.equal(['/path/to/edit.js']);
+    });
+
+    it('should update board with both Read and Write tools', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          {
+            type: 'tool_use',
+            name: 'mcp_read',
+            input: { filePath: '/path/to/input.js' }
+          },
+          {
+            type: 'tool_use',
+            name: 'mcp_write',
+            input: { filePath: '/path/to/output.js' }
+          }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.deep.equal(['/path/to/input.js']);
+      expect(mockBoard.filesWritten).to.deep.equal(['/path/to/output.js']);
+    });
+
+    it('should handle tool state input format', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          {
+            type: 'tool',
+            tool: 'mcp_read',
+            state: {
+              input: { filePath: '/path/to/stateful.js' }
+            }
+          }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.deep.equal(['/path/to/stateful.js']);
+    });
+
+    it('should scan all messages in a session', () => {
+      const messages = [
+        {
+          info: { id: 'msg_1', role: 'assistant' },
+          parts: [
+            { type: 'tool_use', name: 'mcp_read', input: { filePath: '/file1.js' } }
+          ]
+        },
+        {
+          info: { id: 'msg_2', role: 'assistant' },
+          parts: [
+            { type: 'tool_use', name: 'mcp_write', input: { filePath: '/file2.js' } }
+          ]
+        }
+      ];
+
+      component.messages.set('test-session', messages);
+      component.updateBoardWithAllMessages('test-session');
+
+      expect(mockBoard.filesRead).to.deep.equal(['/file1.js']);
+      expect(mockBoard.filesWritten).to.deep.equal(['/file2.js']);
+    });
+
+    it('should handle alternative tool names', () => {
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          { type: 'tool_use', name: 'read_file', input: { path: '/read.js' } },
+          { type: 'tool_use', name: 'write_file', input: { path: '/write.js' } }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.filesRead).to.deep.equal(['/read.js']);
+      expect(mockBoard.filesWritten).to.deep.equal(['/write.js']);
+    });
+
+    it('should set board context with working directory and project info', () => {
+      // Setup component state
+      component.workingDirectory = '/home/jens/lively4/lively4-core';
+      component.currentProject = { path: 'src/ai-workspace' };
+
+      const message = {
+        info: { id: 'msg_1', role: 'assistant' },
+        parts: [
+          { type: 'tool_use', name: 'mcp_read', input: { filePath: '/file.js' } }
+        ]
+      };
+
+      component.updateBoardWithFileOperations(message);
+
+      expect(mockBoard.workingDirectory).to.equal('/home/jens/lively4/lively4-core');
+      expect(mockBoard.projectPath).to.equal('src/ai-workspace');
+    });
+  });
 });
