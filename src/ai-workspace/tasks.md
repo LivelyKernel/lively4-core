@@ -9,3 +9,4 @@ For Human/Agent team:
 - [ ] continue work on [AI/Workspace](doc/ai-workspace-tasks.md)
 - [ ] follow up on [ideas](doc/ideas.md)
 - [ ] normalize links in lively agent board
+- [ ] don't show the URL Project Focus in the board anyway
