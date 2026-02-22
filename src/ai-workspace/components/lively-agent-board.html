@@ -1,0 +1,123 @@
+<template id="lively-agent-board">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      background-color: var(--color-background, #fff);
+    }
+    
+    .board-section {
+      margin-bottom: 20px;
+    }
+    
+    .board-section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      padding: 4px 0;
+      border-bottom: 1px solid #ccc;
+    }
+    
+    .todo-item {
+      padding: 6px 0;
+      padding-left: 20px;
+      border-left: 3px solid transparent;
+    }
+    
+    .todo-item.priority-high {
+      border-left-color: #ff4444;
+    }
+    
+    .todo-item.priority-medium {
+      border-left-color: #ffaa00;
+    }
+    
+    .todo-item.priority-low {
+      border-left-color: #4444ff;
+    }
+    
+    .todo-status-icon {
+      display: inline-block;
+      width: 16px;
+      margin-right: 8px;
+    }
+    
+    .todo-content {
+      display: inline;
+    }
+    
+    .todo-meta {
+      color: #666;
+      font-size: 10px;
+      margin-left: 24px;
+    }
+    
+    .empty-message {
+      color: #999;
+      font-style: italic;
+      padding: 10px;
+    }
+    
+    /* Session Links section */
+    .links-section {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .link-item {
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .link-icon {
+      font-size: 14px;
+    }
+    
+    .link-label {
+      font-weight: bold;
+      color: #555;
+    }
+    
+    .link-path {
+      color: #0066cc;
+      text-decoration: none;
+      font-family: monospace;
+    }
+    
+    .link-path:hover {
+      text-decoration: underline;
+    }
+    
+    .link-group-title {
+      font-weight: bold;
+      color: #666;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    
+    .file-read, .file-written {
+      padding-left: 12px;
+      font-size: 11px;
+    }
+  </style>
+  
+  <div id="content">
+    <div class="empty-message">No data to display</div>
+  </div>
+</template>

@@ -1,0 +1,492 @@
+<template id="lively-opencode">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/components/tools/lively-chat.css"></style>
+<style>
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: white;
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b6b;
+}
+
+.status-dot.connected {
+  background: #51cf66;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  min-width: 80px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Session UI moved to lively-chat-sessions component */
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 12px;
+  background: white;
+}
+
+.message {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  max-width: 80%;
+}
+
+.message.user {
+  background: #e3f2fd;
+  margin-left: auto;
+  text-align: right;
+}
+
+.message.assistant {
+  background: #f5f5f5;
+  margin-right: auto;
+}
+
+.message-role {
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.message-content {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.empty-chat {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 40px;
+  font-style: italic;
+}
+
+.input-area {
+  border-top: 1px solid #e0e0e0;
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  background: #f8f9fa;
+}
+
+.message-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 200px;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.no-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+}
+
+.no-session i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.controls button {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.controls button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Hide sessions component when session-ui is explicitly set to false */
+:host([session-ui="false"]) #sessionsComponent {
+  display: none;
+}
+
+/* Hide message container when messages-ui is explicitly set to false */
+:host([messages-ui="false"]) #messagesContainer {
+  display: none;
+}
+
+.code-user {
+  margin-left: 10px;
+  margin-right: auto;
+  max-width: 75%;
+  align-self: flex-end;
+}
+
+.code-assistant, .code-tool  {
+  margin-left: 10%;
+  margin-right: 0;
+  max-width: 75%;
+  align-self: flex-end;
+}
+
+/* Component-specific logging panel sizing */
+.logging-panel {
+  flex: 0 0 600px;
+}
+
+/* Tab UI for right panel */
+.panel-tabs {
+  display: flex;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.panel-tab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panel-tab:hover {
+  color: #495057;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.panel-tab.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+  background: white;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: none;
+}
+
+.panel-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.debug-log-actions {
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.debug-log-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.debug-log-actions button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #495057;
+}
+
+/* Working Directory Selector */
+.workdir-selector {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workdir-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workdir-selector input-combobox {
+  width: 100%;
+}
+
+.workdir-selector input-combobox input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+/* Project Focus Selector */
+.project-selector {
+  background: #f0f4f8;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3a6186;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.project-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.project-actions button {
+  padding: 2px 5px;
+  font-size: 10px;
+  border: 1px solid #b8c8d8;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  color: #3a6186;
+}
+
+.project-actions button:hover {
+  background: #dde8f0;
+}
+
+.project-selector input-combobox {
+  width: 100%;
+}
+
+.project-url-base {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 10px;
+  border: 1px solid #b8c8d8;
+  border-radius: 3px;
+  color: #3a6186;
+  background: white;
+  box-sizing: border-box;
+}
+
+.project-url-base::placeholder {
+  color: #aab8c8;
+}
+
+.project-indicator {
+  font-size: 10px;
+  color: #3a6186;
+  font-style: italic;
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+
+</style>
+
+<div class="container">
+  <div class="header">
+    <h3>
+      <i class="fa fa-comments"></i>
+      OpenCode Agent
+    </h3>
+    <div class="status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="status">Initializing...</span>
+    </div>
+    <div id="replayControlsPlaceholder"></div>
+    <div class="controls">
+      <button id="serverButton" title="Start/Stop OpenCode server">
+        <i class="fa fa-play"></i> Start Server
+      </button>
+      <button id="reconnectButton" title="Reconnect to OpenCode server">
+        <i class="fa fa-refresh"></i> Reconnect
+      </button>
+      <button id="variantButton" title="Cycle thinking mode (none/high/max)">
+        <i class="fa fa-brain"></i> <span id="variantLabel">none</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="sidebar">
+      <div class="workdir-selector">
+        <label class="workdir-label">Working Directory</label>
+        <input-combobox id="workdirCombobox"></input-combobox>
+      </div>
+      <div class="project-selector">
+        <div class="project-selector-header">
+          <label class="project-label">Project Focus</label>
+          <div class="project-actions">
+            <button id="clearProjectButton" title="Clear project focus">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <input-combobox id="projectCombobox"></input-combobox>
+        <input id="projectUrlBase" type="text" class="project-url-base" 
+               placeholder="URL base, e.g. http://localhost:9005/lively4-core/"
+               title="Base URL for fetching project files (maps local path to lively4 server URL)">
+        <div id="projectIndicator" class="project-indicator" style="display:none;"></div>
+      </div>
+      <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+    </div>
+
+    <lively-separator id="sidebar-separator"></lively-separator>
+
+    <div class="chat-panel">
+      <div class="messages-container" id="messagesContainer">
+        <div class="no-session">
+          <i class="fa fa-comments-o"></i>
+          <div>Select or create a session to start chatting</div>
+        </div>
+      </div>
+      <div class="input-area">
+        <textarea
+          class="message-input"
+          id="messageInput"
+          placeholder="Type a message... "
+          disabled
+        ></textarea>
+      </div>
+    </div>
+
+    <lively-separator id="log-separator"></lively-separator>
+
+    <div class="logging-panel" id="loggingPanel">
+      <div class="panel-tabs">
+        <button class="panel-tab" id="debugLogTab" data-panel="debugLog">
+          Debug Logs
+        </button>
+        <button class="panel-tab active" id="boardTab" data-panel="board">
+          Board
+        </button>
+      </div>
+      
+      <div class="panel-content" id="debugLogContent">
+        <div class="debug-log-actions">
+          <button id="clearLogButton" title="Clear log">
+            <i class="fa fa-trash"></i> Clear
+          </button>
+        </div>
+        <ul id="debugLog"></ul>
+      </div>
+      
+      <div class="panel-content active" id="boardContent">
+        <lively-agent-board id="agentBoard"></lively-agent-board>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden terminal for running OpenCode server -->
+  <div id="serverTerminalContainer" style="display: none;"></div>
+</div>
+
+<content></content>
+</template>

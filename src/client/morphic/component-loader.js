@@ -335,8 +335,7 @@ export default class ComponentLoader {
 
   static async getTemplatePathContent(path) {
     
-   
-    
+
     let cacheInvalidationTime = 60 * 5 * 1000;
     let cached = this.templatePathsCache[path]
     let time = this.templatePathsCacheTime[path]
@@ -364,6 +363,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/',
         lively4url + '/src/components/widgets/',
         lively4url + '/src/components/tools/',
+        lively4url + '/src/ai-workspace/components/',
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
