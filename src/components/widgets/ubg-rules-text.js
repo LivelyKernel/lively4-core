@@ -797,11 +797,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       let iteratingLength = 0
       textToPrint = parts.map((part, i) => {
         let startingLength = iteratingLength
-        const endingLength = iteratingLength = startingLength + percentageSpacePerPart[i]
+        const endingLength = iteratingLength = startingLength + percentageSpacePerPart[i]2
         const middle = (startingLength + endingLength) / 2;
         if (part === 'hedron') {
           const scaleFactor = totalLength > 1 ? .7 : 1
-          return `<g transform='translate(${10 * middle - center.x} 0) translate(5 5) scale(${scaleFactor}) translate(-5 -5) '>${part}</g>`
+          return `<g transform='translate(${10 * middle - center.x} 0) translate(5 5) scale(${scaleFactor}) translate(-5 -5) ' style='font: .5em sans-serif'>${part}</g>`
         } else {
           return `<text x="${100 * middle}%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial; fill: var(--primary-text-color);">${part}</text>`
         }
