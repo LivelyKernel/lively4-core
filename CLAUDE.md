@@ -60,6 +60,51 @@ A significant part of this AI collaboration is an **experiment to teach Claude C
 
 This documentation serves dual purposes: guiding AI development work and creating human-readable documentation of Lively4's development practices. The `demos/claude/` directory contains examples and experiments from this collaborative learning process.
 
+## CRITICAL: Git Safety Guidelines
+
+**Git commands are DANGEROUS and require EXPLICIT user approval!**
+
+**Rules:**
+- ❌ **NEVER** run git commands without user explicitly requesting them
+- ❌ **NEVER** assume the working tree is clean
+- ❌ **NEVER** run destructive git operations (checkout, reset, revert) speculatively
+- ✅ **ALWAYS** check `git status` and `git diff` before any destructive operation
+- ✅ **ALWAYS** ask user for confirmation before reverting/checking out files
+
+**Example of WRONG behavior:**
+```javascript
+// User: "Let's scrap this feature"
+// ❌ WRONG - immediately running destructive command:
+bash("git checkout -- src/file.js")
+
+// What if user had OTHER uncommitted changes?
+// What if the file had important work-in-progress?
+// DISASTER!
+```
+
+**Example of CORRECT behavior:**
+```javascript
+// User: "Let's scrap this feature"
+// ✅ RIGHT - check status first:
+bash("git status")
+// Shows: "modified: src/file.js, modified: src/other-important-file.js"
+
+// ✅ RIGHT - check what will be lost:
+bash("git diff src/file.js")
+// Shows the actual changes
+
+// ✅ RIGHT - ask user for confirmation:
+"I see you have changes in src/file.js. You also have uncommitted changes in 
+src/other-important-file.js. Should I revert ONLY src/file.js, or do you want 
+to keep working on it?"
+```
+
+**Why this matters:**
+- Users may have hours of uncommitted work
+- `git checkout` permanently destroys uncommitted changes
+- There's no "undo" for lost work
+- Always verify before destroying anything
+
 ## Essential Commands
 
 **Testing:**
