@@ -935,7 +935,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Scan message parts for Read/Write tool uses and update the board
+   * Scan message parts for tool uses and update the board
+   * Tracks all tool usages and file operations
    * @param {Object} message - OpenCode message object with parts
    */
   updateBoardWithFileOperations(message) {
@@ -955,6 +956,14 @@ export default class LivelyOpencode extends LivelyChat {
     
     for (const part of parts) {
       const toolName = part.name || part.tool;
+      if (!toolName) continue;
+      
+      // Track all tool usages
+      if (board.addToolUsage) {
+        board.addToolUsage(toolName);
+      }
+      
+      // Track file operations specifically
       const input = part.input || part.state?.input || {};
       const filePath = input.filePath || input.path;
       

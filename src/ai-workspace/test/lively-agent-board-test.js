@@ -255,4 +255,151 @@ describe("Lively Agent Board", function() {
       expect(board.todos).to.be.empty;
     });
   });
+
+  describe("File Operation Counts", () => {
+    it("should count file reads", () => {
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      
+      expect(board.fileReadCounts.get('/path/to/file.js')).to.equal(3);
+      expect(board.links.filesRead).to.have.length(1); // Still only one unique file
+    });
+
+    it("should count file writes", () => {
+      board.addFileWritten('/path/to/file.js');
+      board.addFileWritten('/path/to/file.js');
+      
+      expect(board.fileWriteCounts.get('/path/to/file.js')).to.equal(2);
+      expect(board.links.filesWritten).to.have.length(1);
+    });
+
+    it("should track counts for multiple files", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file2.js');
+      
+      expect(board.fileReadCounts.get('/path/to/file1.js')).to.equal(2);
+      expect(board.fileReadCounts.get('/path/to/file2.js')).to.equal(1);
+    });
+
+    it("should clear file counts when clearing file links", () => {
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      board.addFileWritten('/path/to/file.js');
+      
+      board.clearFileLinks();
+      
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
+    });
+  });
+
+  describe("Tool Usage Tracking", () => {
+    it("should track tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      board.addToolUsage('mcp_read');
+      
+      expect(board.toolUsages.get('mcp_read')).to.equal(2);
+      expect(board.toolUsages.get('mcp_write')).to.equal(1);
+    });
+
+    it("should calculate total tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      board.addToolUsage('mcp_bash');
+      
+      expect(board.getTotalToolUsages()).to.equal(4);
+    });
+
+    it("should clear tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.clearToolUsages();
+      
+      expect(board.toolUsages.size).to.equal(0);
+      expect(board.getTotalToolUsages()).to.equal(0);
+    });
+
+    it("should clear tool usages when clearing all", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.clearAll();
+      
+      expect(board.toolUsages.size).to.equal(0);
+    });
+
+    it("should handle multiple tool types", () => {
+      const tools = ['mcp_read', 'mcp_write', 'mcp_edit', 'mcp_bash', 'mcp_glob', 'mcp_grep'];
+      tools.forEach(tool => {
+        board.addToolUsage(tool);
+        board.addToolUsage(tool);
+      });
+      
+      expect(board.toolUsages.size).to.equal(6);
+      expect(board.getTotalToolUsages()).to.equal(12);
+    });
+  });
+
+  describe("Statistics Section Rendering", () => {
+    it("should render tool usage statistics", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.exist;
+      expect(statsSection.textContent).to.include('Tool Usage');
+      expect(statsSection.textContent).to.include('mcp_read');
+      expect(statsSection.textContent).to.include('mcp_write');
+    });
+
+    it("should show total tool usage count", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.include('Total: 3');
+    });
+
+    it("should render file operation summary", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file2.js');
+      board.addFileWritten('/path/to/file3.js');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.exist;
+      expect(statsSection.textContent).to.include('File Operations');
+      expect(statsSection.textContent).to.include('Total Reads');
+      expect(statsSection.textContent).to.include('3'); // 3 total reads
+      expect(statsSection.textContent).to.include('2 files'); // 2 unique files read
+      expect(statsSection.textContent).to.include('Total Writes');
+      expect(statsSection.textContent).to.include('1'); // 1 total write
+    });
+
+    it("should not render stats section when no stats", () => {
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.not.exist;
+    });
+  });
 });
