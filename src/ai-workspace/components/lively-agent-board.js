@@ -239,6 +239,19 @@ export default class LivelyAgentBoard extends Morph {
       );
     }
 
+    // Project Tasks
+    section.appendChild(
+      <div class="link-item">
+        <span class="link-icon">📋</span>
+        <a class="link-path" click={() => {
+            const tasksUrl = this.buildFileUrl('/home/jens/lively4/lively4-core/src/ai-workspace/tasks.md');
+            lively.openBrowser(tasksUrl, true)
+          }} title="src/ai-workspace/tasks.md">
+          Project Tasks
+        </a>
+      </div>
+    );
+
     // Files Read
     if (this.links.filesRead.length > 0) {
       section.appendChild(

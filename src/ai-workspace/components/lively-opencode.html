@@ -387,6 +387,138 @@
   cursor: help;
 }
 
+/* Permission Request UI */
+.permission-request-ui {
+  border: 2px solid #9b59b6;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  background: linear-gradient(135deg, #f9f5ff 0%, #f0e6ff 100%);
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.15);
+}
+
+.permission-header {
+  font-weight: bold;
+  font-size: 15px;
+  color: #6c3483;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #d5b3e8;
+}
+
+.permission-body {
+  margin-bottom: 14px;
+}
+
+.permission-type {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.permission-patterns {
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+.permission-patterns ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.permission-patterns li {
+  margin: 3px 0;
+  color: #555;
+  font-family: 'Courier New', monospace;
+}
+
+.permission-metadata {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.permission-metadata summary {
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+  font-weight: 500;
+}
+
+.permission-metadata pre {
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+  overflow-x: auto;
+  font-size: 11px;
+  border: 1px solid #e0d0f0;
+}
+
+.permission-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  padding-top: 4px;
+}
+
+.permission-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.permission-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permission-approve-once {
+  background: #27ae60;
+  color: white;
+}
+
+.permission-approve-once:hover:not(:disabled) {
+  background: #229954;
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+}
+
+.permission-approve-always {
+  background: #2ecc71;
+  color: white;
+  border: 2px solid #27ae60;
+}
+
+.permission-approve-always:hover:not(:disabled) {
+  background: #27ae60;
+  box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);
+}
+
+.permission-reject {
+  background: transparent;
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+}
+
+.permission-reject:hover:not(:disabled) {
+  background: #e74c3c;
+  color: white;
+  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+.permission-submitted {
+  color: #555;
+  font-style: italic;
+  font-size: 13px;
+  padding: 10px;
+  text-align: center;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
 
 </style>
 

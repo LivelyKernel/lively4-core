@@ -357,6 +357,8 @@ export default class LivelyOpencode extends LivelyChat {
         sessionId = data.properties?.info?.id || data.properties?.sessionID;
       } else if (data.type === 'todo.updated') {
         sessionId = data.properties?.sessionID;
+      } else if (data.type === 'permission.asked') {
+        sessionId = data.properties?.sessionID;
       }
     }
 
@@ -409,6 +411,17 @@ export default class LivelyOpencode extends LivelyChat {
           this.updateBoard(todos);
         }
       }
+    } else if (data.type === 'permission.asked') {
+      // Permission request - show UI to approve/deny
+      if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
+        const permission = data.properties;
+        if (permission) {
+          this.log(`Permission requested: ${permission.permission} - ${permission.patterns}`);
+          await this.handlePermissionRequest(permission);
+        } else {
+          console.warn('[opencode] permission.asked event has no properties:', data);
+        }
+      }
     } else if (data.type === 'session') {
       this.loadSessions();
     }
@@ -416,6 +429,139 @@ export default class LivelyOpencode extends LivelyChat {
     const statusInfo = this.inferStatusFromEvent(data, sessionId);
     if (statusInfo) {
       this.dispatchMessageEvent('opencode:status-change', statusInfo);
+    }
+  }
+
+  /**
+   * Handle a permission request from the OpenCode server.
+   * Shows a dialog to the user and sends their response back to the server.
+   * 
+   * @param {Object} permission - The permission request object
+   * @param {string} permission.id - Permission request ID
+   * @param {string} permission.sessionID - Session ID
+   * @param {string} permission.permission - Permission type (e.g., "tool.external_directory")
+   * @param {string[]} permission.patterns - Patterns being requested (e.g., ["/etc/group"])
+   * @param {Object} permission.metadata - Additional metadata
+   */
+  async handlePermissionRequest(permission) {
+    const { id, sessionID, permission: permType, patterns, metadata } = permission;
+    
+    // Show notification
+    lively.warn(`Permission requested: ${permType} - ${patterns?.join(', ')}`);
+    
+    // Show permission UI in the chat
+    await this.showPermissionUI(permission);
+  }
+
+  /**
+   * Show permission request UI in the chat area
+   */
+  async showPermissionUI(permission) {
+    const { id, sessionID, permission: permType, patterns, metadata } = permission;
+    
+    // Create permission UI element
+    const permissionDiv = document.createElement('div');
+    permissionDiv.className = 'permission-request-ui';
+    permissionDiv.innerHTML = `
+      <div class="permission-header">🔒 Permission Request</div>
+      <div class="permission-body">
+        <div class="permission-type"><strong>Type:</strong> ${permType}</div>
+        ${patterns && patterns.length > 0 ? `
+          <div class="permission-patterns">
+            <strong>Files/Patterns:</strong>
+            <ul>${patterns.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+        ` : ''}
+        ${metadata && Object.keys(metadata).length > 0 ? `
+          <details class="permission-metadata">
+            <summary>Additional details</summary>
+            <pre>${JSON.stringify(metadata, null, 2)}</pre>
+          </details>
+        ` : ''}
+      </div>
+      <div class="permission-actions">
+        <button class="permission-btn permission-approve-once">Approve Once</button>
+        <button class="permission-btn permission-approve-always">Approve Always</button>
+        <button class="permission-btn permission-reject">Reject</button>
+      </div>
+    `;
+    
+    // Add to messages container
+    const messagesContainer = this.get('#messagesContainer');
+    
+    if (messagesContainer) {
+      messagesContainer.appendChild(permissionDiv);
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } else {
+      console.error('[opencode] messagesContainer not found! Cannot show permission UI.');
+      // Fallback to native dialog
+      const approved = confirm(`Permission requested: ${permType}\n\nPatterns: ${patterns?.join(', ')}\n\nApprove?`);
+      const response = approved ? 'once' : 'reject';
+      await this.submitPermissionResponse(id, sessionID, response, permType, patterns);
+      return;
+    }
+    
+    // Set up button handlers
+    const approveOnceBtn = permissionDiv.querySelector('.permission-approve-once');
+    const approveAlwaysBtn = permissionDiv.querySelector('.permission-approve-always');
+    const rejectBtn = permissionDiv.querySelector('.permission-reject');
+    
+    const submitResponse = async (response) => {
+      // Disable all buttons
+      approveOnceBtn.disabled = true;
+      approveAlwaysBtn.disabled = true;
+      rejectBtn.disabled = true;
+      
+      const success = await this.submitPermissionResponse(id, sessionID, response, permType, patterns);
+      
+      if (success) {
+        // Update UI to show submitted state
+        permissionDiv.innerHTML = `
+          <div class="permission-submitted">
+            Permission ${response === 'reject' ? 'rejected' : 'approved'} ${response === 'always' ? '(remembered)' : ''} - waiting for agent...
+          </div>
+        `;
+      } else {
+        // Re-enable buttons on error
+        approveOnceBtn.disabled = false;
+        approveAlwaysBtn.disabled = false;
+        rejectBtn.disabled = false;
+      }
+    };
+    
+    approveOnceBtn.addEventListener('click', () => submitResponse('once'));
+    approveAlwaysBtn.addEventListener('click', () => submitResponse('always'));
+    rejectBtn.addEventListener('click', () => submitResponse('reject'));
+  }
+
+  /**
+   * Submit permission response to server
+   */
+  async submitPermissionResponse(permissionId, sessionID, response, permType, patterns) {
+    try {
+      const url = `${this.serverUrl}/session/${sessionID}/permissions/${permissionId}`;
+      
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response })
+      });
+      
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error(`[opencode] Permission response error:`, errorText);
+        lively.error(`Failed to submit permission response: ${resp.status}`);
+        return false;
+      }
+      
+      this.log(`Permission ${response} for ${permType}: ${patterns}`);
+      lively.notify(`Permission ${response}`);
+      return true;
+    } catch (error) {
+      console.error('[opencode] Error submitting permission response:', error);
+      lively.error('Error submitting permission: ' + error.message);
+      return false;
     }
   }
 
@@ -2033,6 +2179,12 @@ export default class LivelyOpencode extends LivelyChat {
         // Clear pending updates since we've merged them
         this.pendingUpdates.delete(messageId);
       }
+    }
+
+    // Clear placeholder if this is the first message
+    const emptyChat = container.querySelector('.empty-chat');
+    if (emptyChat) {
+      emptyChat.remove();
     }
 
     const chatMessage = await lively.create('lively-chat-message');
