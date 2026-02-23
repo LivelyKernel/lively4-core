@@ -55,42 +55,26 @@ export default class LivelyAgentBoard extends Morph {
     this.windowTitle = "Agent Board";
     this.todos = [];
     this.links = {
-      projectFocus: null,
-      filesRead: [],
-      filesWritten: []
+      projectFocus: null
     };
-    // Tool usage tracking
-    this.toolUsages = new Map(); // toolName -> count
-    this.fileReadCounts = new Map(); // filePath -> count
-    this.fileWriteCounts = new Map(); // filePath -> count
-    // Context for building URLs and shortening paths
+    this.toolUsages = new Map();
+    this.fileReadCounts = new Map();
+    this.fileWriteCounts = new Map();
     this.workingDirectory = null;
     this.projectPath = null;
     this.urlBase = null;
   }
 
-  /**
-   * Update the TODO list display
-   * @param {Array} todos - Array of TODO items from server
-   */
   updateTodos(todos) {
     this.todos = todos || [];
     this.render();
   }
 
-  /**
-   * Set the project focus link
-   * @param {string} path - Path to the project focus index.md
-   */
   setProjectFocus(path) {
     this.links.projectFocus = path;
     this.render();
   }
 
-  /**
-   * Set context for URL building and path shortening
-   * @param {Object} context - { workingDirectory, projectPath, urlBase }
-   */
   setContext(context) {
     this.workingDirectory = context.workingDirectory;
     this.projectPath = context.projectPath;
@@ -98,38 +82,18 @@ export default class LivelyAgentBoard extends Morph {
     this.render();
   }
 
-  /**
-   * Add a file read link
-   * @param {string} path - Path to the file that was read
-   */
   addFileRead(path) {
-    if (!this.links.filesRead.includes(path)) {
-      this.links.filesRead.push(path);
-    }
-    // Track read count
     const count = this.fileReadCounts.get(path) || 0;
     this.fileReadCounts.set(path, count + 1);
     this.render();
   }
 
-  /**
-   * Add a file written link
-   * @param {string} path - Path to the file that was written
-   */
   addFileWritten(path) {
-    if (!this.links.filesWritten.includes(path)) {
-      this.links.filesWritten.push(path);
-    }
-    // Track write count
     const count = this.fileWriteCounts.get(path) || 0;
     this.fileWriteCounts.set(path, count + 1);
     this.render();
   }
 
-  /**
-   * Add a tool usage
-   * @param {string} toolName - Name of the tool that was used
-   */
   addToolUsage(toolName) {
     const count = this.toolUsages.get(toolName) || 0;
     this.toolUsages.set(toolName, count + 1);
@@ -148,33 +112,20 @@ export default class LivelyAgentBoard extends Morph {
     return total;
   }
 
-  /**
-   * Clear all file links (reads and writes)
-   */
   clearFileLinks() {
-    this.links.filesRead = [];
-    this.links.filesWritten = [];
     this.fileReadCounts.clear();
     this.fileWriteCounts.clear();
     this.render();
   }
 
-  /**
-   * Clear all tool usages
-   */
   clearToolUsages() {
     this.toolUsages.clear();
     this.render();
   }
 
-  /**
-   * Clear everything (TODOs, file links, and tool usages)
-   */
   clearAll() {
     this.todos = [];
     this.links.projectFocus = null;
-    this.links.filesRead = [];
-    this.links.filesWritten = [];
     this.fileReadCounts.clear();
     this.fileWriteCounts.clear();
     this.toolUsages.clear();
@@ -342,13 +293,13 @@ export default class LivelyAgentBoard extends Morph {
     return section;
   }
 
-  /**
-   * Render the session links section
-   */
   renderLinksSection() {
+    const filesRead = Array.from(this.fileReadCounts.keys());
+    const filesWritten = Array.from(this.fileWriteCounts.keys());
+    
     const hasLinks = this.links.projectFocus || 
-                     this.links.filesRead.length > 0 || 
-                     this.links.filesWritten.length > 0;
+                     filesRead.length > 0 || 
+                     filesWritten.length > 0;
 
     if (!hasLinks) return null;
 
@@ -385,12 +336,12 @@ export default class LivelyAgentBoard extends Morph {
     );
 
     // Files Read
-    if (this.links.filesRead.length > 0) {
+    if (filesRead.length > 0) {
       section.appendChild(
-        <div class="link-group-title">Files Read ({this.links.filesRead.length})</div>
+        <div class="link-group-title">Files Read ({filesRead.length})</div>
       );
       
-      this.links.filesRead.forEach(path => {
+      filesRead.forEach(path => {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
         const readCount = this.fileReadCounts.get(path) || 0;
@@ -407,12 +358,12 @@ export default class LivelyAgentBoard extends Morph {
     }
 
     // Files Written
-    if (this.links.filesWritten.length > 0) {
+    if (filesWritten.length > 0) {
       section.appendChild(
-        <div class="link-group-title">Files Written ({this.links.filesWritten.length})</div>
+        <div class="link-group-title">Files Written ({filesWritten.length})</div>
       );
       
-      this.links.filesWritten.forEach(path => {
+      filesWritten.forEach(path => {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
         const writeCount = this.fileWriteCounts.get(path) || 0;
