@@ -91,16 +91,17 @@ export default class LivelyOpencode extends LivelyChat {
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();
 
-    // Register persistent attributes with camelCase property names
-    this.registerAttributeWithAlias('working-directory', 'workingDirectory');
-    this.registerAttributeWithAlias('project-path', 'projectPath');
-    this.registerAttributeWithAlias('current-session', 'currentSessionId');
     this.registerAttribute('variant');
 
     // Server configuration
     this.serverUrl = 'http://localhost:9100';
 
-    // Restore working directory from attribute or use defaults
+    // Restore properties from attributes if present (for persistence)
+    this.workingDirectory = this.getAttribute('working-directory') || this.workingDirectory;
+    this.projectPath = this.getAttribute('project-path') || this.projectPath;
+    this.currentSessionId = this.getAttribute('current-session') || this.currentSessionId;
+
+    // Use defaults if still not set
     if (!this.workingDirectory) {
       const recent = this.getRecentWorkingDirectories();
       this.workingDirectory = LivelyOpencode.sharedWorkingDirectory || (recent.length > 0 ? recent[0] : null);
@@ -181,8 +182,8 @@ export default class LivelyOpencode extends LivelyChat {
 
   connectedCallback() {
     this.shouldReconnect = true;
-    // Connect to OpenCode server
-    this.connectToServer();
+    // AUTOSTART DISABLED - Connect to OpenCode server manually via button
+    // this.connectToServer();
   }
 
   disconnectedCallback() {
@@ -287,14 +288,15 @@ export default class LivelyOpencode extends LivelyChat {
       this.updateStatus('Disconnected', false);
       this.connected = false;
       
+      // AUTOSTART DISABLED - Server must be started manually via button
       // Try to auto-start server on first failure (only once)
-      if (this.shouldReconnect && !this._hasTriedAutoStart) {
-        this._hasTriedAutoStart = true;
-        this.log('Server not running - attempting to start automatically...');
-        await this.startServer();
-        // startServer() already schedules connection attempt
-        return;
-      }
+      // if (this.shouldReconnect && !this._hasTriedAutoStart) {
+      //   this._hasTriedAutoStart = true;
+      //   this.log('Server not running - attempting to start automatically...');
+      //   await this.startServer();
+      //   // startServer() already schedules connection attempt
+      //   return;
+      // }
       
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
@@ -3105,6 +3107,26 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
+  livelyPrepareSave() {
+    // Persist properties to attributes before saving
+    if (this.workingDirectory) {
+      this.setAttribute('working-directory', this.workingDirectory);
+    } else {
+      this.removeAttribute('working-directory');
+    }
+    
+    if (this.projectPath) {
+      this.setAttribute('project-path', this.projectPath);
+    } else {
+      this.removeAttribute('project-path');
+    }
+    
+    if (this.currentSessionId) {
+      this.setAttribute('current-session', this.currentSessionId);
+    } else {
+      this.removeAttribute('current-session');
+    }
+  }
 
   livelyPreMigrate() {
     this.disconnectFromServer();

@@ -132,29 +132,6 @@ export default class Morph extends HTMLElement {
     });
   }
 
-  /**
-   * Register an attribute with a camelCase alias for easier access in code
-   * Example: registerAttributeWithAlias('working-directory', 'workingDirectory')
-   * Creates a property `workingDirectory` that reads/writes to the `working-directory` attribute
-   */
-  registerAttributeWithAlias(attributeName, propertyName) {
-    Object.defineProperty(this, propertyName, {
-      get() { 
-        return this.getAttribute(attributeName); 
-      },
-      set(newValue) { 
-        if (newValue) {
-          this.setAttribute(attributeName, newValue);
-        } else {
-          this.removeAttribute(attributeName);
-        }
-      },
-      enumerable: true,
-      configurable: true
-    });
-  }
-  
-  
   toString() {
     return "[" + this.constructor.name + "]"
   }
