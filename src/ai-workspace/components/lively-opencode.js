@@ -91,11 +91,21 @@ export default class LivelyOpencode extends LivelyChat {
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();
 
+    // Register persistent attributes with camelCase property names
+    this.registerAttributeWithAlias('working-directory', 'workingDirectory');
+    this.registerAttributeWithAlias('project-path', 'projectPath');
+    this.registerAttributeWithAlias('current-session', 'currentSessionId');
+    this.registerAttribute('variant');
+
     // Server configuration
     this.serverUrl = 'http://localhost:9100';
 
-    // Working directory state - sync with shared state if server already running
-    this.workingDirectory = this.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    // Restore working directory from attribute or use defaults
+    if (!this.workingDirectory) {
+      const recent = this.getRecentWorkingDirectories();
+      this.workingDirectory = LivelyOpencode.sharedWorkingDirectory || (recent.length > 0 ? recent[0] : null);
+    }
+    
     this.allSessions = []; // All sessions from server
 
     // Session state
@@ -115,6 +125,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.connected = false;
     this.shouldReconnect = true;
     this.reconnectTimer = null;
+    this._hasTriedAutoStart = false; // Track if we've tried auto-starting server
 
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
@@ -122,11 +133,17 @@ export default class LivelyOpencode extends LivelyChat {
     this.generatingSessions = this.generatingSessions || new Set(); // Track generating state per session
     this._busyTimeouts = new Map(); // Per-session debounce timers for idle detection (always fresh)
 
-    // Variant (thinking mode) state - preserve during live updates
-    this.variant = this.variant || 'high'; // none, high, max
+    // Set default variant if not present
+    if (!this.variant) {
+      this.variant = 'high';
+    }
 
-    // Project focus state - preserve during live updates
+    // Project focus state - restore from attribute if present
     this.currentProject = this.currentProject || null; // { path, name, indexContent } or null
+    if (this.projectPath && !this.currentProject) {
+      // Restore project from saved attribute (will be loaded fully when needed)
+      await this.selectProject(this.projectPath);
+    }
     // Per-session project mapping: sessionId -> projectPath (or null for "none")
     this.sessionProjects = this.sessionProjects || this.loadSessionProjectsFromStorage();
 
@@ -151,8 +168,6 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup project selector
     this.setupProjectSelector();
-    
-
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -247,9 +262,21 @@ export default class LivelyOpencode extends LivelyChat {
 
       this.updateStatus('Connected', true);
       this.connected = true;
+      
+      // Reset auto-start flag on successful connection
+      this._hasTriedAutoStart = false;
 
       // Load existing sessions
       await this.loadSessions();
+
+      // Restore saved session if present
+      if (this.currentSessionId && !this.currentSession) {
+        const savedSession = this.sessions.find(s => s.id === this.currentSessionId);
+        if (savedSession) {
+          this.log(`Restoring saved session: ${savedSession.id}`);
+          await this.selectSession(savedSession);
+        }
+      }
 
       // Connect to event stream
       this.connectEventStream();
@@ -259,6 +286,15 @@ export default class LivelyOpencode extends LivelyChat {
     } catch (error) {
       this.updateStatus('Disconnected', false);
       this.connected = false;
+      
+      // Try to auto-start server on first failure (only once)
+      if (this.shouldReconnect && !this._hasTriedAutoStart) {
+        this._hasTriedAutoStart = true;
+        this.log('Server not running - attempting to start automatically...');
+        await this.startServer();
+        // startServer() already schedules connection attempt
+        return;
+      }
       
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
@@ -709,9 +745,8 @@ export default class LivelyOpencode extends LivelyChat {
     const recentDirs = this.getRecentWorkingDirectories();
     workdirCombobox.setOptions(recentDirs);
 
-    // Set default to current lively4-core directory if nothing selected
-    if (!this.workingDirectory && recentDirs.length > 0) {
-      this.workingDirectory = recentDirs[0];
+    // Update combobox to show current value
+    if (this.workingDirectory) {
       workdirCombobox.value = this.workingDirectory;
     }
 
@@ -774,7 +809,7 @@ export default class LivelyOpencode extends LivelyChat {
       await this.stopServer();
     }
 
-    // Update working directory
+    // Update working directory (setter saves to attribute)
     this.workingDirectory = newDir;
     this.saveRecentWorkingDirectory(newDir);
 
@@ -1047,6 +1082,9 @@ export default class LivelyOpencode extends LivelyChat {
     };
 
     this.currentProject = project;
+    
+    // Save to attribute for persistence
+    this.projectPath = projectPath;
 
     // Remember this path for the current working directory
     this.saveRecentProject(this.workingDirectory, projectPath);
@@ -1067,6 +1105,9 @@ export default class LivelyOpencode extends LivelyChat {
    */
   clearProject() {
     this.currentProject = null;
+    
+    // Clear attribute
+    this.projectPath = null;
 
     // Bind "none" to current session
     if (this.currentSession) {
@@ -1117,6 +1158,7 @@ export default class LivelyOpencode extends LivelyChat {
     if (!storedPath) {
       // Explicitly set to "none"
       this.currentProject = null;
+      this.projectPath = null;
     } else if (!this.currentProject || this.currentProject.path !== storedPath) {
       // Different project - load it silently (no success toast)
       const content = await this.tryFetchProjectFile(storedPath, 'index.md');
@@ -1126,6 +1168,7 @@ export default class LivelyOpencode extends LivelyChat {
         name: storedPath.split('/').pop(),
         indexContent: content
       };
+      this.projectPath = storedPath;
     }
 
     this.updateProjectSelector();
@@ -1532,6 +1575,10 @@ export default class LivelyOpencode extends LivelyChat {
     this.cleanupArtificialSession();
 
     this.currentSession = session;
+    
+    // Save session ID to attribute for persistence
+    this.currentSessionId = session.id;
+    
     await this.updateSessionList();
 
     // Load messages for this session
