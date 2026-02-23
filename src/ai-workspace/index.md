@@ -16,8 +16,8 @@ Integrated AI coding assistance for Lively4, providing multiple AI agents that w
   - Coordinates between voice/text agents and code agents
   - Provides unified interface for AI interactions
 
-- **[lively-opencode](components/lively-opencode.js)** - OpenCode terminal-based AI coding agent
-  - Connects to OpenCode server on `http://localhost:9100`
+- **[lively-opencode](components/lively-opencode.js)** - Claude Code terminal-based AI coding agent
+  - Connects to Claude Code server on `http://localhost:9100`
   - Full terminal capabilities for coding tasks
   - Event capture and replay for history
 
@@ -36,6 +36,17 @@ Integrated AI coding assistance for Lively4, providing multiple AI agents that w
 - **[lively-chat-message](components/lively-chat-message.js)** - Message display component
   - Renders individual chat messages
   - Supports markdown, code blocks, and rich content
+
+- **[lively-chat-sessions](components/lively-chat-sessions.js)** - Session management component
+  - Multi-select session support
+  - Context menu for session operations
+  - Active session tracking
+
+- **[lively-agent-board](components/lively-agent-board.js)** - Display board for agent information
+  - TODOs grouped by status with priority-based color coding
+  - Tool usage statistics and file operation summary
+  - Session links (project focus, files read/written)
+  - Reusable across AI components
 
 - **[openai-realtime-chat-tools](components/openai-realtime-chat-tools.js)** - Tool integration for OpenAI Realtime API
   - BasicToolset - Standalone tools for openai-realtime-chat
@@ -56,25 +67,33 @@ lively-ai-workspace (coordinator/blackboard)
 ├── openai-realtime-chat (eventSource: 'realtime')
 │   ├── Voice/text interaction with OpenAI
 │   └── Tool execution capabilities
-└── lively-opencode (eventSource: 'opencode')
-    ├── Terminal-based coding agent
-    └── Full OpenCode server integration
+├── lively-opencode (eventSource: 'opencode')
+│   ├── Terminal-based coding agent
+│   └── Full Claude Code server integration
+└── lively-agent-board
+    ├── TODOs and task tracking
+    ├── Tool usage statistics
+    └── Session links and file operations
 ```
 
 All components use event capture system to maintain conversation history and enable replay functionality.
 
 ## Documentation
 
-- [Architecture Overview](doc/architecture/ai-workspace.md) - Main architecture documentation
-- [Task Management](doc/architecture/ai-workspace-tasks.md) - Task handling and coordination
-- [Modes](doc/architecture/ai-workspace-modes.md) - Different operational modes
-- [OpenCode Details](doc/architecture/opencode.md) - OpenCode integration specifics
-- [Diagrams](doc/diagrams/) - Architecture diagrams and flow charts
+- [Architecture Overview](doc/ai-workspace.md) - Main architecture documentation
+- [AI Workspace Overview](doc/ai-workspace-overview.md) - High-level overview and concepts
+- [Task Management](doc/ai-workspace-tasks.md) - Task handling and coordination
+- [Modes](doc/ai-workspace-modes.md) - Different operational modes
+- [Claude Code Details](doc/opencode.md) - Claude Code integration specifics
+- [Question Tool](doc/opencode-question-tool.md) - Question tool implementation details
+- [Duplicate Messages](doc/openai-realtime-duplicate-messages.md) - OpenAI Realtime API message handling
+- [Ideas](doc/ideas.md) - Future ideas and explorations
 
 ## Testing
 
 Tests are located in `test/` directory:
 - `lively-ai-workspace-test.js` - Integration tests for coordinator
+- `lively-agent-board-test.js` - Agent board component tests
 - `lively-opencode-test.js` - Event replay and message handling tests
 - `openai-realtime-chat-test.js` - Realtime API integration tests
 - `openai-realtime-chat-tools-test.js` - Tool functionality tests
@@ -102,8 +121,8 @@ Individual components can also be opened directly:
 
 ## External Dependencies
 
-- **OpenCode Server**: Runs separately on `http://localhost:9100`
-  - Source code in `../opencode/` directory (not part of lively4-server)
+- **Claude Code Server**: Runs separately on `http://localhost:9100`
+  - Source code in `../Claude/` directory (for documentation/reference only - NOT lively4-server)
   - Terminal-based AI coding agent
   
 - **OpenAI Realtime API**: Requires OpenAI API key

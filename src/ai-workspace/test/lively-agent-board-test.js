@@ -203,32 +203,32 @@ describe("Lively Agent Board", function() {
       board.addFileRead('/path/to/file1.js');
       board.addFileRead('/path/to/file2.js');
       
-      expect(board.links.filesRead).to.have.length(2);
-      expect(board.links.filesRead).to.include('/path/to/file1.js');
-      expect(board.links.filesRead).to.include('/path/to/file2.js');
+      expect(board.fileReadCounts.size).to.equal(2);
+      expect(board.fileReadCounts.has('/path/to/file1.js')).to.be.true;
+      expect(board.fileReadCounts.has('/path/to/file2.js')).to.be.true;
     });
 
     it("should add file written links", () => {
       board.addFileWritten('/path/to/output1.js');
       board.addFileWritten('/path/to/output2.js');
       
-      expect(board.links.filesWritten).to.have.length(2);
-      expect(board.links.filesWritten).to.include('/path/to/output1.js');
-      expect(board.links.filesWritten).to.include('/path/to/output2.js');
+      expect(board.fileWriteCounts.size).to.equal(2);
+      expect(board.fileWriteCounts.has('/path/to/output1.js')).to.be.true;
+      expect(board.fileWriteCounts.has('/path/to/output2.js')).to.be.true;
     });
 
     it("should not add duplicate file reads", () => {
       board.addFileRead('/path/to/file.js');
       board.addFileRead('/path/to/file.js');
       
-      expect(board.links.filesRead).to.have.length(1);
+      expect(board.fileReadCounts.size).to.equal(1);
     });
 
     it("should not add duplicate file writes", () => {
       board.addFileWritten('/path/to/file.js');
       board.addFileWritten('/path/to/file.js');
       
-      expect(board.links.filesWritten).to.have.length(1);
+      expect(board.fileWriteCounts.size).to.equal(1);
     });
 
     it("should clear file links", () => {
@@ -237,8 +237,8 @@ describe("Lively Agent Board", function() {
       
       board.clearFileLinks();
       
-      expect(board.links.filesRead).to.be.empty;
-      expect(board.links.filesWritten).to.be.empty;
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
     });
 
     it("should clear all data", () => {
@@ -249,8 +249,8 @@ describe("Lively Agent Board", function() {
       
       board.clearAll();
       
-      expect(board.links.filesRead).to.be.empty;
-      expect(board.links.filesWritten).to.be.empty;
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
       expect(board.links.projectFocus).to.be.null;
       expect(board.todos).to.be.empty;
     });
@@ -263,7 +263,7 @@ describe("Lively Agent Board", function() {
       board.addFileRead('/path/to/file.js');
       
       expect(board.fileReadCounts.get('/path/to/file.js')).to.equal(3);
-      expect(board.links.filesRead).to.have.length(1); // Still only one unique file
+      expect(board.fileReadCounts.size).to.equal(1); // Still only one unique file
     });
 
     it("should count file writes", () => {
@@ -271,7 +271,7 @@ describe("Lively Agent Board", function() {
       board.addFileWritten('/path/to/file.js');
       
       expect(board.fileWriteCounts.get('/path/to/file.js')).to.equal(2);
-      expect(board.links.filesWritten).to.have.length(1);
+      expect(board.fileWriteCounts.size).to.equal(1);
     });
 
     it("should track counts for multiple files", () => {

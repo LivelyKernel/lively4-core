@@ -212,16 +212,23 @@
   align-self: flex-end;
 }
 
-/* Component-specific logging panel sizing */
+/* Right Panel - Debug Log and Board Tabs
+ * Structure: .logging-panel (fixed 600px) contains .panel-tabs (fixed)
+ * and .panel-content (scrollable). Each .panel-content has overflow: auto
+ * so tabs stay visible while content scrolls.
+ */
 .logging-panel {
   flex: 0 0 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Tab UI for right panel */
 .panel-tabs {
   display: flex;
   background: #e9ecef;
   border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
 }
 
 .panel-tab {
@@ -249,7 +256,7 @@
 
 .panel-content {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   display: none;
 }
 
@@ -258,12 +265,25 @@
   flex-direction: column;
 }
 
+/* Debug log and board content */
+#debugLog {
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  background: white;
+}
+
+#agentBoard {
+  background: white;
+}
+
 .debug-log-actions {
   padding: 8px 12px;
   background: white;
   border-bottom: 1px solid #dee2e6;
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .debug-log-actions button {
@@ -282,26 +302,47 @@
   color: #495057;
 }
 
-/* Working Directory Selector */
-.workdir-selector {
-  background: #f8f9fa;
+/* Sidebar Selectors - shared styles */
+.workdir-selector,
+.project-selector {
   border-right: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
-  padding: 10px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.workdir-selector {
+  background: #f8f9fa;
+  padding: 10px 12px;
   gap: 6px;
 }
 
-.workdir-label {
+.project-selector {
+  background: #f0f4f8;
+}
+
+/* Shared label styles */
+.workdir-label,
+.project-label {
   font-size: 11px;
   font-weight: 600;
-  color: #495057;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.workdir-selector input-combobox {
+.workdir-label {
+  color: #495057;
+}
+
+.project-label {
+  color: #3a6186;
+}
+
+/* Shared combobox width */
+.workdir-selector input-combobox,
+.project-selector input-combobox {
   width: 100%;
 }
 
@@ -313,29 +354,10 @@
   border-radius: 3px;
 }
 
-/* Project Focus Selector */
-.project-selector {
-  background: #f0f4f8;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .project-selector-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.project-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #3a6186;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .project-actions {
@@ -355,10 +377,6 @@
 
 .project-actions button:hover {
   background: #dde8f0;
-}
-
-.project-selector input-combobox {
-  width: 100%;
 }
 
 .project-url-base {
@@ -461,6 +479,7 @@
   padding-top: 4px;
 }
 
+/* Permission buttons - shared and specific styles */
 .permission-btn {
   padding: 8px 16px;
   font-size: 13px;
@@ -476,6 +495,10 @@
   cursor: not-allowed;
 }
 
+.permission-btn:hover:not(:disabled) {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .permission-approve-once {
   background: #27ae60;
   color: white;
@@ -483,7 +506,6 @@
 
 .permission-approve-once:hover:not(:disabled) {
   background: #229954;
-  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
 }
 
 .permission-approve-always {
@@ -494,7 +516,6 @@
 
 .permission-approve-always:hover:not(:disabled) {
   background: #27ae60;
-  box-shadow: 0 2px 4px rgba(46, 204, 113, 0.3);
 }
 
 .permission-reject {
@@ -506,7 +527,6 @@
 .permission-reject:hover:not(:disabled) {
   background: #e74c3c;
   color: white;
-  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
 }
 
 .permission-submitted {

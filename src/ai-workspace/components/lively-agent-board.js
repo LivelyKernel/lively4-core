@@ -345,15 +345,18 @@ export default class LivelyAgentBoard extends Morph {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
         const readCount = this.fileReadCounts.get(path) || 0;
-        section.appendChild(
-          <div class="link-item file-read">
-            <span class="link-icon">📖</span>
-            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
-              {displayPath}
-            </a>
-            {readCount > 1 ? <span class="file-count">×{readCount}</span> : null}
-          </div>
-        );
+        const linkItem = <div class="link-item file-read">
+          <span class="link-icon">📖</span>
+          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+            {displayPath}
+          </a>
+        </div>;
+        
+        if (readCount > 1) {
+          linkItem.appendChild(<span class="file-count">×{readCount}</span>);
+        }
+        
+        section.appendChild(linkItem);
       });
     }
 
@@ -367,15 +370,18 @@ export default class LivelyAgentBoard extends Morph {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
         const writeCount = this.fileWriteCounts.get(path) || 0;
-        section.appendChild(
-          <div class="link-item file-written">
-            <span class="link-icon">✏️</span>
-            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
-              {displayPath}
-            </a>
-            {writeCount > 1 ? <span class="file-count">×{writeCount}</span> : null}
-          </div>
-        );
+        const linkItem = <div class="link-item file-written">
+          <span class="link-icon">✏️</span>
+          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+            {displayPath}
+          </a>
+        </div>;
+        
+        if (writeCount > 1) {
+          linkItem.appendChild(<span class="file-count">×{writeCount}</span>);
+        }
+        
+        section.appendChild(linkItem);
       });
     }
 

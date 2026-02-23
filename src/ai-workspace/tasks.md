@@ -10,4 +10,6 @@ For Human/Agent team:
 - [ ] follow up on [ideas](doc/ideas.md)
 - [X] normalize links in lively agent board
 - [X] don't show the URL Project Focus in the board anyway
-- [ ] tally tool usages and files written/read
+- [X] tally tool usages and files written/read
+- [X] rendering in agent-board: components/lively-chat-sessions.js [object Object]
+- [ ] when writing in opencode, always show details
