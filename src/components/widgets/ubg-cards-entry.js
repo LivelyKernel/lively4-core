@@ -33,7 +33,7 @@ export default class UBGCardEntry extends Morph {
   }
   
   selectMe() {
-    this.ubg.selectEntry(this);
+    this.ubg.selectCard(this.card);
   }
 
   get mode() {

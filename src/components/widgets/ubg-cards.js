@@ -247,12 +247,10 @@ export default class Cards extends Morph {
   updateItemsToRange() {
     const start = this.rangeStartValue;
     const end = this.rangeEndValue;
-    this.allEntries.forEach(entry => {
-      entry.updateToRange(start, end);
-    });
     this.cards.forEach(card => {
       this.updateCardToRange(card, start, end)
     });
+    this.applyCardListToVirtual()
     this.scheduleUpdateStats()
   }
 
@@ -294,12 +292,10 @@ export default class Cards extends Morph {
   updateItemsToFilter() {
     const filterValue = this.filterValue;
     const filterFunction = this.functionForFilter(filterValue);
-    this.allEntries.forEach(entry => {
-      entry.updateToFilter(filterFunction);
-    });
     this.cards.forEach(card => {
       this.updateCardToFilter(card, filterFunction)
     });
+    this.applyCardListToVirtual()
     this.scheduleUpdateStats()
   }
 
@@ -312,72 +308,53 @@ export default class Cards extends Morph {
     }
   }
 
+  markCardAsSelected(card) {
+    
+  }
+
+  unmarkCardAsSelected(card) {
+    delete card.selected
+  }
+  
   updateSelectedItemToFilterAndRange() {
-    const selectedEntry = this.selectedEntry;
-    if (selectedEntry) {
-      if (!selectedEntry.card.isVisible()) {
-        selectedEntry.classList.remove('selected');
-        const downwards = this.findNextVisibleItem(selectedEntry, false, false);
+    const selectedCard = this.selectedCard;
+    if (selectedCard) {
+      if (!selectedCard.isVisible()) {
+        this.unmarkCardAsSelected(selectedCard)
+        const downwards = this.findNextVisibleCard(selectedCard, false, false);
         if (downwards) {
-          this.selectEntry(downwards);
+          this.selectCard(downwards);
         } else {
-          const upwards = this.findNextVisibleItem(selectedEntry, true, false);
+          const upwards = this.findNextVisibleCard(selectedCard, true, false);
           if (upwards) {
-            this.selectEntry(upwards);
+            this.selectCard(upwards);
           }
         }
       } else {
-        this.scrollSelectedItemIntoView();
+        this.scrollSelectedCardIntoView()
       }
     } else {
-      const newItem = this.findNextVisibleItem(undefined, false, false);
-      if (newItem) {
-        this.selectEntry(newItem);
+      const newCard = this.findNextVisibleCard(undefined, false, false);
+      if (newCard) {
+        this.selectCard(newCard);
       }
     }
   }
 
-  scrollSelectedItemIntoView() {
-    const selectedEntry = this.selectedEntry;
-    if (!selectedEntry) {
-      return;
-    }
-
-    selectedEntry.scrollIntoView({
-      behavior: "auto",
-      block: "nearest",
-      inline: "nearest"
-    });
-  }
-
-  selectNextListItem(evt, prev) {
-    const listItems = this.allEntries;
-
-    if (listItems.length <= 1) {
-      return;
-    }
-
-    const selectedEntry = this.selectedEntry;
-    const newItem = this.findNextVisibleItem(selectedEntry, prev, !evt.repeat);
-    if (newItem && newItem !== selectedEntry) {
-      this.selectEntry(newItem);
-    }
-  }
-
-  findNextVisibleItem(referenceItem, prev, allowLooping) {
-    let listItems = this.allEntries;
-    if (listItems.length === 0) {
+  findNextVisibleCard(referenceCard, prev, allowLooping) {
+    let allCards = [...this.cards];
+    if (allCards.length === 0) {
       return;
     }
 
     if (prev) {
-      listItems = listItems.reverse();
+      allCards = allCards.reverse();
     }
 
     // might be -1, if no reference item is given (which start the search from the beginning)
-    const referenceIndex = listItems.indexOf(referenceItem);
+    const referenceIndex = allCards.indexOf(referenceCard);
 
-    const firstPass = listItems.find((item, index) => index > referenceIndex && item.card.isVisible());
+    const firstPass = allCards.find((card, index) => index > referenceIndex && card.isVisible());
     if (firstPass) {
       return firstPass;
     }
@@ -386,7 +363,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    return listItems.find((item, index) => index <= referenceIndex && item.card.isVisible());
+    return allCards.find((card, index) => index <= referenceIndex && card.isVisible());
   }
 
   async onKeyDown(evt) {
@@ -394,7 +371,7 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.selectNextEntryInDirection(true, !evt.repeat);
+      this.selectNextCardInDirection(true, !evt.repeat);
       return;
     }
 
@@ -402,7 +379,7 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.selectNextEntryInDirection(false, !evt.repeat);
+      this.selectNextCardInDirection(false, !evt.repeat);
       return;
     }
 
@@ -485,7 +462,7 @@ export default class Cards extends Morph {
       evt.preventDefault();
 
       if (!evt.repeat) {
-        await this.deleteCurrentEntry();
+        await this.deleteCurrentCard();
       } else {
         lively.warn('prevent deleting multiple cards');
       }
@@ -509,10 +486,10 @@ export default class Cards extends Morph {
     // lively.notify(evt.key, evt.repeat);
   }
 
-  selectNextEntryInDirection(up, loop) {
-    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
-    if (newEntry) {
-      this.selectEntry(newEntry);
+  selectNextCardInDirection(up, loop) {
+    const newCard = this.findNextVisibleCard(this.selectedCard, up, loop);
+    if (newCard) {
+      this.selectCard(newCard);
     }
   }
 
@@ -537,16 +514,9 @@ export default class Cards extends Morph {
   
   async addCard(card) {
     this.cards.push(card);
-    await this.appendCardEntry(card);
   }
   
-  async appendCardEntry(card) {
-    const entry = await identity(<ubg-cards-entry slot="entry"></ubg-cards-entry>);
-    entry.value = card;
-    this.appendChild(entry);
-    return entry;
-  }
-
+  // #important
   async updateView() {
     this.innerHTML = "";
     
@@ -568,17 +538,9 @@ export default class Cards extends Morph {
       } catch (e) {
         this.innerHTML = "" + e;
       }
-    } else {
-      // ensure an entry for each card
-      const currentEntries = this.allEntries;
-      for (const card of this.cards) {
-        let entry = currentEntries.find(entry => entry.card === card);
-        if (!entry) {
-          entry = await this.appendCardEntry(card);
-        }
-      }
     }
-    await this.reinitVirtual()
+    this.setupVirtual()
+    this.applyCardListToVirtual(this.cards)
     this.scheduleUpdateStats()
 
     if (!this.sets) {
@@ -594,23 +556,34 @@ export default class Cards extends Morph {
 
     this.selectCard(this.card || this.cards.first);
   }
-  reinitVirtual() {
-    const list = this.cardList = createVirtualList(this.get('#outer-container'), {
+  
+  setupVirtual() {
+    this.cardList = createVirtualList(this.get('#outer-container'), {
       rowHeight: 18.5,
       overscan: 10,
       getKey: card => card.getId(),
       renderRow: (index, recycled) => {
+        const card = this.displayedCards[index];
         const el = recycled ?? document.createElement('ubg-cards-entry')
         el.style.height = 18.5 + 'px'
-        el.value = this.cards[index];
+        el.value = card;
+        if (card.selected) {
+          el.setAttribute('selected', true);
+        }
         return el;
       },
       onRowRecycled: (index, el) => {
-        // optional cleanup
+        el.removeAttribute('selected');
       },
     })
-    list.scrollToKey
-    list.setItems(this.cards);
+  }
+  
+  // #important
+  applyCardListToVirtual() {
+    const visibleCards = this.cards.filter(card => card.isVisible())
+    this.displayedCards = this.sort(visibleCards)
+    __probes__['ubg-cards 627 cb6bbcc8'] = this.displayedCards.length
+    this.cardList.setItems(this.displayedCards);
   }
 
   async addSlot(cardID) {
@@ -755,12 +728,12 @@ export default class Cards extends Morph {
         }
 
         try {
-          let entry = costVPMatrix.find(entry => entry.cost === cost && entry.vp === vp)
-          if (!entry) {
+          let dataPoint = costVPMatrix.find(dataPoint => dataPoint.cost === cost && dataPoint.vp === vp)
+          if (!dataPoint) {
             costVPMatrix.push({ cost, vp, count: 1 })
             return
           }
-          entry.count++
+          dataPoint.count++
         } catch (e) {
           stats.append(<div style='color: red;'>{cost + '-' + vp}</div>)
         }
@@ -996,19 +969,15 @@ export default class Cards extends Morph {
         .attr("dy", ".35em")
         .text(d => d);
   }
+
+  get selectedCard() {
+    return this.cards.find(card => card.selected);
+  }
+
+  getVirtualEntries() {
+    return this.cardList._inner.querySelectorAll('ubg-cards-entry')
+  }
   
-  get allEntries() {
-    return [...this.querySelectorAll('ubg-cards-entry')];
-  }
-
-  get selectedEntry() {
-    return this.allEntries.find(entry => entry.hasAttribute('selected'));
-  }
-
-  selectEntry(entry) {
-    this.selectCard(entry.card);
-  }
-
   selectCard(card) {
     this.card = card;
 
@@ -1019,17 +988,34 @@ export default class Cards extends Morph {
         delete c.selected
       }
     })
-    this.allEntries.forEach(entry => {
+    this.getVirtualEntries().forEach(entry => {
       if (entry.value === card) {
         entry.setAttribute('selected', true);
       } else {
         entry.removeAttribute('selected');
       }
-    });
-    this.cardList.scrollToKey(card.getId())
+    })
 
     this.updateCardInEditor(card);
-    this.scrollSelectedItemIntoView();
+    // this.scrollSelectedItemIntoView();
+    this.scrollSelectedCardIntoView();
+  }
+  
+  scrollSelectedCardIntoView() {
+    const index = this.displayedCards.findIndex(card => card.selected)
+    if (index === -1) {
+      return
+    }
+    const { start, end } = this.cardList.getVisibleRange()
+    if (start <= index && index < end) {
+      return
+    }
+    const card = this.displayedCards[index]
+    if (index < start) {
+      this.cardList.scrollToKey(card.getId(), "start")
+    } else if (index >= end) {
+      this.cardList.scrollToKey(card.getId(), "end")
+    }
   }
   
   updateCardInEditor(card) {
@@ -1044,10 +1030,6 @@ export default class Cards extends Morph {
     this.updateCardInEditor(this.card);
   }
   
-  entryForCard(card) {
-    return this.allEntries.find(entry => entry.card === card);
-  }
-
   async loadCardsAndSetsFromFile() {
     const text = await this.src.fetchText();
     const { cards, sets } = deserialize(text, { Card });
@@ -1150,20 +1132,19 @@ export default class Cards extends Morph {
     }
   }
 
-  sortEntries() {
+  sort(list) {
     const sortingFunction = this.getSortingFunction();
     const ascending = !this.sortDescending;
-    const sortedEntries = this.allEntries.sortBy(sortingFunction, ascending);
-    sortedEntries.forEach(entry => this.append(entry));
+    return list.sortBy(sortingFunction, ascending);
   }
-
+  
   getSortingFunction() {
     return {
-      id(entry) {
-        return entry.card.getId();
+      id(card) {
+        return card.getId();
       },
-      name(entry) {
-        return entry.card.getName();
+      name(card) {
+        return card.getName();
       }
     }[this.sortBy];
   }
@@ -1253,12 +1234,12 @@ export default class Cards extends Morph {
   
   onSortById(evt) {
     this.setSortKeyOrFlipOrder(SORT_BY.ID);
-    this.sortEntries();
+    this.applyCardListToVirtual()
   }
 
   onSortByName(evt) {
     this.setSortKeyOrFlipOrder(SORT_BY.NAME);
-    this.sortEntries();
+    this.applyCardListToVirtual()
   }
   
   async onCopyIDs(evt) {
@@ -1462,12 +1443,12 @@ export default class Cards extends Morph {
     const text = do {
       const assetsInfo = await this.fetchAssetsInfo();
       let ids = []
-      for (let entry of assetsInfo) {
-        if (entry.type !== 'file') {
+      for (let asset of assetsInfo) {
+        if (asset.type !== 'file') {
           continue
         }
         
-        const match = entry.name.match(/^(.+)\.jpg$/)
+        const match = asset.name.match(/^(.+)\.jpg$/)
         if (!match) {
           continue
         }
@@ -1538,10 +1519,12 @@ export default class Cards extends Morph {
     function faLeft(icon) {
       return <i class={"fa fa-" + icon} aria-hidden="true"></i>;
     }
+    let m
     const menu = new ContextMenu(this, [{
       name: "Filtered cards in range",
       callback: () => {
-        menu.remove()
+        debugger
+        m.remove()
         this.onPrintSelected(evt)
       },
       // children: ,
@@ -1550,7 +1533,7 @@ export default class Cards extends Morph {
     }, {
       name: "Unprinted cards",
       callback: () => {
-        menu.remove()
+        m.remove()
         this.onPrintChanges(evt)
       },
       // children: ,
@@ -1560,13 +1543,13 @@ export default class Cards extends Morph {
       name: "Cards in Set",
       callback: () => {
         debugger
-        // menu.remove()
+        m.remove()
         this.onPrintSet(evt)
       },
       // children: ,
       icon: faLeft('th'),
     }]);
-    menu.openIn(document.body, evt, this);
+    m= await menu.openIn(document.body, evt, this);
     return;
   }
 
@@ -1666,23 +1649,22 @@ export default class Cards extends Morph {
     newCard.setId(highestId + 1);
 
     await this.addCard(newCard)
+    this.applyCardListToVirtual()
     this.selectCard(newCard);
 
     this.markAsChanged();
   }
 
   async onDeleteButton(evt) {
-    await this.deleteCurrentEntry();
+    await this.deleteCurrentCard();
   }
 
-  async deleteCurrentEntry() {
+  async deleteCurrentCard() {
     const cardToDelete = this.card;
-    const entryToDelete = this.entryForCard(cardToDelete);
 
-    await this.selectNextEntryInDirection(false, true);
-
+    await this.selectNextCardInDirection(false, true);
     this.cards.removeItem(cardToDelete);
-    entryToDelete.remove();
+    this.applyCardListToVirtual()
 
     this.markAsChanged();
   }
@@ -1725,12 +1707,12 @@ export default class Cards extends Morph {
     const assetsInfo = await this.fetchAssetsInfo();
     const fileNames = new Set()
     const alreadyScaled = new Set();
-    for (let entry of assetsInfo) {
-      if (entry.type !== 'file') {
+    for (let asset of assetsInfo) {
+      if (asset.type !== 'file') {
         continue
       }
       
-      const match = entry.name.match(/^(.+)\.jpg$/)
+      const match = asset.name.match(/^(.+)\.jpg$/)
       if (!match) {
         continue
       }
@@ -1826,7 +1808,7 @@ export default class Cards extends Morph {
   }
 
   markCardAsChanged(card) {
-    const entryToUpdate = this.entryForCard(card);
+    const entryToUpdate = this.getVirtualEntries().find(entry => entry.card === card)
     if (entryToUpdate) {
       entryToUpdate.updateView();
     }

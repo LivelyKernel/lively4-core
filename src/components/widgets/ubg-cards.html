@@ -48,12 +48,12 @@
 
     #layout {
       display: grid;
-      grid-template-columns: auto auto 200px 15px 15px 15px 400px;
+      grid-template-columns: auto 200px 15px 15px 15px 400px;
       grid-template-rows: min-content 1fr auto;
       grid-template-areas:
-        "header header header header header header header"
-        "main outer-container sets minimap minimap2 minimap3 stats"
-        "footer footer footer footer footer footer footer"
+        "header header header header header header"
+        "outer-container sets minimap minimap2 minimap3 stats"
+        "footer footer footer footer footer footer"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -72,13 +72,6 @@
     }
     #footer {
       grid-area: footer;
-    }
-    #content {
-      grid-area: main;
-      align-self: left;
-      white-space: nowrap;
-      overflow-x: hidden;
-      overflow-y: auto;
     }
     #outer-container {
       grid-area: outer-container;
@@ -215,7 +208,7 @@
 }
             }
   */  
-        #content, #footer, #minimap, #minimap2, #minimap3 {
+        #footer, #minimap, #minimap2, #minimap3 {
       border: 1px solid red;
       contain: content;
     }
@@ -242,9 +235,6 @@
       <input id="magic-style" type='checkbox' title="use old magic style" />
       <input id="skip-cardbacks" type='checkbox' title="skip cardbacks when printing" />
       <button id="menuButton" title="click to open additional options"><i class="fa fa-bars"></i></button>
-    </div>
-    <div id="content">
-        <slot name="entry"></slot>
     </div>
     <div id="outer-container"></div>
     

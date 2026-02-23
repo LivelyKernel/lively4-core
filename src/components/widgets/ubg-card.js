@@ -106,12 +106,12 @@ export default class UbgCard extends Morph {
   colorsForCard(card) {
     // #Temp
     const BOX_FILL_OPACITY = 0.7;
-
+__probes__['ubg-card 109 e54c26e1'] = 42
     if (card.hasType('character')) {
       return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
     }
 
-    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
+    // return ['#ffffff', '#888888', BOX_FILL_OPACITY];
     
     const multiElement = Array.isArray(card.getElement());
     if (multiElement) {
@@ -129,7 +129,7 @@ export default class UbgCard extends Morph {
       return singleElementColors;
     }
 
-    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
+    return __probes__['ubg-card 132 bee23875'] = ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
   getNameFromCard(cardDesc) {
@@ -515,7 +515,7 @@ position: absolute;
       const radius = (outsideBorder.width - CIRCLE_BORDER) / 2;
       const center = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + radius)
       const strokeWidth = 1;
-      this.maskedCircle(outsideBorder, center, radius, strokeWidth, BOX_FILL_COLOR, BOX_FILL_OPACITY, BOX_STROKE_COLOR)
+      this.maskedCircle(outsideBorder, center, radius, strokeWidth, __probes__['ubg-card 518 67adeede'] = BOX_FILL_COLOR, __probes__['ubg-card 518 6a99627c'] = BOX_FILL_OPACITY, __probes__['ubg-card 518 239a3479'] = BOX_STROKE_COLOR)
     }
     
     // innerBorder
