@@ -14,4 +14,5 @@ For Human/Agent team:
 - [X] rendering in agent-board: components/lively-chat-sessions.js [object Object]
 - [ ] when writing in opencode, always show details
 - [ ] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
-
+- [ ] in lively-opencode: start server, should check if server is actually running.... 
+- [ ] auto-commit current agent changes and provides points to jump back

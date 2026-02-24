@@ -36,7 +36,29 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
-  static sharedWorkingDirectory = null;
+  
+  // Shared state via localStorage (survives page reload, shared across instances)
+  static get sharedWorkingDirectory() {
+    return localStorage.getItem('opencode.workingDirectory');
+  }
+  static set sharedWorkingDirectory(value) {
+    if (value) {
+      localStorage.setItem('opencode.workingDirectory', value);
+    } else {
+      localStorage.removeItem('opencode.workingDirectory');
+    }
+  }
+  
+  static get sharedSessionId() {
+    return localStorage.getItem('opencode.currentSessionId');
+  }
+  static set sharedSessionId(value) {
+    if (value) {
+      localStorage.setItem('opencode.currentSessionId', value);
+    } else {
+      localStorage.removeItem('opencode.currentSessionId');
+    }
+  }
   
   // Event type tracking across all instances
   static eventTypeLog = [];
@@ -96,15 +118,17 @@ export default class LivelyOpencode extends LivelyChat {
     // Server configuration
     this.serverUrl = 'http://localhost:9100';
 
-    // Restore properties from attributes if present (for persistence)
-    this.workingDirectory = this.getAttribute('working-directory') || this.workingDirectory;
-    this.projectPath = this.getAttribute('project-path') || this.projectPath;
-    this.currentSessionId = this.getAttribute('current-session') || this.currentSessionId;
+    // Restore from shared state (hot-reload safe: preserves live state first)
+    this.workingDirectory = this.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    this.currentSessionId = this.currentSessionId || LivelyOpencode.sharedSessionId;
 
     // Use defaults if still not set
     if (!this.workingDirectory) {
       const recent = this.getRecentWorkingDirectories();
-      this.workingDirectory = LivelyOpencode.sharedWorkingDirectory || (recent.length > 0 ? recent[0] : null);
+      this.workingDirectory = recent.length > 0 ? recent[0] : null;
+      if (this.workingDirectory) {
+        LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
+      }
     }
     
     this.allSessions = []; // All sessions from server
@@ -139,13 +163,13 @@ export default class LivelyOpencode extends LivelyChat {
       this.variant = 'high';
     }
 
-    // Project focus state - restore from attribute if present
+    // Project focus state - preserve during hot reload
     this.currentProject = this.currentProject || null; // { path, name, indexContent } or null
     if (this.projectPath && !this.currentProject) {
-      // Restore project from saved attribute (will be loaded fully when needed)
+      // Restore project if projectPath is set (hot reload scenario)
       await this.selectProject(this.projectPath);
     }
-    // Per-session project mapping: sessionId -> projectPath (or null for "none")
+    // Per-session project mapping: sessionId -> projectPath (persisted to localStorage)
     this.sessionProjects = this.sessionProjects || this.loadSessionProjectsFromStorage();
 
     // Event capture already initialized by parent, but preserve existing logic for safety
@@ -182,8 +206,8 @@ export default class LivelyOpencode extends LivelyChat {
 
   connectedCallback() {
     this.shouldReconnect = true;
-    // AUTOSTART DISABLED - Connect to OpenCode server manually via button
-    // this.connectToServer();
+    // Auto-reconnect to running server (AUTOSTART disabled - server must be started manually)
+    this.connectToServer();
   }
 
   disconnectedCallback() {
@@ -811,8 +835,9 @@ export default class LivelyOpencode extends LivelyChat {
       await this.stopServer();
     }
 
-    // Update working directory (setter saves to attribute)
+    // Update working directory and sync to shared state
     this.workingDirectory = newDir;
+    LivelyOpencode.sharedWorkingDirectory = newDir;
     this.saveRecentWorkingDirectory(newDir);
 
     // Update combobox
@@ -1085,7 +1110,7 @@ export default class LivelyOpencode extends LivelyChat {
 
     this.currentProject = project;
     
-    // Save to attribute for persistence
+    // Save to temp property (persisted via session binding)
     this.projectPath = projectPath;
 
     // Remember this path for the current working directory
@@ -1108,7 +1133,7 @@ export default class LivelyOpencode extends LivelyChat {
   clearProject() {
     this.currentProject = null;
     
-    // Clear attribute
+    // Clear temp property
     this.projectPath = null;
 
     // Bind "none" to current session
@@ -1579,8 +1604,9 @@ export default class LivelyOpencode extends LivelyChat {
 
     this.currentSession = session;
     
-    // Save session ID to attribute for persistence
+    // Save session ID and sync to shared state
     this.currentSessionId = session.id;
+    LivelyOpencode.sharedSessionId = session.id;
     
     await this.updateSessionList();
 
@@ -2711,6 +2737,7 @@ export default class LivelyOpencode extends LivelyChat {
       if (!this.workingDirectory) {
         const recentDirs = this.getRecentWorkingDirectories();
         this.workingDirectory = recentDirs[0] || '/home/jens/lively4/lively4-core';
+        LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
       }
 
       // Create a hidden terminal for running the server
@@ -3108,26 +3135,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  livelyPrepareSave() {
-    // Persist properties to attributes before saving
-    if (this.workingDirectory) {
-      this.setAttribute('working-directory', this.workingDirectory);
-    } else {
-      this.removeAttribute('working-directory');
-    }
-    
-    if (this.projectPath) {
-      this.setAttribute('project-path', this.projectPath);
-    } else {
-      this.removeAttribute('project-path');
-    }
-    
-    if (this.currentSessionId) {
-      this.setAttribute('current-session', this.currentSessionId);
-    } else {
-      this.removeAttribute('current-session');
-    }
-  }
+
 
   livelyPreMigrate() {
     this.disconnectFromServer();
