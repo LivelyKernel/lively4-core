@@ -389,6 +389,64 @@ export default class Sync extends Morph {
     this.gitControl("squash");
   }
 
+  async onCheckpointButton() {
+    // Get current status to find changed files
+    const status = await this.gitControl("status", () => {});
+    
+    // Check if there are any changes to commit
+    if (status.includes("nothing to commit, working tree clean")) {
+      lively.notify("No changes to checkpoint");
+      return;
+    }
+    
+    // Parse changed files from git status output
+    const changedFiles = this.parseChangedFilesFromStatus(status);
+    
+    if (changedFiles.length === 0) {
+      lively.notify("No changes to checkpoint");
+      return;
+    }
+    
+    // Build commit message with file names (basenames only for brevity)
+    const MAX_FILES_IN_MESSAGE = 3;
+    const baseNames = changedFiles
+      .slice(0, MAX_FILES_IN_MESSAGE)
+      .map(f => f.split('/').pop());  // Just the filename, no path
+    const fileList = baseNames.join('-');
+    const suffix = changedFiles.length > MAX_FILES_IN_MESSAGE ? '-and-more' : '';
+    const commitMessage = `AUTO-COMMIT-AI-${fileList}${suffix}`;
+    
+    // Set the commit message
+    this.get("#gitcommitmessage").value = commitMessage;
+    
+    // Commit using existing commit infrastructure
+    await this.gitControl("commit");
+    
+    lively.notify(`AI checkpoint created`);
+  }
+
+  parseChangedFilesFromStatus(statusOutput) {
+    const lines = statusOutput.split('\n');
+    const files = [];
+    
+    // Parse git status output for modified/new/deleted files
+    // Format examples:
+    //   modified:   src/file.js
+    //   new file:   src/another.js
+    //   deleted:    src/old.js
+    for (const line of lines) {
+      const modifiedMatch = line.match(/^\s*modified:\s+(.+)$/);
+      const newFileMatch = line.match(/^\s*new file:\s+(.+)$/);
+      const deletedMatch = line.match(/^\s*deleted:\s+(.+)$/);
+      
+      if (modifiedMatch) files.push(modifiedMatch[1].trim());
+      else if (newFileMatch) files.push(newFileMatch[1].trim());
+      else if (deletedMatch) files.push(deletedMatch[1].trim());
+    }
+    
+    return files;
+  }
+
   async onResetButton(){
     const answer = await lively.confirm("This will hard reset to the current remote working index.");
     if(answer){
