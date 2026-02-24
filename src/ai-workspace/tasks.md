@@ -12,7 +12,8 @@ For Human/Agent team:
 - [X] don't show the URL Project Focus in the board anyway
 - [X] tally tool usages and files written/read
 - [X] rendering in agent-board: components/lively-chat-sessions.js [object Object]
-- [ ] when writing in opencode, always show details
+- [X] when writing in opencode, always show details
 - [ ] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
 - [ ] in lively-opencode: start server, should check if server is actually running.... 
 - [ ] auto-commit current agent changes and provides points to jump back
+- [ ] implement auto session naming again.... 

@@ -2729,7 +2729,7 @@ export default class LivelyOpencode extends LivelyChat {
       // Check if server is already running (shared across all instances)
       if (LivelyOpencode.sharedServerRunning && LivelyOpencode.sharedServerTerminal) {
         lively.notify('OpenCode server is already running');
-        this.updateServerButton();
+        await this.updateServerButton();
         return;
       }
 
@@ -2760,7 +2760,7 @@ export default class LivelyOpencode extends LivelyChat {
       LivelyOpencode.sharedServerTerminal = terminal;
       LivelyOpencode.sharedServerRunning = true;
       LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
-      this.updateServerButton();
+      await this.updateServerButton();
 
       lively.success(`OpenCode server starting in ${this.workingDirectory}...`);
 
@@ -2813,7 +2813,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       LivelyOpencode.sharedServerRunning = false;
       LivelyOpencode.sharedWorkingDirectory = null;
-      this.updateServerButton();
+      await this.updateServerButton();
 
       lively.notify('OpenCode server stopped');
 
@@ -2823,13 +2823,40 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  updateServerButton() {
+  /**
+   * Check if server is actually running by attempting to connect
+   * @returns {Promise<boolean>} True if server is running and responding
+   */
+  async checkIfServerRunning() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // Quick 2s timeout
+
+      const response = await fetch(`${this.serverUrl}/config`, {
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async updateServerButton() {
     const button = this.get('#serverButton');
     if (!button) return;
 
-    if (LivelyOpencode.sharedServerRunning) {
-      button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
-      button.title = 'Stop OpenCode server (shared across all instances)';
+    const isRunning = await this.checkIfServerRunning();
+    
+    if (isRunning) {
+      if (LivelyOpencode.sharedServerRunning) {
+        button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
+        button.title = 'Stop OpenCode server (started by this instance)';
+      } else {
+        button.innerHTML = '<i class="fa fa-link"></i> Connected';
+        button.title = 'Connected to external OpenCode server';
+      }
     } else {
       button.innerHTML = '<i class="fa fa-play"></i> Start Server';
       button.title = 'Start OpenCode server';
