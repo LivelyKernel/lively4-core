@@ -653,6 +653,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Mark a session as idle (not generating). Clears any pending debounce timer.
+   * Also refreshes the session title from server (auto-generated after first exchange).
    */
   markSessionIdle(sessionId) {
     if (!sessionId) return;
@@ -664,6 +665,54 @@ export default class LivelyOpencode extends LivelyChat {
       this.generatingSessions.delete(sessionId);
       if (sessionId === this.currentSession?.id) this.isGenerating = false;
       this.updateSessionList();
+      
+      // Refresh session title from server (auto-generated)
+      this.refreshSessionTitle(sessionId);
+    }
+  }
+
+  /**
+   * Refresh a session's title from the server.
+   * The OpenCode server auto-generates meaningful titles based on conversation content.
+   * This is called when a session goes idle to pick up the auto-generated title.
+   */
+  async refreshSessionTitle(sessionId) {
+    if (!sessionId || this._replayMode) return;
+    
+    try {
+      // Fetch the updated session data from server
+      const response = await fetch(`${this.serverUrl}/session/${sessionId}`);
+      if (!response.ok) {
+        console.warn(`Failed to refresh session title for ${sessionId}: ${response.status}`);
+        return;
+      }
+      
+      const updatedSession = await response.json();
+      
+      // Update in allSessions array
+      const allIndex = this.allSessions.findIndex(s => s.id === sessionId);
+      if (allIndex >= 0) {
+        this.allSessions[allIndex] = updatedSession;
+      }
+      
+      // Update in filtered sessions array
+      const filteredIndex = this.sessions.findIndex(s => s.id === sessionId);
+      if (filteredIndex >= 0) {
+        this.sessions[filteredIndex] = updatedSession;
+      }
+      
+      // Update current session if it's the active one
+      if (this.currentSession?.id === sessionId) {
+        this.currentSession = updatedSession;
+      }
+      
+      // Refresh the session list UI to show updated title
+      await this.updateSessionList();
+      
+      this.log(`[opencode] Refreshed session title: "${updatedSession.title}"`);
+    } catch (error) {
+      console.error('Error refreshing session title:', error);
+      // Non-fatal - just log and continue
     }
   }
 
@@ -2443,7 +2492,8 @@ export default class LivelyOpencode extends LivelyChat {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          title: `Session ${new Date().toLocaleTimeString()}`
+          // Title will be auto-generated based on conversation content
+          // title: `Session ${new Date().toLocaleTimeString()}`
         })
       });
 
