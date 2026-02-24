@@ -48,10 +48,10 @@ export default class LivelyOpencode extends LivelyChat {
    */
   static get sessionMetaDB() {
     var db = new Dexie("opencode-session-metadata");
-    db.version(1).stores({
+    db.version(31).stores({
       sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
     }).upgrade(function () {});
-    db.version(2).stores({
+    db.version(32).stores({
       sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime, parentSessionId'
     }).upgrade(function () {});
     return db;
@@ -1321,8 +1321,9 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Build the context message to inject as the first user message in a session.
-   * The project context is wrapped in [lively4:project] markers so the renderer
-   * displays it as a collapsible details block.
+   * The project context is wrapped in <system-reminder> tags so the renderer
+   * displays it as a collapsible details block, and Claude Code treats it as
+   * contextual information rather than the primary message.
    *
    * The subproject's index.md acts as a second-level CLAUDE.md — it can store
    * project-focus-specific insights, conventions, and notes for AI assistants.
@@ -1348,7 +1349,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     const context = contextParts.join('\n');
-    return `[lively4:project]\n${context}\n[/lively4:project]\n\n${message}`;
+    return `${message}\n\n<system-reminder>\n${context}\n</system-reminder>`;
   }
 
 

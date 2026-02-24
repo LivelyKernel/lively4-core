@@ -189,4 +189,83 @@ describe('LivelyChatMessage', () => {
       expect(renderedText).to.include("OpenCode function response with full text");
     });
   });
+
+  describe('Project focus context rendering', () => {
+    it('should render new system-reminder format with message first', async () => {
+      const REMINDER_START = '<system-reminder>';
+      const REMINDER_END = '</system-reminder>';
+      
+      const messageObj = {
+        info: { role: "user" },
+        parts: [{
+          type: "text",
+          text: 'My question.\n\n' + REMINDER_START + '\nContext here\n' + REMINDER_END
+        }]
+      };
+
+      await component.setOpenCodeMessage(messageObj);
+
+      // Check that a details element with class system-reminder-block exists
+      const partsContainer = component.get('#partsContainer');
+      expect(partsContainer).to.exist;
+      
+      const reminderBlock = partsContainer.querySelector('details.system-reminder-block');
+      expect(reminderBlock).to.exist;
+
+      // Check that the summary shows "Project Focus"
+      const summary = reminderBlock.querySelector('summary');
+      expect(summary).to.exist;
+      expect(summary.textContent).to.include("Project Focus");
+    }).timeout(10000);
+
+    it('should render legacy lively4:project format for backward compatibility', async () => {
+      const messageObj = {
+        info: { role: "user" },
+        parts: [{
+          type: "text",
+          text: `[lively4:project]
+We are focusing on subproject src/ai-workspace
+[/lively4:project]
+
+This is my actual question.`
+        }]
+      };
+
+      await component.setOpenCodeMessage(messageObj);
+
+      // Check that a details element with class project-context-block exists
+      const partsContainer = component.get('#partsContainer');
+      expect(partsContainer).to.exist;
+      
+      const contextBlock = partsContainer.querySelector('details.project-context-block');
+      expect(contextBlock).to.exist;
+
+      // Check that the summary shows "Project Focus"
+      const summary = contextBlock.querySelector('summary');
+      expect(summary).to.exist;
+      expect(summary.textContent).to.include("Project Focus");
+    }).timeout(5000);
+
+    it('should render regular text without special formatting', async () => {
+      const messageObj = {
+        role: "user",
+        parts: [{
+          type: "text",
+          text: "Just a regular message without any special tags."
+        }]
+      };
+
+      await component.setMessage(messageObj);
+
+      // Should NOT have any project focus blocks
+      const reminderBlock = component.get('details.system-reminder-block');
+      const contextBlock = component.get('details.project-context-block');
+      expect(reminderBlock).to.not.exist;
+      expect(contextBlock).to.not.exist;
+
+      // Should have regular markdown content
+      const markdown = component.get('lively-markdown');
+      expect(markdown).to.exist;
+    });
+  });
 });

@@ -62,19 +62,18 @@ This documentation serves dual purposes: guiding AI development work and creatin
 
 ## CRITICAL: Git Safety Guidelines
 
-**Git commands are DANGEROUS and require EXPLICIT user approval!**
+**How to safely work with git and preserve all user work!**
 
-**Rules:**
-- ❌ **NEVER** run git commands without user explicitly requesting them
-- ❌ **NEVER** assume the working tree is clean
-- ❌ **NEVER** run destructive git operations (checkout, reset, revert) speculatively
-- ✅ **ALWAYS** check `git status` and `git diff` before any destructive operation
-- ✅ **ALWAYS** ask user for confirmation before reverting/checking out files
+**Guiding Principles:**
+- ✅ **ALWAYS** wait for explicit user request before running any git commands
+- ✅ **ALWAYS** check `git status` and `git diff` first to see the current state
+- ✅ **ALWAYS** ask user for confirmation before making destructive changes
+- ✅ **ALWAYS** verify what other uncommitted work exists before any operation
 
-**Example of WRONG behavior:**
+**Example of WRONG approach:**
 ```javascript
 // User: "Let's scrap this feature"
-// ❌ WRONG - immediately running destructive command:
+// ❌ WRONG - immediately destroying work:
 bash("git checkout -- src/file.js")
 
 // What if user had OTHER uncommitted changes?
@@ -82,28 +81,32 @@ bash("git checkout -- src/file.js")
 // DISASTER!
 ```
 
-**Example of CORRECT behavior:**
+**Example of CORRECT approach:**
 ```javascript
 // User: "Let's scrap this feature"
-// ✅ RIGHT - check status first:
+
+// Step 1: Check current state
 bash("git status")
 // Shows: "modified: src/file.js, modified: src/other-important-file.js"
 
-// ✅ RIGHT - check what will be lost:
+// Step 2: Check what will be lost
 bash("git diff src/file.js")
 // Shows the actual changes
 
-// ✅ RIGHT - ask user for confirmation:
+// Step 3: Ask user for confirmation
 "I see you have changes in src/file.js. You also have uncommitted changes in 
-src/other-important-file.js. Should I revert ONLY src/file.js, or do you want 
-to keep working on it?"
+src/other-important-file.js. Should I discard the changes in src/file.js, 
+or do you want to keep working on it?"
+
+// Step 4: Only proceed if user explicitly confirms
+// Then run the git command they requested
 ```
 
-**Why this matters:**
+**Why this approach is safe:**
 - Users may have hours of uncommitted work
-- `git checkout` permanently destroys uncommitted changes
-- There's no "undo" for lost work
-- Always verify before destroying anything
+- Git operations can permanently destroy uncommitted changes
+- User gets to review what will be lost before deciding
+- Verifies no other important work will be affected
 
 ## Essential Commands
 

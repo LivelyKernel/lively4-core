@@ -13,3 +13,5 @@ For Human/Agent team:
 - [X] tally tool usages and files written/read
 - [X] rendering in agent-board: components/lively-chat-sessions.js [object Object]
 - [ ] when writing in opencode, always show details
+- [ ] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
+

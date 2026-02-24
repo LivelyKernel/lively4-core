@@ -431,28 +431,68 @@ export default class LivelyChatMessage extends Morph {
     for (const part of parts) {
       if (part.type === 'text') {
         // Detect injected project focus block in user messages
-        // Format: [lively4:project]...[/lively4:project]\n\nrest of message
-        const PROJ_START = '[lively4:project]';
-        const PROJ_END = '[/lively4:project]';
-        const pi = part.text.indexOf(PROJ_START);
-        const pe = part.text.indexOf(PROJ_END);
+        // New format: message first, then <system-reminder>...</system-reminder>
+        // Legacy format: [lively4:project]...[/lively4:project]\n\nrest of message
+        
+        // Try new format first
+        const REMINDER_START = '<system-reminder>';
+        const REMINDER_END = '</system-reminder>';
+        const ri = part.text.indexOf(REMINDER_START);
+        const re = part.text.indexOf(REMINDER_END);
 
-        if (pi !== -1 && pe !== -1 && pi < pe) {
-          const projText = part.text.slice(pi + PROJ_START.length, pe).trim();
-          const rest = part.text.slice(pe + PROJ_END.length).trim();
+        if (ri !== -1 && re !== -1 && ri < re) {
+          const beforeReminder = part.text.slice(0, ri).trim();
+          const reminderText = part.text.slice(ri + REMINDER_START.length, re).trim();
+          const afterReminder = part.text.slice(re + REMINDER_END.length).trim();
 
-          const details = <details class="project-context-block">
-            <summary><em>Project Focus</em></summary>
-          </details>;
-          details.appendChild(await this.createMarkdownElement(projText));
+          // Render user message first
+          if (beforeReminder) {
+            this.partsContainer.appendChild(await this.createMarkdownElement(beforeReminder));
+          }
+
+          // Render system reminder as collapsible block
+          const details = document.createElement('details');
+          details.className = 'system-reminder-block';
+          const summary = document.createElement('summary');
+          const em = document.createElement('em');
+          em.textContent = 'Project Focus';
+          summary.appendChild(em);
+          details.appendChild(summary);
+          details.appendChild(await this.createMarkdownElement(reminderText));
           this.partsContainer.appendChild(details);
 
-          if (rest) {
-            this.partsContainer.appendChild(await this.createMarkdownElement(rest));
+          // Render any content after reminder
+          if (afterReminder) {
+            this.partsContainer.appendChild(await this.createMarkdownElement(afterReminder));
           }
         } else {
-          // Text part: each gets its own lively-markdown element
-          this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
+          // Try legacy format for backward compatibility
+          const PROJ_START = '[lively4:project]';
+          const PROJ_END = '[/lively4:project]';
+          const pi = part.text.indexOf(PROJ_START);
+          const pe = part.text.indexOf(PROJ_END);
+
+          if (pi !== -1 && pe !== -1 && pi < pe) {
+            const projText = part.text.slice(pi + PROJ_START.length, pe).trim();
+            const rest = part.text.slice(pe + PROJ_END.length).trim();
+
+            const details = document.createElement('details');
+            details.className = 'project-context-block';
+            const summary = document.createElement('summary');
+            const em = document.createElement('em');
+            em.textContent = 'Project Focus';
+            summary.appendChild(em);
+            details.appendChild(summary);
+            details.appendChild(await this.createMarkdownElement(projText));
+            this.partsContainer.appendChild(details);
+
+            if (rest) {
+              this.partsContainer.appendChild(await this.createMarkdownElement(rest));
+            }
+          } else {
+            // No special formatting - render as normal text
+            this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
+          }
         }
       } else if (part.type === 'reasoning') {
         // Extended thinking block: collapsible, content rendered in lively-markdown
