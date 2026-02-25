@@ -839,6 +839,20 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Listen for status changes from OpenCode component via CustomEvents
     if (!this.opencodeComponent) return;
 
+    // Listen for connection status changes
+    this.opencodeComponent.addEventListener('opencode:connection-status', (evt) => {
+      const { status, connected } = evt.detail;
+      this.log(`[workspace] OpenCode connection status: ${status}`);
+      
+      // Update workspace status display
+      this.updateOpenCodeStatus(status, connected);
+      
+      // When OpenCode connects, ensure workspace session is linked
+      if (status === 'Connected' && connected) {
+        this.onOpenCodeConnected();
+      }
+    });
+
     this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
       const { message } = evt.detail;
       if (message) {
@@ -863,24 +877,35 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
       const { messageObj } = evt.detail;
-      // Update status
+      // Update status (for message-level status like 'working', 'idle')
       this.updateOpenCodeStatusMessage(evt.detail);
       // If there's a message update, handle it
       if (messageObj && evt.detail.type === 'message.part.updated') {
         this.updateOpenCodeMessage(messageObj);
       }
-
-      // When OpenCode connects, ensure workspace session is linked
-      if (evt.detail.status === 'Connected' && evt.detail.connected) {
-        this.onOpenCodeConnected();
-      }
+      // Note: Connection status is now handled by opencode:connection-status event
     });
 
-    // Listen for TODO updates from OpenCode
+    // Listen for TODO updates from OpenCode (incremental update - just TODOs)
     this.opencodeComponent.addEventListener('opencode:todos-updated', (evt) => {
       const { todos } = evt.detail;
       if (todos) {
-        this.updateWorkspaceBoardTodos(todos);
+        const board = this.get('#agentBoard');
+        if (board) {
+          board.updateTodos(todos);
+        }
+      }
+    });
+    
+    // Listen for session loaded events to update board with existing session data
+    this.opencodeComponent.addEventListener('opencode:session-loaded', async (evt) => {
+      const { sessionId } = evt.detail;
+      this.log(`[workspace] Session loaded: ${sessionId}, updating board`);
+      
+      // Board pulls what it needs from OpenCode component - OO approach!
+      const board = this.get('#agentBoard');
+      if (board && board.updateFromOpenCode) {
+        await board.updateFromOpenCode(this.opencodeComponent);
       }
     });
 

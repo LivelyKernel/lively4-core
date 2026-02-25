@@ -195,6 +195,61 @@ export default class LivelyAgentBoard extends Morph {
   }
 
   /**
+   * Update board by pulling data directly from an OpenCode component.
+   * This is the OO approach - the board knows what it needs and fetches it itself.
+   * 
+   * @param {LivelyOpencode} opencodeComponent - The OpenCode component to pull data from
+   */
+  async updateFromOpenCode(opencodeComponent) {
+    if (!opencodeComponent) return;
+    
+    const session = opencodeComponent.currentSession;
+    if (!session) {
+      // No session - clear board
+      this.clearAll();
+      return;
+    }
+    
+    // Set context for URL building and path shortening
+    this.setContext({
+      workingDirectory: opencodeComponent.workingDirectory,
+      projectPath: opencodeComponent.currentProject?.path,
+      urlBase: opencodeComponent.loadProjectUrlBase()
+    });
+    
+    // Clear file operations before loading new session data
+    this.fileReadCounts.clear();
+    this.fileWriteCounts.clear();
+    this.toolUsages.clear();
+    
+    // Pull and update TODOs
+    const todos = await opencodeComponent.fetchTodosForSession(session.id);
+    this.updateTodos(todos);
+    
+    // Pull and update project focus
+    if (opencodeComponent.currentProject) {
+      this.updateProjectFocus(opencodeComponent.currentProject);
+    } else {
+      this.links.projectFocus = null;
+    }
+    
+    // Pull messages and scan for file operations
+    const messages = opencodeComponent.messages.get(session.id);
+    if (messages) {
+      for (const message of messages) {
+        this.updateFromMessage(message, {
+          workingDirectory: this.workingDirectory,
+          projectPath: this.projectPath,
+          urlBase: this.urlBase
+        });
+      }
+    }
+    
+    // Final render with all data
+    this.render();
+  }
+
+  /**
    * Build a full URL for opening a file in browser
    * @param {string} filePath - Absolute file path
    * @returns {string} Full URL for lively.openBrowser

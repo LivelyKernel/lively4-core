@@ -18,5 +18,4 @@ For Human/Agent team:
 - [ ] auto-commit current agent changes and provides points to jump back
 - [X] implement auto session naming again.... 
 - [ ] the voice chat entries are not correctly time stamped and result in bad replay rendering
-
-
+- [ ] make the AI workspace chat messages scroll properly... ideally... scroll when scrolled to botton... and keep it otherwise stable... (I know this is hard)

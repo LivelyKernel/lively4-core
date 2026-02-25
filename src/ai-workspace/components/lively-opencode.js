@@ -306,11 +306,26 @@ export default class LivelyOpencode extends LivelyChat {
       // Connect to event stream
       this.connectEventStream();
 
+      // Notify workspace of successful connection
+      this.dispatchMessageEvent('opencode:connection-status', {
+        status: 'Connected',
+        connected: true,
+        timestamp: Date.now()
+      });
+
       lively.success('Connected to OpenCode server');
 
     } catch (error) {
       this.updateStatus('Disconnected', false);
       this.connected = false;
+      
+      // Notify workspace of disconnection
+      this.dispatchMessageEvent('opencode:connection-status', {
+        status: 'Disconnected',
+        connected: false,
+        error: error.message,
+        timestamp: Date.now()
+      });
       
       // AUTOSTART DISABLED - Server must be started manually via button
       // Try to auto-start server on first failure (only once)
@@ -327,6 +342,12 @@ export default class LivelyOpencode extends LivelyChat {
         this.reconnectTimer = setTimeout(() => {
           // this.log('Attempting to reconnect to OpenCode server...');
           this.updateStatus('Reconnecting...', false);
+          // Notify workspace of reconnection attempt
+          this.dispatchMessageEvent('opencode:connection-status', {
+            status: 'Reconnecting',
+            connected: false,
+            timestamp: Date.now()
+          });
           this.connectToServer();
         }, 5000);
       }
@@ -348,6 +369,14 @@ export default class LivelyOpencode extends LivelyChat {
 
     this.connected = false;
     this.updateStatus('Disconnected', false);
+    
+    // Notify workspace of intentional disconnection
+    this.dispatchMessageEvent('opencode:connection-status', {
+      status: 'Disconnected',
+      connected: false,
+      intentional: true,
+      timestamp: Date.now()
+    });
   }
 
   connectEventStream() {
@@ -1633,24 +1662,23 @@ export default class LivelyOpencode extends LivelyChat {
     const input = this.get('#messageInput');
     if (input) input.disabled = false;
 
-    // Clear board before loading new session data
-    const board = this.get('#agentBoard');
-    if (board && board.clearAll) {
-      board.clearAll();
-    }
-
-    // Restore project focus for this session
+    // Restore project focus for this session (needed before board update)
     await this.applyProjectForSession(session.id);
-    
-    // Load TODOs for this session
-    const todos = await this.fetchTodosForSession(session.id);
-    this.updateBoard(todos);
-    
-    // Update board with file operations from all messages
-    this.updateBoardWithAllMessages(session.id);
+
+    // Update board using OO approach - board pulls what it needs
+    const board = this.get('#agentBoard');
+    if (board && board.updateFromOpenCode) {
+      await board.updateFromOpenCode(this);
+    }
 
     // Display messages
     this.displayMessages();
+    
+    // Notify workspace that session is loaded with all data
+    this.dispatchMessageEvent('opencode:session-loaded', {
+      sessionId: session.id,
+      messageCount: this.messages.get(session.id)?.length || 0
+    });
   }
 
   /**
@@ -2142,7 +2170,7 @@ export default class LivelyOpencode extends LivelyChat {
     if (!sessionId) {
       return []
     }
-    return this.messages.get(sessionId)
+    return this.messages.get(sessionId) || []
   }
 
   /**
