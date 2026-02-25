@@ -202,9 +202,12 @@ export default class LivelyChatMessage extends Morph {
   updateRawDisplay() {
     if (!this.rawDisplay || !this.rawJson) return;
 
-    if (this._showRaw && this._opencodeMessage) {
+    // Support both opencode format (_opencodeMessage) and legacy format (_messageData)
+    const dataToShow = this._opencodeMessage || this._messageData;
+    
+    if (this._showRaw && dataToShow) {
       this.rawDisplay.style.display = 'block';
-      this.rawJson.textContent = JSON.stringify(this._opencodeMessage, null, 2);
+      this.rawJson.textContent = JSON.stringify(dataToShow, null, 2);
       this.viewRawButton.textContent = 'Hide Raw';
     } else {
       this.rawDisplay.style.display = 'none';

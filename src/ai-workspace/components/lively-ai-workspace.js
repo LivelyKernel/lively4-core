@@ -492,12 +492,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         // Handle tool messages with metadata
         await this.createRealtimeToolMessage(msg);
       } else {
-        // Regular user/assistant messages
-        await this.createRealtimeMessage(msg.role, {
-          id: msg.id,
-          item_id: msg.item_id,
-          content: msg.content
-        });
+        // Regular user/assistant messages - pass full message to preserve metadata
+        await this.createRealtimeMessage(msg.role, msg);
       }
     }
 
@@ -554,14 +550,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const item_id = messageData.item_id || messageData.id;
     this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
 
-    // Create widget
+    // Create widget - pass the FULL message object, don't create partial copies
     const widget = await lively.create('lively-chat-message');
-    await widget.setMessage({
-      role: role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime'
-    });
+    await widget.setMessage(messageData);
     widget.showDebug = this.showDebug;
 
     this.realtimeMessageWidgets.set(item_id, widget);
@@ -579,18 +570,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const messageId = `tool-${messageData.sequence}`;
     this.log(`[workspace] createRealtimeToolMessage(${messageData.role}, seq: ${messageData.sequence})`);
 
-    // Create widget with full message data including metadata
+    // Create widget - pass the FULL message object, don't create partial copies
     const widget = await lively.create('lively-chat-message');
-    await widget.setMessage({
-      role: messageData.role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime',
-      metadata: messageData.metadata,
-      type: messageData.type,
-      sequence: messageData.sequence,
-      timestamp: messageData.timestamp
-    });
+    await widget.setMessage(messageData);
     widget.showDebug = this.showDebug;
 
     this.realtimeMessageWidgets.set(messageId, widget);
@@ -614,13 +596,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       return;
     }
 
-    // Update widget
-    await widget.setMessage({
-      role: role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime'
-    });
+    // Update widget - pass the FULL message object, don't create partial copies
+    await widget.setMessage(messageData);
     this.scrollSharedPaneToBottom();
 
     // Trigger debounced save for message stream backup
@@ -1615,8 +1592,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (this.isEventStorageEnabled) {
       items.push(
         ["---"], // Separator
-        ["Copy Message Stream", () => this.copyMessageStream()],
-        ["Replay Message Stream", () => this.replayMessageStream()]
+        ["Copy Message Stream (DB)", () => this.copyMessageStream()],
+        ["Replay Message Stream (DB)", () => this.replayMessageStream()]
       );
     } else {
       items.push(
