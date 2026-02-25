@@ -876,13 +876,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
 
     this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const { messageObj } = evt.detail;
       // Update status (for message-level status like 'working', 'idle')
       this.updateOpenCodeStatusMessage(evt.detail);
-      // If there's a message update, handle it
-      if (messageObj && evt.detail.type === 'message.part.updated') {
-        this.updateOpenCodeMessage(messageObj);
-      }
+      // Note: Message updates are handled by dedicated opencode:message-updated event
+      // Removed redundant updateOpenCodeMessage call that caused duplicate message creation
       // Note: Connection status is now handled by opencode:connection-status event
     });
 
