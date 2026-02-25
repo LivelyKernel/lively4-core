@@ -1930,6 +1930,38 @@ export default class LivelyOpencode extends LivelyChat {
           this.updateBoardWithFileOperations(msg);
         }
       } 
+    } else {
+      // Handle all other part types (reasoning, step-start, step-finish, etc.)
+      // These parts were being logged but silently dropped, causing data loss in workspace UI
+      let messageIndex = messages.findIndex(m => m.info?.id === messageId);
+      
+      if (messageIndex >= 0) {
+        const msg = messages[messageIndex];
+        
+        // Find existing part by ID and update, or add new part
+        let existingPart = msg.parts.find(p => p.id === part.id);
+        if (existingPart) {
+          // Update existing part (e.g., streaming reasoning text)
+          Object.assign(existingPart, part);
+        } else {
+          // Add new part (step-start, step-finish, initial reasoning, etc.)
+          msg.parts.push(part);
+        }
+        
+        // Update lastModified timestamp and save to IndexedDB (skip in replay mode)
+        msg.lastModified = Date.now();
+        if (!this._replayMode) {
+          await LivelyOpencode.messagesdb.messages.put({
+            sessionId: sessionId,
+            messageId: msg.info.id,
+            localTimestamp: msg.localTimestamp,  // Keep original creation time
+            lastModified: msg.lastModified,       // Update modification time
+            message: msg
+          });
+        }
+        
+        this.updateOpenCodeMessage(messageId, msg);
+      }
     }
     // For tool_use/tool_result: these come from server fetch after tool completion
   }
