@@ -101,6 +101,68 @@ export default class LivelyAgentBoard extends Morph {
   }
 
   /**
+   * Update board from an OpenCode message.
+   * Scans message parts for tool uses and tracks file operations.
+   * 
+   * @param {Object} message - OpenCode message object with parts array
+   * @param {Object} context - Optional context for URL building and path shortening
+   * @param {string} context.workingDirectory - Current working directory
+   * @param {string} context.projectPath - Project path for URL shortening
+   * @param {string} context.urlBase - Base URL for building file links
+   */
+  updateFromMessage(message, context) {
+    if (!message) return;
+    
+    // Update context if provided
+    if (context) {
+      this.setContext(context);
+    }
+    
+    const parts = message.parts || [];
+    
+    for (const part of parts) {
+      const toolName = part.name || part.tool;
+      if (!toolName) continue;
+      
+      // Track all tool usages
+      this.addToolUsage(toolName);
+      
+      // Track file operations specifically
+      const input = part.input || part.state?.input || {};
+      const filePath = input.filePath || input.path;
+      
+      if (!filePath) continue;
+      
+      // Check for Read tools
+      if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
+        this.addFileRead(filePath);
+      }
+      
+      // Check for Write tools  
+      if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
+          toolName === 'mcp_edit' || toolName === 'edit') {
+        this.addFileWritten(filePath);
+      }
+    }
+  }
+
+  /**
+   * Update project focus from a project object.
+   * 
+   * @param {Object} project - Project object with url and path
+   * @param {string} project.url - Project URL (optional)
+   * @param {string} project.path - Project path
+   */
+  updateProjectFocus(project) {
+    if (!project) return;
+    
+    const indexUrl = project.url 
+      ? project.url + 'index.md' 
+      : `${project.path}/index.md`;
+    this.setProjectFocus(indexUrl);
+  }
+
+  /**
    * Get total number of tool usages across all tools
    * @returns {number}
    */

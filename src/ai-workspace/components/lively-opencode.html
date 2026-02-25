@@ -198,6 +198,11 @@
   display: none;
 }
 
+/* Hide logging panel when embedded in workspace */
+:host([logging-ui="false"]) .logging-panel {
+  display: none;
+}
+
 .code-user {
   margin-left: 10px;
   margin-right: auto;

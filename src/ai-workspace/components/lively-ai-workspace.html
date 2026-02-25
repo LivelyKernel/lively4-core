@@ -104,9 +104,90 @@
 
 /* Component-specific logging panel sizing */
 .logging-panel {
-  width: 400px;
-  flex-shrink: 0;
+  flex: 0 0 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-bottom: 1px solid #e0e0e0;
+}
+
+/* Panel tabs and content - same structure as opencode */
+.panel-tabs {
+  display: flex;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.panel-tab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panel-tab:hover {
+  color: #495057;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.panel-tab.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+  background: white;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: auto;
+  display: none;
+}
+
+.panel-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Debug log and board content */
+#debugLog {
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  background: white;
+}
+
+#agentBoard {
+  background: white;
+}
+
+.debug-log-actions {
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.debug-log-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.debug-log-actions button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #495057;
 }
 
 .subchats-container {
@@ -253,13 +334,27 @@
     <lively-separator></lively-separator>
 
     <div class="logging-panel" id="loggingPanel">
-      <div class="logging-header">
-        <span>Debug Log</span>
-        <button id="clearLogButton" title="Clear log">
-          <i class="fa fa-trash"></i>
+      <div class="panel-tabs">
+        <button class="panel-tab active" id="boardTab">
+          Board
+        </button>
+        <button class="panel-tab" id="debugLogTab">
+          Debug Logs
         </button>
       </div>
-      <ul id="debugLog"></ul>
+      
+      <div class="panel-content active" id="boardContent">
+        <lively-agent-board id="agentBoard"></lively-agent-board>
+      </div>
+      
+      <div class="panel-content" id="debugLogContent">
+        <div class="debug-log-actions">
+          <button id="clearLogButton" title="Clear log">
+            <i class="fa fa-trash"></i> Clear
+          </button>
+        </div>
+        <ul id="debugLog"></ul>
+      </div>
     </div>
   </div>
 

@@ -158,6 +158,25 @@ export default class LivelyChat extends Morph {
     return true; // default is visible
   }
 
+  set loggingUI(value) {
+    // Control whether logging panel is shown
+    // Default (undefined/true) shows the logging panel
+    // Set to false to hide when embedded or managed externally
+    if (value === false || value === "false") {
+      this.setAttribute("logging-ui", "false");
+    } else if (value === true || value === "true") {
+      this.setAttribute("logging-ui", "true");
+    } else {
+      this.removeAttribute("logging-ui");
+    }
+  }
+
+  get loggingUI() {
+    const attr = this.getAttribute("logging-ui");
+    if (attr === "false") return false;
+    return true; // default is visible
+  }
+
   set showDebug(value) {
     // Control whether debug annotations are shown in messages
     this._showDebug = value;

@@ -402,4 +402,111 @@ describe("Lively Agent Board", function() {
       expect(statsSection).to.not.exist;
     });
   });
+
+  describe("Message Parsing", () => {
+    it("should extract and track tool usages from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file.js' } },
+          { name: 'mcp_write', input: { filePath: '/test/output.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.toolUsages.get('mcp_read')).to.equal(1);
+      expect(board.toolUsages.get('mcp_write')).to.equal(1);
+      expect(board.getTotalToolUsages()).to.equal(2);
+    });
+
+    it("should track file reads from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file1.js' } },
+          { name: 'read_file', input: { filePath: '/test/file2.js' } },
+          { name: 'read', input: { path: '/test/file3.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.fileReadCounts.get('/test/file1.js')).to.equal(1);
+      expect(board.fileReadCounts.get('/test/file2.js')).to.equal(1);
+      expect(board.fileReadCounts.get('/test/file3.js')).to.equal(1);
+    });
+
+    it("should track file writes from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_write', input: { filePath: '/test/file1.js' } },
+          { name: 'mcp_edit', input: { filePath: '/test/file2.js' } },
+          { name: 'write', input: { path: '/test/file3.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.fileWriteCounts.get('/test/file1.js')).to.equal(1);
+      expect(board.fileWriteCounts.get('/test/file2.js')).to.equal(1);
+      expect(board.fileWriteCounts.get('/test/file3.js')).to.equal(1);
+    });
+
+    it("should set context from message update", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file.js' } }
+        ]
+      };
+      
+      const context = {
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: 'src/ai-workspace',
+        urlBase: 'http://localhost:9005/lively4-core/'
+      };
+      
+      board.updateFromMessage(message, context);
+      
+      expect(board.workingDirectory).to.equal('/home/jens/lively4/lively4-core');
+      expect(board.projectPath).to.equal('src/ai-workspace');
+      expect(board.urlBase).to.equal('http://localhost:9005/lively4-core/');
+    });
+
+    it("should handle messages without parts", () => {
+      const message = {};
+      
+      expect(() => board.updateFromMessage(message)).to.not.throw();
+    });
+
+    it("should handle null/undefined messages", () => {
+      expect(() => board.updateFromMessage(null)).to.not.throw();
+      expect(() => board.updateFromMessage(undefined)).to.not.throw();
+    });
+  });
+
+  describe("Project Focus", () => {
+    it("should update project focus from project object with url", () => {
+      const project = {
+        url: 'http://localhost:9005/lively4-core/src/ai-workspace/',
+        path: 'src/ai-workspace'
+      };
+      
+      board.updateProjectFocus(project);
+      
+      expect(board.links.projectFocus).to.equal('http://localhost:9005/lively4-core/src/ai-workspace/index.md');
+    });
+
+    it("should update project focus from project object without url", () => {
+      const project = {
+        path: 'src/ai-workspace'
+      };
+      
+      board.updateProjectFocus(project);
+      
+      expect(board.links.projectFocus).to.equal('src/ai-workspace/index.md');
+    });
+
+    it("should handle null project", () => {
+      expect(() => board.updateProjectFocus(null)).to.not.throw();
+    });
+  });
 });

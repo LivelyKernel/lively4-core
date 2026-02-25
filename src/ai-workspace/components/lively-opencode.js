@@ -1039,10 +1039,12 @@ export default class LivelyOpencode extends LivelyChat {
     }
     
     // Update project focus link
-    if (board.setProjectFocus && this.currentProject) {
-      const indexUrl = this.currentProject.url ? this.currentProject.url + 'index.md' : `${this.currentProject.path}/index.md`;
-      board.setProjectFocus(indexUrl);
+    if (this.currentProject) {
+      board.updateProjectFocus(this.currentProject);
     }
+    
+    // Dispatch event for workspace to listen to
+    this.dispatchMessageEvent('opencode:todos-updated', { todos });
   }
 
   /**
@@ -1054,47 +1056,12 @@ export default class LivelyOpencode extends LivelyChat {
     const board = this.get('#agentBoard');
     if (!board) return;
     
-    // Update context for URL building and path shortening
-    if (board.setContext) {
-      board.setContext({
-        workingDirectory: this.workingDirectory,
-        projectPath: this.currentProject?.path,
-        urlBase: this.loadProjectUrlBase()
-      });
-    }
-    
-    const parts = message.parts || [];
-    
-    for (const part of parts) {
-      const toolName = part.name || part.tool;
-      if (!toolName) continue;
-      
-      // Track all tool usages
-      if (board.addToolUsage) {
-        board.addToolUsage(toolName);
-      }
-      
-      // Track file operations specifically
-      const input = part.input || part.state?.input || {};
-      const filePath = input.filePath || input.path;
-      
-      if (!filePath) continue;
-      
-      // Check for Read tools
-      if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
-        if (board.addFileRead) {
-          board.addFileRead(filePath);
-        }
-      }
-      
-      // Check for Write tools  
-      if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
-          toolName === 'mcp_edit' || toolName === 'edit') {
-        if (board.addFileWritten) {
-          board.addFileWritten(filePath);
-        }
-      }
-    }
+    // Let board handle message parsing and updates
+    board.updateFromMessage(message, {
+      workingDirectory: this.workingDirectory,
+      projectPath: this.currentProject?.path,
+      urlBase: this.loadProjectUrlBase()
+    });
   }
 
   /**

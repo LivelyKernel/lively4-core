@@ -70,8 +70,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.windowTitle = "AI Workspace";
 
-    // Initialize debug log visibility (controlled by showDebug property)
-    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
+    // Always show logging panel (contains board) - independent of debug view
+    this.setAttribute("hide-debug-log", "false");
 
     this.blackboard = this.blackboard || {
       currentTask: null,
@@ -114,9 +114,56 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     await this.setupSessionsComponent();
     
+    // Initialize panel tabs (default to Board tab)
+    this.switchPanelTab('board');
+    
     this.renderAllMessages()
     
     this.log('AI Workspace initialized');
+  }
+
+  /*MD ## Panel Tab Management MD*/
+  
+  onDebugLogTab() {
+    this.switchPanelTab('debugLog')
+  }
+  
+  onBoardTab() {
+    this.switchPanelTab('board')
+  }
+  
+  switchPanelTab(panelName) {
+    // Update tab buttons
+    const debugLogTab = this.get('#debugLogTab');
+    const boardTab = this.get('#boardTab');
+    
+    if (debugLogTab) {
+      debugLogTab.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardTab) {
+      boardTab.classList.toggle('active', panelName === 'board');
+    }
+    
+    // Update content panels
+    const debugLogContent = this.get('#debugLogContent');
+    const boardContent = this.get('#boardContent');
+    
+    if (debugLogContent) {
+      debugLogContent.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardContent) {
+      boardContent.classList.toggle('active', panelName === 'board');
+    }
+  }
+
+  /**
+   * Clear debug log button handler
+   */
+  onClearLogButton() {
+    const debugLog = this.get('#debugLog');
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
   }
 
   /**
@@ -469,6 +516,40 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
+  /*MD ## Workspace Board Updates MD*/
+  
+  /**
+   * Update the workspace board from an OpenCode message.
+   * Extracts file operations and tool usage from message parts.
+   */
+  updateWorkspaceBoardFromMessage(message) {
+    const board = this.get('#agentBoard');
+    if (!board || !this.opencodeComponent) return;
+    
+    // Let board handle message parsing and updates
+    board.updateFromMessage(message, {
+      workingDirectory: this.opencodeComponent.workingDirectory,
+      projectPath: this.opencodeComponent.currentProject?.path,
+      urlBase: this.opencodeComponent.loadProjectUrlBase()
+    });
+    
+    // Update project focus link if opencode has a project selected
+    if (this.opencodeComponent.currentProject) {
+      board.updateProjectFocus(this.opencodeComponent.currentProject);
+    }
+  }
+
+  /**
+   * Update the workspace board with TODOs from OpenCode.
+   * Called when OpenCode receives a todo.updated event.
+   */
+  updateWorkspaceBoardTodos(todos) {
+    const board = this.get('#agentBoard');
+    if (!board || !board.updateTodos) return;
+    
+    board.updateTodos(todos);
+  }
+
 
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
@@ -662,6 +743,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.opencodeComponent.sessionUI = false;
         this.opencodeComponent.messagesUI = false;
+        this.opencodeComponent.loggingUI = false; // Hide opencode's logging panel when embedded
         this.opencodeComponent.log = (...args) => this.log(...args)
 
         this.setupOpenCodeEvents();
@@ -761,6 +843,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const { message } = evt.detail;
       if (message) {
         this.createOpenCodeMessage(message);
+        // Update board with file operations from this new message
+        this.updateWorkspaceBoardFromMessage(message);
       } else {
         this.log('[workspace] message-added event has no message object');
       }
@@ -770,6 +854,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const { message } = evt.detail;
       if (message) {
         this.updateOpenCodeMessage(message);
+        // Update board with file operations from this message
+        this.updateWorkspaceBoardFromMessage(message);
       } else {
         this.log('[workspace] message-updated event has no message object');
       }
@@ -787,6 +873,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // When OpenCode connects, ensure workspace session is linked
       if (evt.detail.status === 'Connected' && evt.detail.connected) {
         this.onOpenCodeConnected();
+      }
+    });
+
+    // Listen for TODO updates from OpenCode
+    this.opencodeComponent.addEventListener('opencode:todos-updated', (evt) => {
+      const { todos } = evt.detail;
+      if (todos) {
+        this.updateWorkspaceBoardTodos(todos);
       }
     });
 
