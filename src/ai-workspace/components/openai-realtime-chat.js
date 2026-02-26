@@ -158,6 +158,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       conversations: 'id, timestamp, lastMessageTime',
       messages: '++id, conversationId, timestamp, type, role'
     }).upgrade(function () {});
+    // Version 2: Add sequence index for correct message ordering
+    db.version(2).stores({
+      conversations: 'id, timestamp, lastMessageTime',
+      messages: '++id, conversationId, sequence, timestamp, type, role'
+    });
     return db;
   }
 
@@ -246,7 +251,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         if (conversations.length > 0) {
           // Load existing conversation
           const convId = conversations[0].id;
-          const messages = await this.getMessages(convId).sortBy('timestamp');
+          // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+          const messages = await this.getMessages(convId).toArray();
+          messages.sort((a, b) => {
+            if (a.sequence !== undefined && b.sequence !== undefined) {
+              return a.sequence - b.sequence;
+            }
+            return (a.timestamp || 0) - (b.timestamp || 0);
+          });
           this.currentConversationId = convId;
           this.conversation = messages;
 
@@ -609,6 +621,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Use provided content or fallback to placeholder
     const content = initialContent || (role === 'user' ? '_Listening..._' : '');
 
+    // IMPORTANT: Assign timestamp ONCE at message creation time
+    const timestamp = Date.now();
+
     // Create message data structure
     const messageData = {
       role: role,
@@ -616,7 +631,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence,
-      timestamp: Date.now(),
+      timestamp: timestamp,  // Use single timestamp
       item_id: item_id
     };
 
@@ -637,7 +652,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role,
         content: initialContent,
         sequence: this.messageSequence++,
-        timestamp: Date.now()
+        timestamp: timestamp  // Reuse same timestamp
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -649,6 +664,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
 
   async updateMessage(item_id, role, content, persist = false) {
+    // IMPORTANT: Assign timestamp ONCE at update time
+    const timestamp = Date.now();
+    
     // Create update message data
     const widget = this.chatMessages.get(item_id);
     const messageData = {
@@ -657,7 +675,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       source: 'audio',
       streamType: 'realtime',
       sequence: widget?.message?.sequence || this.messageSequence,
-      timestamp: Date.now(),
+      timestamp: timestamp,  // Use single timestamp
       item_id: item_id  // Include item_id for workspace lookup
     };
 
@@ -687,7 +705,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role,
         content,
         sequence: messageData.sequence || this.messageSequence++,
-        timestamp: Date.now()
+        timestamp: timestamp  // Reuse same timestamp
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -807,7 +825,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         console.error("Conversation not found:", conversationId);
         return;
       }
-      const messages = await this.getMessages(conversationId).sortBy('timestamp');
+      // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+      const messages = await this.getMessages(conversationId).toArray();
+      messages.sort((a, b) => {
+        if (a.sequence !== undefined && b.sequence !== undefined) {
+          return a.sequence - b.sequence;
+        }
+        return (a.timestamp || 0) - (b.timestamp || 0);
+      });
 
       this.conversation = messages;
 
