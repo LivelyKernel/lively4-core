@@ -93,11 +93,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;
 
-    // Track displayed messages to avoid duplicates (Map<messageId, element>)
-    this.displayedMessages = this.displayedMessages || new Map();
-
-    // Track realtime message widgets by item_id for updates
-    this.realtimeMessageWidgets = this.realtimeMessageWidgets || new Map();
+    // Note: chatMessages map now inherited from base class (lively-chat.js)
+    // Tracks all message widgets (both OpenCode and realtime) by messageId
 
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
@@ -417,7 +414,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // #important
   async createOpenCodeMessage(msg) {
     if (!this.messagesContainer || !msg) return;
-       this.log(`[workspace] createOpenCodeMessage`, msg);
+    this.log(`[workspace] createOpenCodeMessage`, msg);
     
     const msgId = msg.info?.id;
     if (!msgId) {
@@ -425,28 +422,22 @@ export default class LivelyAiWorkspace extends LivelyChat {
       return;
     }
 
-    if (this.displayedMessages.has(msgId)) {
+    if (this.chatMessages.has(msgId)) {
       this.log(`[workspace] message already displayed (id: ${msgId.substring(0, 5)}), skipping`);
       return;
     }
 
-    // Create and append new message element
-    const chatMessage = await lively.create('lively-chat-message');
-    await chatMessage.setOpenCodeMessage(msg, {
-      source: 'code',
-      streamType: 'opencode'
+    // Use base class method for consistent rendering
+    await this.renderChatMessage(msg, msgId, {
+      container: this.messagesContainer,
+      enableBuffering: true,  // Use full OpenCode streaming logic
+      metadata: {
+        source: 'code',
+        streamType: 'opencode'
+      }
     });
-    chatMessage.showDebug = this.showDebug;
-
-    this.messagesContainer.appendChild(chatMessage);
-    this.displayedMessages.set(msgId, chatMessage);
 
     this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollToBottom(this.messagesContainer);
-    }
   }
 
   // #important
@@ -456,7 +447,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const msgId = msg.info?.id;
     if (!msgId) return;
 
-    const chatMessage = this.displayedMessages.get(msgId);
+    const chatMessage = this.chatMessages.get(msgId);
     if (chatMessage) {
       await chatMessage.setOpenCodeMessage(msg, {
         source: 'code',
@@ -557,8 +548,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     if (!this.messagesContainer || !this.workspaceId) return;
 
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.chatMessages.clear();
 
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)
@@ -620,18 +610,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const item_id = messageData.item_id || messageData.id;
     this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
 
-    // Create widget - pass the FULL message object, don't create partial copies
-    const widget = await lively.create('lively-chat-message');
-    await widget.setMessage(messageData);
-    widget.showDebug = this.showDebug;
-
-    this.realtimeMessageWidgets.set(item_id, widget);
-    this.messagesContainer.appendChild(widget);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollToBottom(this.messagesContainer);
-    }
+    // Use base class method (simple mode - no buffering needed for realtime)
+    await this.renderChatMessage(messageData, item_id, {
+      container: this.messagesContainer,
+      enableBuffering: false  // Realtime messages don't have race conditions like OpenCode
+    });
   }
 
   // #important
@@ -640,18 +623,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const messageId = `tool-${messageData.sequence}`;
     this.log(`[workspace] createRealtimeToolMessage(${messageData.role}, seq: ${messageData.sequence})`);
 
-    // Create widget - pass the FULL message object, don't create partial copies
-    const widget = await lively.create('lively-chat-message');
-    await widget.setMessage(messageData);
-    widget.showDebug = this.showDebug;
-
-    this.realtimeMessageWidgets.set(messageId, widget);
-    this.messagesContainer.appendChild(widget);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollToBottom(this.messagesContainer);
-    }
+    // Use base class method (simple mode - no buffering needed for tool messages)
+    await this.renderChatMessage(messageData, messageId, {
+      container: this.messagesContainer,
+      enableBuffering: false
+    });
   }
 
   // #important
@@ -660,7 +636,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
 
     // Look up widget by item_id
-    const widget = this.realtimeMessageWidgets.get(item_id);
+    const widget = this.chatMessages.get(item_id);
     if (!widget) {
       // this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
       return;
@@ -1547,8 +1523,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.workspaceId = replayWorkspaceId;
 
     this.get('#messagesContainer').innerHTML = '';
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.chatMessages.clear();
 
     // Suppress replay controls in child components (use unified controls)
     this.realtimeComponent._suppressReplayControls = true;
@@ -1588,8 +1563,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.workspaceId = null;
 
     this.get('#messagesContainer').innerHTML = '';
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.chatMessages.clear();
 
     this.realtimeComponent.cleanupSession();
     this.opencodeComponent.cleanupSession();
@@ -1718,7 +1692,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     super.livelyMigrate(other)
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
-    this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
+    // Note: chatMessages migration handled by base class
   }
 
 }

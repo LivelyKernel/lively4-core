@@ -108,7 +108,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   async initialize() {
     // Call parent initialize to setup event capture system
-    await super.initialize();
+    super.initialize();
 
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();
@@ -138,9 +138,8 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = null;
     this.messages = new Map(); // sessionId -> messages array (pure server data)
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
-    this.messageElements = this.messageElements || new Map(); // messageId -> DOM element for fast updates
-    this.pendingUpdates = this.pendingUpdates || new Map(); // messageId -> array of pending update messages
-    this.renderingMessages = this.renderingMessages || new Set(); // messageIds currently being rendered
+    
+    // Note: chatMessages, pendingUpdates, renderingMessages inherited from base class
 
     // Set event source for capture system (parent class property)
     this.eventSource = 'opencode';
@@ -1729,7 +1728,7 @@ export default class LivelyOpencode extends LivelyChat {
       } else {
         // No parts in event - just update debug stats panel
         if (this.showDebug) {
-          const chatMessage = this.messageElements.get(messageInfo.id);
+          const chatMessage = this.chatMessages.get(messageInfo.id);
           if (chatMessage && chatMessage.renderUsageStats) {
             const usageEl = chatMessage.get('#usageStats');
             if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
@@ -2259,7 +2258,7 @@ export default class LivelyOpencode extends LivelyChat {
     container.innerHTML = '';
 
     // Clear message elements tracking since we're rebuilding
-    if (this.messageElements) this.messageElements.clear();
+    if (this.chatMessages) this.chatMessages.clear();
 
     if (!this.currentSession) {
       container.innerHTML = `
@@ -2297,7 +2296,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Track element for future updates
       if (opencodeMsg.info?.id) {
-        this.messageElements.set(opencodeMsg.info.id, chatMessage);
+        this.chatMessages.set(opencodeMsg.info.id, chatMessage);
       }
     }
 
@@ -2308,6 +2307,23 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Incrementally add a single message to the UI without full rebuild
    * @param {Object} opencodeMsg - OpenCode message object with info and parts
+   */
+  /**
+   * Render an OpenCode message to the UI.
+   * 
+   * NOTE: This method doesn't use the base class renderChatMessage() because it needs
+   * specialized handling for SSE streaming edge cases:
+   * 
+   * 1. Buffered part merging (parts that arrive before message.created)
+   * 2. Immediate DOM insertion + tracking BEFORE async setOpenCodeMessage
+   *    (critical for preserving message order in streaming scenarios)
+   * 3. Rendering completion tracking to handle late updates
+   * 4. Post-render update application (updates that arrive during rendering)
+   * 
+   * The base method assumes simple batch rendering (like workspace DB loading),
+   * while OpenCode needs real-time streaming with race condition protection.
+   * Both follow the same PATTERN (create widget → set content → append → track),
+   * but OpenCode controls the exact sequence for streaming correctness.
    */
   async renderMessage(opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
@@ -2357,7 +2373,7 @@ export default class LivelyOpencode extends LivelyChat {
     // IMPORTANT: Track element IMMEDIATELY after creation, before any async operations
     // This prevents race conditions where part updates arrive before rendering completes
     if (messageId) {
-      this.messageElements.set(messageId, chatMessage);
+      this.chatMessages.set(messageId, chatMessage);
     }
 
     // Use setOpenCodeMessage() which handles all the rendering logic
@@ -2411,7 +2427,7 @@ export default class LivelyOpencode extends LivelyChat {
     
     // Check if message is currently being rendered or not ready yet
     const isRendering = this.renderingMessages.has(messageId);
-    const hasElement = this.messageElements.has(messageId);
+    const hasElement = this.chatMessages.has(messageId);
 
     if (isRendering || !hasElement) {
       // Buffer this update - it will be applied after rendering completes
@@ -2423,7 +2439,7 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    const chatMessage = this.messageElements.get(messageId);
+    const chatMessage = this.chatMessages.get(messageId);
 
     // Update the existing message element
     await chatMessage.setOpenCodeMessage(opencodeMsg, {
@@ -2483,11 +2499,11 @@ export default class LivelyOpencode extends LivelyChat {
     for (const tempMsg of tempMessages) {
       const msgId = tempMsg.info?.id;
       if (msgId) {
-        const element = this.messageElements.get(msgId);
+        const element = this.chatMessages.get(msgId);
         if (element && element.parentNode) {
           element.parentNode.removeChild(element);
         }
-        this.messageElements.delete(msgId);
+        this.chatMessages.delete(msgId);
       }
     }
 
@@ -3093,7 +3109,7 @@ export default class LivelyOpencode extends LivelyChat {
     // Clear UI for fresh replay
     const messagesContainer = this.get('#messagesContainer');
     if (messagesContainer) messagesContainer.innerHTML = '';
-    this.messageElements.clear();
+    this.chatMessages.clear();
 
     return replaySessionId;
   }
@@ -3117,7 +3133,7 @@ export default class LivelyOpencode extends LivelyChat {
       this.currentSession = null;
       const messagesContainer = this.get('#messagesContainer');
       if (messagesContainer) messagesContainer.innerHTML = '';
-      this.messageElements.clear();
+      this.chatMessages.clear();
     }
   }
 

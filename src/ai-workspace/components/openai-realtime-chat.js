@@ -189,8 +189,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Track saved response items by OpenAI item_id to prevent duplicates
     this.savedResponseItems = this.savedResponseItems || new Set();
 
-    // Track message widgets by OpenAI item_id for updates
-    this.messageWidgets = this.messageWidgets || new Map();
+    // Note: chatMessages map inherited from base class (lively-chat.js)
 
     // Track accumulated transcripts for assistant streaming messages
     this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
@@ -628,7 +627,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Optionally render UI widget
     if (this.messagesUI !== false) {
       const widget = await this.renderMessage(messageData);
-      this.messageWidgets.set(item_id, widget);
+      this.chatMessages.set(item_id, widget);
       this.log(`[item_id] Created widget for ${item_id} (${role})`);
     }
 
@@ -651,7 +650,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async updateMessage(item_id, role, content, persist = false) {
     // Create update message data
-    const widget = this.messageWidgets.get(item_id);
+    const widget = this.chatMessages.get(item_id);
     const messageData = {
       role: role,
       content: content,
@@ -1242,7 +1241,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           const role = message.item.role;
 
           // Skip if already created
-          if (this.messageWidgets.has(item_id)) {
+          if (this.chatMessages.has(item_id)) {
             this.log(`[item_id] Message already exists for ${item_id}`);
             break;
           }
@@ -1409,7 +1408,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.messageSequence = 0;
 
     // Clear tracking maps to allow replay to create new widgets
-    this.messageWidgets.clear();
+    this.chatMessages.clear();
     this.savedResponseItems.clear();
     this.accumulatedTranscripts.clear();
 
@@ -1432,7 +1431,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.currentConversationId = null;
       this.conversation = [];
       this.get('#messagesContainer').innerHTML = '';
-      this.messageWidgets.clear();
+      this.chatMessages.clear();
       this.savedResponseItems.clear();
       this.accumulatedTranscripts.clear();
     }
@@ -1767,7 +1766,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.conversation = other.conversation;
     this.realtimeVoice = other.realtimeVoice;
     this.savedResponseItems = other.savedResponseItems || new Set();
-    this.messageWidgets = other.messageWidgets || new Map();
+    // Note: chatMessages migration handled by base class
     this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
 
     this.get("#voiceBox").value = other.get("#voiceBox").value

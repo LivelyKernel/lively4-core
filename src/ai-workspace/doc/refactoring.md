@@ -8,7 +8,6 @@
 
 - [ ] #3 Session vs Conversation Terminology
 - [ ] #5 Button Handler Naming
-- [ ] #6 Message Rendering Duplication
 - [ ] #7 Scroll Wrapper Methods
 - [ ] #8 Temporary Message Handling
 - [ ] #9 Event Capture Deduplication
@@ -288,9 +287,9 @@ onReconnectButton()         // OK if element is #reconnectButton
 
 ## Code Duplication
 
-### 6. Message Rendering Duplication
+### 6. ✅ Message Rendering Duplication - COMPLETED
 
-**Problem:** CRITICAL - Message rendering logic duplicated between workspace and opencode
+**Problem:** Message rendering logic duplicated between workspace and opencode
 
 ```javascript
 // lively-opencode.js - renderMessage()
@@ -312,26 +311,43 @@ this.displayedMessages.set(messageId, widget);
 - Inconsistent behavior risk
 - Harder to maintain
 
-**Solution:** Extract to shared method in `LivelyChat` base class
+**Solution:** Extract common pattern to shared method in `LivelyChat` base class
 
-**Refactoring:**
+**Implementation:**
+
+Added `renderChatMessage()` base method that handles the common rendering pattern:
+
 ```javascript
 // Base class (lively-chat.js)
-async renderChatMessage(message, messageId, targetContainer = null) {
+async renderChatMessage(message, messageId, targetContainer = null, options = null) {
   const container = targetContainer || this.messagesContainer;
+  if (!container) return null;
+
+  // Create widget
   const widget = await lively.create('lively-chat-message');
   
   // Auto-detect message format and use appropriate setter
   if (message.info && message.parts) {
-    await widget.setOpenCodeMessage(message);
+    // OpenCode format
+    await widget.setOpenCodeMessage(message, options);
   } else {
+    // Simple format
     await widget.setMessage(message);
   }
   
+  // Apply debug state from parent
+  widget.showDebug = this.showDebug;
+  
+  // Append to container
   container.appendChild(widget);
   
   // Track in appropriate Map (subclass can override)
   this.trackMessageWidget(messageId, widget);
+  
+  // Scroll to bottom (unless batching)
+  if (!this._batchRendering) {
+    this.scrollToBottom(container);
+  }
   
   return widget;
 }
@@ -343,41 +359,59 @@ trackMessageWidget(messageId, widget) {
   }
   this.messageElements.set(messageId, widget);
 }
+```
 
-// Subclass (lively-opencode.js)
-async renderMessage(message) {
-  const messageId = message.info.id;
-  if (this.messageElements.has(messageId)) {
-    await this.updateMessage(messageId, message);
-  } else {
-    await this.renderChatMessage(message, messageId);
-  }
-}
+**Workspace now uses base method:**
 
+```javascript
 // Subclass (lively-ai-workspace.js)
 async createOpenCodeMessage(msg) {
-  const messageId = msg.info.id;
-  return await this.renderChatMessage(msg, messageId);
+  const msgId = msg.info?.id;
+  if (!msgId) return;
+
+  if (this.displayedMessages.has(msgId)) return;
+
+  // Use base class method for consistent rendering
+  await this.renderChatMessage(msg, msgId, this.messagesContainer, {
+    source: 'code',
+    streamType: 'opencode'
+  });
 }
 
+// Override to use workspace's map
 trackMessageWidget(messageId, widget) {
-  // Workspace uses different Map name
   this.displayedMessages.set(messageId, widget);
 }
 ```
 
+**OpenCode keeps specialized implementation:**
+
+OpenCode's `renderMessage()` **does NOT use** the base method because it has specialized streaming requirements:
+
+1. **Buffered part merging** - parts that arrive before message.created
+2. **Immediate DOM insertion + tracking BEFORE async setOpenCodeMessage** - critical for preserving order
+3. **Rendering completion tracking** - to handle late updates
+4. **Post-render update application** - updates that arrive during rendering
+
+However, OpenCode now includes documentation explaining why it follows the same PATTERN manually rather than using the base method. Both approaches create widget → set content → append → track, but OpenCode controls the exact sequence for streaming correctness.
+
 **Benefits:**
-- Single source of truth for message rendering
-- Consistent behavior across components
-- Easier to add features (batching, animations)
-- Reduces code duplication
+- Workspace uses single source of truth for simple batch rendering
+- OpenCode documents its specialized streaming needs
+- Both follow the same pattern (create → set → append → track)
+- Consistent behavior where appropriate, specialized behavior where needed
 
-**Files to change:**
-- `lively-chat.js` - Add `renderChatMessage()` base method
-- `lively-opencode.js` - Use base method in `renderMessage()`
-- `lively-ai-workspace.js` - Use base method in `createOpenCodeMessage()`
+**Files changed:**
+- ✅ `lively-chat.js` - Added `renderChatMessage()` and `trackMessageWidget()` base methods
+- ✅ `lively-ai-workspace.js` - Refactored to use base method + override tracking
+- ✅ `lively-opencode.js` - Documented why it uses specialized implementation
 
-**Reference:** See analysis in conversation 2026-02-25 about OpenCode message handling flow
+**Tests:**
+- ✅ `lively-ai-workspace-test.js` - All tests pass
+- ✅ `lively-opencode-test.js` - All 22 tests pass
+- ✅ `openai-realtime-chat-test.js` - All 4 tests pass
+
+**Status:** ✅ COMPLETED (2026-02-26)
 
 
 
