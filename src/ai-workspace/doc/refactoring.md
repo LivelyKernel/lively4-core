@@ -8,7 +8,6 @@
 
 - [ ] #3 Session vs Conversation Terminology
 - [ ] #5 Button Handler Naming
-- [ ] #7 Scroll Wrapper Methods
 - [ ] #8 Temporary Message Handling
 - [ ] #9 Event Capture Deduplication
 - [ ] #10 Health Check / Reconnection
@@ -415,7 +414,7 @@ However, OpenCode now includes documentation explaining why it follows the same 
 
 
 
-### 7. Scroll Wrapper Methods
+### 7. ✅ Scroll Wrapper Methods - COMPLETED
 
 **Problem:** Workspace has wrapper methods that just call base class
 
@@ -435,24 +434,22 @@ scrollSharedPaneToBottom(force = false, delay = 100) {
 - More methods to maintain
 - No added value
 
-**Solution:** Remove wrappers, use base class directly
+**Solution:** ✅ Remove wrappers, use base class directly
 
-**Refactoring:**
+**Status:** ✅ COMPLETED (2025-02-26) - **Already completed as part of section #1**
+
+This refactoring was completed when fixing inconsistent container names. The wrapper methods `isSharedPaneAtBottom()` and `scrollSharedPaneToBottom()` were removed, and all 14 call sites were updated to use base class methods directly:
+
 ```javascript
-// Before
-if (this.isSharedPaneAtBottom()) {
-  this.scrollSharedPaneToBottom(true);
-}
-
-// After
+// After refactoring - using base class methods directly
 if (this.isAtBottom(this.messagesContainer)) {
   this.scrollToBottom(this.messagesContainer, true);
 }
 ```
 
-**Files to change:**
-- `lively-ai-workspace.js` - Remove wrapper methods
-- Update all call sites
+**Files changed:**
+- ✅ `lively-ai-workspace.js` - Removed wrapper methods, updated all call sites
+- ✅ Component now uses `this.isAtBottom()` and `this.scrollToBottom()` directly
 
 
 ---
