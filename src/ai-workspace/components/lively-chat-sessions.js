@@ -42,6 +42,14 @@ export default class LivelyChatSessions extends Morph {
     this.addEventListener('contextmenu', (evt) => this.onContextMenu(evt));
   }
 
+  dispatchMessageEvent(name, data) {
+    this.dispatchEvent(new CustomEvent(name, {
+        detail: data,
+        bubbles: true,
+        composed: true
+      }));
+  }
+
   // Properties with getters/setters
   get sessions() {
     return this._sessions;
@@ -356,20 +364,12 @@ export default class LivelyChatSessions extends Morph {
     this.updateActiveState();
 
     // Dispatch event
-    this.dispatchEvent(new CustomEvent('session-selected', {
-      detail: { sessionId },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchMessageEvent('session-selected', { sessionId });
   }
 
   deleteSingleSession(sessionId) {
     // Dispatch event
-    this.dispatchEvent(new CustomEvent('session-deleted', {
-      detail: { sessionId },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchMessageEvent('session-deleted', { sessionId });
   }
 
   async deleteSelectedSessions() {
@@ -386,11 +386,7 @@ export default class LivelyChatSessions extends Morph {
     if (!await lively.confirm(message)) return;
 
     // Dispatch event
-    this.dispatchEvent(new CustomEvent('sessions-bulk-deleted', {
-      detail: { sessionIds },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchMessageEvent('sessions-bulk-deleted', { sessionIds });
 
     // Clear selection
     this._selectedSessionIds.clear();
@@ -444,11 +440,7 @@ export default class LivelyChatSessions extends Morph {
     const sessionIds = Array.from(this._selectedSessionIds);
 
     // Dispatch event for parent components to handle
-    this.dispatchEvent(new CustomEvent('sessions-load-requested', {
-      detail: { sessionIds },
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchMessageEvent('sessions-load-requested', { sessionIds });
   }
 
   // Context Menu using Lively's ContextMenu system
@@ -494,10 +486,7 @@ export default class LivelyChatSessions extends Morph {
 
   // Button Handlers
   onNewSessionButton() {
-    this.dispatchEvent(new CustomEvent('session-created', {
-      bubbles: true,
-      composed: true
-    }));
+    this.dispatchMessageEvent('session-created', {});
   }
 
   // Public API Methods

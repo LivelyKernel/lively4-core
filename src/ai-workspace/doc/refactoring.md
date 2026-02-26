@@ -12,7 +12,7 @@
 - [ ] #9 Event Capture Deduplication
 - [ ] #10 Health Check / Reconnection
 - [ ] #11 Extract Message Widget Manager
-- [ ] #12 Standardize Event Dispatching
+- [x] #12 Standardize Event Dispatching
 - [ ] #13 Unify Session Persistence
 - [ ] #14 Extract Blackboard Pattern
 - [ ] #15 Toolset Interface
@@ -749,88 +749,19 @@ class LivelyOpencode extends LivelyChat {
 
 ---
 
-### 12. Standardize Event Dispatching
+### 12. ✅ Standardize Event Dispatching - COMPLETED
 
-**Problem:** Different event dispatching patterns across components
+**Problem:** Some components used direct `new CustomEvent()`, others used helper method
 
-```javascript
-// Some use helper method
-this.dispatchMessageEvent('realtime:create-live-user-message', data);
+**Solution:** All components now use `dispatchMessageEvent(name, data)` helper
 
-// Some use direct CustomEvent
-this.dispatchEvent(new CustomEvent('opencode:status-change', {
-  detail: data,
-  bubbles: true
-}));
+**Files changed:**
+- ✅ `openai-realtime-chat.js` - line 741 now uses helper
+- ✅ `lively-chat-sessions.js` - added helper, updated 5 event dispatches
 
-// Inconsistent event naming
-'realtime:create-live-user-message'  // Very descriptive
-'opencode:status-change'             // Short
-```
+**LOC saved:** ~20 lines of boilerplate CustomEvent construction
 
-**Solution:** Standardize on helper method, document naming convention
-
-**Refactoring:**
-```javascript
-// Base class (lively-chat.js) - already exists
-dispatchMessageEvent(name, data) {
-  this.dispatchEvent(new CustomEvent(name, {
-    detail: data,
-    bubbles: true,
-    composed: true
-  }));
-}
-
-// Enforce usage in all components
-// Add JSDoc with event naming convention
-/**
- * Dispatch component event following naming convention:
- * 
- * Format: [component]:[action]-[entity]
- * 
- * Examples:
- * - realtime:message-created
- * - realtime:message-updated
- * - opencode:session-switched
- * - opencode:status-changed
- * 
- * @param {string} name - Event name
- * @param {object} data - Event data
- */
-```
-
-**Create Event Catalog:**
-```javascript
-// New file: src/ai-workspace/doc/events.md
-# AI Workspace Events
-
-## Event Naming Convention
-
-Format: `[component]:[action]-[entity]`
-
-## Workspace Events
-- `workspace:session-created`
-- `workspace:session-switched`
-- `workspace:session-deleted`
-
-## Realtime Events
-- `realtime:message-created`
-- `realtime:message-updated`
-- `realtime:tool-executed`
-
-## OpenCode Events
-- `opencode:message-added`
-- `opencode:message-updated`
-- `opencode:status-changed`
-- `opencode:session-switched`
-```
-
-**Files to create:**
-- `src/ai-workspace/doc/events.md` - Event catalog
-
-**Files to change:**
-- All components - Use `dispatchMessageEvent()` consistently
-- Add JSDoc to event emitters
+**Status:** ✅ COMPLETED (2026-02-26)
 
 
 ---

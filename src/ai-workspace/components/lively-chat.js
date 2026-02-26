@@ -116,9 +116,9 @@ export default class LivelyChat extends Morph {
 
   /*MD ## Custom Events MD*/
 
-  dispatchMessageEvent(name, msg) {
+  dispatchMessageEvent(name, data) {
     this.dispatchEvent(new CustomEvent(name, {
-        detail: msg,
+        detail: data,
         bubbles: true,
         composed: true
       }));

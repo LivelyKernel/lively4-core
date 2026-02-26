@@ -738,21 +738,17 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       });
 
       // Dispatch event for workspace integration
-      this.dispatchEvent(new CustomEvent('realtime:message-saved', {
-        detail: {
-          conversationId: this.currentConversationId,
-          message: {
-            role: message.role,
-            content: message.content,
-            type: message.type || "message",
-            metadata: message.metadata || {},
-            sequence: message.sequence,
-            timestamp: message.timestamp || Date.now()
-          }
-        },
-        bubbles: true,
-        composed: true
-      }));
+      this.dispatchMessageEvent('realtime:message-saved', {
+        conversationId: this.currentConversationId,
+        message: {
+          role: message.role,
+          content: message.content,
+          type: message.type || "message",
+          metadata: message.metadata || {},
+          sequence: message.sequence,
+          timestamp: message.timestamp || Date.now()
+        }
+      });
     } catch (error) {
       console.error("Failed to save message to DB:", error);
     }

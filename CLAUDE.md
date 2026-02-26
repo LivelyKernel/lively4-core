@@ -315,6 +315,10 @@ await lively.openComponentInWindow("component-name")
 
 ## Development Guidelines
 
+**Avoid Needless Documentation:**
+- Don't document what can be queried from the live system (search event names, grep patterns, runtime inspection)
+- Let method names and parameters speak for themselves - think Smalltalk, not JavaDoc. No verbose JSDoc.
+
 - Always check component template paths and ensure proper .js/.html file pairing
 - Use `lively.components.searchTemplateFilename()` to locate templates programmatically
 - Components auto-run dependent tests when saving modules
