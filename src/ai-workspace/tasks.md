@@ -21,3 +21,4 @@ For Human/Agent team:
 - [ ] make the AI workspace chat messages scroll properly... ideally... scroll when scrolled to botton... and keep it otherwise stable... (I know this is hard)
 - [ ] #REFACTOR message rendering duplication: `lively-opencode.renderMessage()` and `workspace.createOpenCodeMessage()` duplicate the same logic (create widget, setOpenCodeMessage, append to DOM). Should be refactored to shared method in `LivelyChat` base class that takes target container as parameter. See analysis in conversation 2026-02-25 about OpenCode message handling flow.
 - [ ] method render double bug...
+- [ ] opencode sessions costs and info is not there in ai workspace sessions
