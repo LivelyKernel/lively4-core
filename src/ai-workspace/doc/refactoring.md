@@ -146,45 +146,65 @@ renderMessages() {  // Renamed
 
 ---
 
-### 3. Session vs Conversation Terminology
+### 3. ⏸️ Session vs Conversation Terminology - POSTPONED
 
 **Problem:** Inconsistent terminology confuses the domain model
 
 - **Workspace:** "workspace" (links conversation + session)
-- **Realtime:** "conversation"
-- **OpenCode:** "session"
+- **Realtime:** "conversation" (conversationId)
+- **OpenCode:** "session" (sessionId)
 
 **Impact:**
 - Unclear what "session" means in context
+- Workspace coordinator mixes both terms (conversationId, sessionId)
 - Hard to explain the linking model
 - Code comments needed to clarify
 
-**Solution:** Document the terminology clearly, consider renaming for consistency
+**Why Postponed:**
 
-**Option A: Keep current terms, document clearly**
+The mixed terminology is intentional and reflects the APIs being wrapped:
+- **OpenAI Realtime API uses "conversation"** - it's their domain term
+- **Claude Code API uses "session"** - it's their domain term
+- **Leaf components stay honest** - they use API-native terminology
+
+The workspace component naturally uses "conversation" heavily because it interacts extensively with the voice component (openai-realtime-chat). Forcing internal abstraction would fight against this reality.
+
+**Attempted Solution (rejected):**
+- Creating internal abstraction layer (audioSessionId, codeSessionId)
+- Would not help: workspace still needs to work with `conversationId` constantly
+- Would add translation overhead without improving clarity
+- Would make code less readable by fighting natural API terminology
+
+**Current Approach:**
+Keep the API-native terms and document clearly:
+
 ```javascript
-// TERMINOLOGY:
-// - Workspace: Links one realtime conversation with one opencode session
-// - Conversation: OpenAI realtime chat history (conversationId)
-// - Session: Claude Code coding session (opencodeSessionId)
+/**
+ * TERMINOLOGY CONSTRAINTS:
+ * 
+ * Components use their API's native terminology:
+ * - openai-realtime-chat: conversationId (OpenAI's term)
+ * - lively-opencode: sessionId (Claude Code's term)
+ * - lively-ai-workspace: uses both when interacting with children
+ * 
+ * This mixed terminology is intentional - components honestly reflect
+ * their underlying APIs rather than forcing artificial consistency.
+ * 
+ * Workspace linking:
+ * - workspaceSession links one conversationId + one sessionId
+ * - conversationId → OpenAI realtime chat history
+ * - sessionId → Claude Code coding session
+ */
 ```
 
-**Option B: Rename for consistency**
-```javascript
-// Everything becomes "session":
-// - workspaceSession (links audioSession + codeSession)
-// - audioSession (OpenAI realtime)
-// - codeSession (Claude Code)
-```
+**Status:** ⏸️ POSTPONED - Keep as is, not a priority to change
 
-**Recommendation:** Option A (keep current, document clearly)
-- Less churn
-- Matches external APIs (OpenAI uses "conversation", OpenCode uses "session")
-- Add clear terminology section to architecture.md
+**Decision Date:** 2026-02-26
 
-**Files to change:**
-- `architecture.md` - Add terminology glossary
-- Component JSDoc comments - Document the linking model
+**Files to update with documentation:**
+- `architecture.md` - Add terminology constraints section
+- `lively-ai-workspace.js` - Add JSDoc explaining the mixed terminology
+- Component headers - Document the linking model
 
 
 ---
