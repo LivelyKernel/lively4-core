@@ -17,8 +17,14 @@ For Human/Agent team:
 - [X] in lively-opencode: start server, should check if server is actually running.... 
 - [ ] auto-commit current agent changes and provides points to jump back
 - [X] implement auto session naming again.... 
-- [ ] the voice chat entries are not correctly time stamped and result in bad replay rendering
-- [ ] make the AI workspace chat messages scroll properly... ideally... scroll when scrolled to botton... and keep it otherwise stable... (I know this is hard)
-- [ ] #REFACTOR message rendering duplication: `lively-opencode.renderMessage()` and `workspace.createOpenCodeMessage()` duplicate the same logic (create widget, setOpenCodeMessage, append to DOM). Should be refactored to shared method in `LivelyChat` base class that takes target container as parameter. See analysis in conversation 2026-02-25 about OpenCode message handling flow.
-- [ ] method render double bug...
-- [ ] opencode sessions costs and info is not there in ai workspace sessions
+
+## Refactoring & Bug Fixes
+
+See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and architecture improvements.
+
+**Current open refactoring tasks:**
+- [ ] Message rendering duplication (#6, #7 in refactoring.md)
+- [ ] Auto-scroll message container (#16 in refactoring.md)
+- [ ] Session metadata sync (#17 in refactoring.md)
+- [ ] Method render double bug (#18 in refactoring.md)
+- [ ] Voice chat timestamp issues (#19 in refactoring.md)

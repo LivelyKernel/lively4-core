@@ -977,43 +977,35 @@ clearTemporaryMessages(sessionId)
 
 ### 5. **Debug State Update Methods**
 
-**Issue:** Inconsistent override method names
+**Issue:** ✅ RESOLVED - Inconsistent override method names
 
 ```javascript
-// Base class:
-updateMessagesDebugState()       // Empty implementation
-
-// Subclasses:
+// All components now use consistent naming:
+updateMessagesDebugState()       // Base class
 updateMessagesDebugState()       // lively-ai-workspace
 updateMessagesDebugState()       // openai-realtime-chat
-updateOpenCodeMessagesDebugState()  // lively-opencode (DIFFERENT NAME!)
+updateMessagesDebugState()       // lively-opencode (renamed from updateOpenCodeMessagesDebugState)
 ```
 
-**Recommendation:**
-- Rename `updateOpenCodeMessagesDebugState()` → `updateMessagesDebugState()` in opencode
-- Add call to parent's `updateMessagesDebugState()` in opencode's initialize
+**Status:** ✅ Completed - See [refactoring.md](refactoring.md#4-debug-method-naming)
 
 ### 6. **Event Capture Deduplication**
 
-**Issue:** Realtime chat has special deduplication for `conversation.item.created`
+**Status:** ✅ COMPLETED - Deduplication logic moved to base class
 
-**Code:**
+See [refactoring.md](refactoring.md#9-event-capture-deduplication) for details on the implementation.
+
+The base class now provides optional deduplication via parameters:
 ```javascript
-// openai-realtime-chat.js
-if (!this._capturedItemIds) {
-  this._capturedItemIds = new Set();
-}
-if (this._capturedItemIds.has(message.item.id)) {
-  this.log(`Skipping duplicate`);
-} else {
-  this._capturedItemIds.add(message.item.id);
-  this.captureEvent('realtime', message, this.currentConversationId);
-}
-```
+// Base class (lively-chat.js)
+captureEvent(type, data, sessionId, {deduplicate = false, idField = 'id'} = {})
 
-**Recommendation:**
-- Move deduplication to base class if other components need it
-- Or document why only realtime needs it (API sends duplicate item.created events)
+// Usage (openai-realtime-chat.js)
+this.captureEvent('realtime', message, this.currentConversationId, {
+  deduplicate: true,
+  idField: 'item.id'
+});
+```
 
 ### 7. **Session/Conversation Terminology**
 
@@ -1684,35 +1676,24 @@ Document complete lifecycle:
 
 ### Recommended Refactoring Priority
 
-**Phase 1 - Critical Bugs:**
-1. Remove duplicate `updateOpenCodeMessage` in workspace
-2. Fix or remove commented polling code
-3. Rename `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
+**See [refactoring.md](refactoring.md) for complete refactoring roadmap and details.**
 
-**Phase 2 - Standardization:**
-4. ✅ Standardize container names (`#messagesContainer`) - COMPLETED
-5. Standardize method names (`renderMessages`, `renderMessage`, `updateMessage`)
-6. Standardize button handler names (`on[ButtonId]Button`)
-7. Remove or document backward compatibility aliases
+**Progress Summary:**
 
-**Phase 3 - Cleanup:**
-8. Remove commented debug code
-9. Add size limit to `_eventCapture`
-10. Document or remove deprecated methods
+✅ **Phases 1-4, 6 - COMPLETED**
+- Critical bugs fixed
+- Naming standardization complete
+- Major architecture improvements done
+- Cleanup tasks completed
 
-**Phase 4 - Architecture:**
-11. Extract `MessageWidgetManager` class
-12. Extract `WorkspaceBlackboard` class
-13. Create `Toolset` base class
-14. Add sequence diagrams
-15. Unify terminology in documentation
+🔄 **Phase 5 - IN PROGRESS** (UI/UX & Bug Fixes)
+- Message rendering duplication
+- Auto-scroll improvements
+- Session metadata sync
+- Method render double bug
+- Voice chat timestamp issues
 
-**Phase 5 - Message Component:**
-16. Unify setMessage() APIs or add auto-detection
-17. Make tool parsers extensible (registry pattern)
-18. Make isLocalFunction() configurable
-19. Decompose formatToolMessage() into smaller methods
-20. Consider data attributes for positioning instead of CSS classes
+**Next Priority:** See [refactoring.md](refactoring.md#phase-5-uiux--bug-fixes-week-9-10) for current tasks
 
 ---
 

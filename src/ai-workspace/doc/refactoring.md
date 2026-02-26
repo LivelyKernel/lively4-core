@@ -1,8 +1,34 @@
 # AI Workspace Refactoring Guide
 
-Strategic refactoring opportunities to reduce redundancy and streamline the AI workspace architecture.
+**Consolidated refactoring tasks and architecture improvements for AI Workspace**
 
-**Last Updated:** 2025-02-26
+**Last Updated:** 2026-02-26  
+**Target Audience:** Human-Agent development teams
+
+This document consolidates all refactoring tasks from:
+- `tasks.md` - Daily task tracking
+- `ai-workspace-tasks.md` - Feature development tasks
+- `ai-workspace.md` - Architecture documentation
+
+---
+
+## Status
+
+**✅ Completed:**
+- Phase 1: Critical bugs fixed
+- Phase 2: Naming standardization complete
+- Phase 3: Code duplication reduced
+- Phase 4: Major architecture improvements
+- Phase 6: Cleanup tasks done
+
+**🔄 In Progress:**
+- Phase 5: UI/UX improvements & bug fixes
+  - Message rendering duplication
+  - Auto-scroll behavior
+  - Session metadata sync
+  - Bug investigations
+
+**Next:** Message rendering duplication
 
 ---
 
@@ -86,7 +112,6 @@ get messagesContainer() {
 - ✅ `ai-workspace.md` - Updated documentation
 - ✅ `refactoring.md` - Marked as complete
 
-**Actual effort:** ~1 hour
 
 ---
 
@@ -148,7 +173,6 @@ renderMessages() {  // Renamed
 
 **Status:** ✅ COMPLETED (2025-02-26)
 
-**Actual effort:** ~15 minutes
 
 ---
 
@@ -192,11 +216,10 @@ renderMessages() {  // Renamed
 - `architecture.md` - Add terminology glossary
 - Component JSDoc comments - Document the linking model
 
-**Estimated effort:** 1 hour (documentation)
 
 ---
 
-### 4. Debug Method Naming
+### 4. ✅ Debug Method Naming - COMPLETED
 
 **Problem:** OpenCode has different name for debug state update
 
@@ -208,7 +231,7 @@ updateMessagesDebugState() { ... }
 updateOpenCodeMessagesDebugState() { ... }
 ```
 
-**Solution:** Rename to match base class
+**Solution:** ✅ Renamed to match base class
 
 **Refactoring:**
 ```javascript
@@ -229,10 +252,11 @@ updateMessagesDebugState() {  // Renamed
 }
 ```
 
-**Files to change:**
-- `lively-opencode.js` - Rename method
+**Files changed:**
+- ✅ `lively-opencode.js` - Method already renamed
 
-**Estimated effort:** 15 minutes
+**Status:** ✅ COMPLETED (pre-existing)
+
 
 ---
 
@@ -269,13 +293,105 @@ onReconnectButton()         // OK if element is #reconnectButton
 - All component `.html` files
 - Corresponding `.js` files
 
-**Estimated effort:** 2 hours
 
 ---
 
 ## Code Duplication
 
-### 6. Scroll Wrapper Methods
+### 6. Message Rendering Duplication
+
+**Problem:** CRITICAL - Message rendering logic duplicated between workspace and opencode
+
+```javascript
+// lively-opencode.js - renderMessage()
+const widget = await lively.create('lively-chat-message');
+await widget.setOpenCodeMessage(message);
+this.messagesContainer.appendChild(widget);
+this.messageElements.set(messageId, widget);
+
+// lively-ai-workspace.js - createOpenCodeMessage()
+const widget = await lively.create('lively-chat-message');
+await widget.setOpenCodeMessage(msg);
+this.messagesContainer.appendChild(widget);
+this.displayedMessages.set(messageId, widget);
+```
+
+**Impact:**
+- Same logic in two places
+- Bug fixes must be applied twice
+- Inconsistent behavior risk
+- Harder to maintain
+
+**Solution:** Extract to shared method in `LivelyChat` base class
+
+**Refactoring:**
+```javascript
+// Base class (lively-chat.js)
+async renderChatMessage(message, messageId, targetContainer = null) {
+  const container = targetContainer || this.messagesContainer;
+  const widget = await lively.create('lively-chat-message');
+  
+  // Auto-detect message format and use appropriate setter
+  if (message.info && message.parts) {
+    await widget.setOpenCodeMessage(message);
+  } else {
+    await widget.setMessage(message);
+  }
+  
+  container.appendChild(widget);
+  
+  // Track in appropriate Map (subclass can override)
+  this.trackMessageWidget(messageId, widget);
+  
+  return widget;
+}
+
+trackMessageWidget(messageId, widget) {
+  // Default implementation - subclasses can override
+  if (!this.messageElements) {
+    this.messageElements = new Map();
+  }
+  this.messageElements.set(messageId, widget);
+}
+
+// Subclass (lively-opencode.js)
+async renderMessage(message) {
+  const messageId = message.info.id;
+  if (this.messageElements.has(messageId)) {
+    await this.updateMessage(messageId, message);
+  } else {
+    await this.renderChatMessage(message, messageId);
+  }
+}
+
+// Subclass (lively-ai-workspace.js)
+async createOpenCodeMessage(msg) {
+  const messageId = msg.info.id;
+  return await this.renderChatMessage(msg, messageId);
+}
+
+trackMessageWidget(messageId, widget) {
+  // Workspace uses different Map name
+  this.displayedMessages.set(messageId, widget);
+}
+```
+
+**Benefits:**
+- Single source of truth for message rendering
+- Consistent behavior across components
+- Easier to add features (batching, animations)
+- Reduces code duplication
+
+**Files to change:**
+- `lively-chat.js` - Add `renderChatMessage()` base method
+- `lively-opencode.js` - Use base method in `renderMessage()`
+- `lively-ai-workspace.js` - Use base method in `createOpenCodeMessage()`
+
+**Reference:** See analysis in conversation 2026-02-25 about OpenCode message handling flow
+
+
+
+### 7. Scroll Wrapper Methods
 
 **Problem:** Workspace has wrapper methods that just call base class
 
@@ -314,11 +430,10 @@ if (this.isAtBottom(this.messagesContainer)) {
 - `lively-ai-workspace.js` - Remove wrapper methods
 - Update all call sites
 
-**Estimated effort:** 1 hour
 
 ---
 
-### 7. Temporary Message Handling
+### 8. Temporary Message Handling
 
 **Problem:** Only OpenCode has temporary message support
 
@@ -363,11 +478,10 @@ clearTemporaryMessages(sessionId) {
 **Files to change:**
 - `lively-opencode.js` - Add JSDoc explaining why
 
-**Estimated effort:** 30 minutes (documentation)
 
 ---
 
-### 8. Event Capture Deduplication
+### 9. Event Capture Deduplication
 
 **Problem:** Only realtime has deduplication logic
 
@@ -432,11 +546,10 @@ this.captureEvent('realtime', message, this.currentConversationId, {
 - `lively-chat.js` - Add deduplication to base `captureEvent()`
 - `openai-realtime-chat.js` - Remove local implementation, use base class
 
-**Estimated effort:** 2 hours
 
 ---
 
-### 9. Health Check / Reconnection
+### 10. Health Check / Reconnection
 
 **Problem:** Only OpenCode has health checking and auto-reconnect
 
@@ -494,13 +607,12 @@ checkServerHealth() {
 **Files to change:**
 - `lively-opencode.js` - Add JSDoc
 
-**Estimated effort:** 30 minutes (documentation)
 
 ---
 
 ## Architecture Improvements
 
-### 10. Extract Message Widget Manager
+### 11. Extract Message Widget Manager
 
 **Problem:** All three components manage message widgets independently
 
@@ -613,11 +725,10 @@ class LivelyOpencode extends LivelyChat {
 - `openai-realtime-chat.js`
 - `lively-opencode.js`
 
-**Estimated effort:** 4-6 hours
 
 ---
 
-### 11. Standardize Event Dispatching
+### 12. Standardize Event Dispatching
 
 **Problem:** Different event dispatching patterns across components
 
@@ -700,11 +811,10 @@ Format: `[component]:[action]-[entity]`
 - All components - Use `dispatchMessageEvent()` consistently
 - Add JSDoc to event emitters
 
-**Estimated effort:** 3-4 hours
 
 ---
 
-### 12. Unify Session Persistence
+### 13. Unify Session Persistence
 
 **Problem:** Three different persistence approaches
 
@@ -761,11 +871,10 @@ Workspace Session
 **Files to change:**
 - `architecture.md` - Add persistence strategy section
 
-**Estimated effort:** 1 hour (documentation)
 
 ---
 
-### 13. Extract Blackboard Pattern
+### 14. Extract Blackboard Pattern
 
 **Problem:** Blackboard is embedded in workspace component
 
@@ -942,11 +1051,10 @@ class LivelyAiWorkspace extends LivelyChat {
 **Files to change:**
 - `lively-ai-workspace.js`
 
-**Estimated effort:** 3-4 hours
 
 ---
 
-### 14. Toolset Interface
+### 15. Toolset Interface
 
 **Problem:** Two toolsets without documented interface
 
@@ -1055,13 +1163,231 @@ export class BasicToolset extends Toolset {
 **Files to create:**
 - `src/ai-workspace/doc/toolsets.md` - Toolset documentation
 
-**Estimated effort:** 3-4 hours
+
+---
+
+## UI/UX Improvements
+
+### 16. Auto-Scroll Message Container
+
+**Problem:** Message container scroll behavior is inconsistent
+
+**Requirements:**
+- Auto-scroll to bottom when new message arrives IF already scrolled to bottom
+- Keep scroll position stable if user scrolled up to read earlier messages
+- Handle edge case: rapidly arriving messages during streaming
+
+**Current Issue:**
+```javascript
+// Simple approach breaks when user is reading history:
+this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+```
+
+**Solution:** Smart scroll detection
+
+**Refactoring:**
+```javascript
+// Base class (lively-chat.js) - already has helpers
+isAtBottom(container, threshold = 50) {
+  const scrollTop = container.scrollTop;
+  const scrollHeight = container.scrollHeight;
+  const clientHeight = container.clientHeight;
+  return scrollHeight - scrollTop - clientHeight < threshold;
+}
+
+scrollToBottom(container, force = false, delay = 100) {
+  if (force || this.isAtBottom(container)) {
+    setTimeout(() => {
+      container.scrollTop = container.scrollHeight;
+    }, delay);
+  }
+}
+
+// Enhanced version for streaming:
+scrollToBottomSmooth(container, force = false) {
+  if (force || this.isAtBottom(container)) {
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth'
+    });
+  }
+}
+
+// Use in message rendering:
+async renderMessage(message) {
+  const wasAtBottom = this.isAtBottom(this.messagesContainer);
+  
+  // Render message...
+  const widget = await this.renderChatMessage(message, messageId);
+  
+  // Auto-scroll if was already at bottom
+  if (wasAtBottom) {
+    this.scrollToBottom(this.messagesContainer, false, 50);
+  }
+}
+```
+
+**Additional considerations:**
+- Debounce scroll during rapid streaming
+- User gesture detection (if user manually scrolls up, stop auto-scroll)
+- Visual indicator when new messages arrive while scrolled up
+
+**Files to change:**
+- `lively-chat.js` - Add `scrollToBottomSmooth()` helper
+- `lively-opencode.js` - Use smart scroll in `renderMessage()`
+- `lively-ai-workspace.js` - Use smart scroll in message handlers
+- `openai-realtime-chat.js` - Use smart scroll in `renderMessage()`
+
+**Reference:** [tasks.md](browse://src/ai-workspace/tasks.md#L21)
+
+
+
+---
+
+### 17. Session Metadata Sync
+
+**Problem:** OpenCode session costs and info not available in AI workspace sessions
+
+**Current behavior:**
+- OpenCode tracks: token usage, cost, file operations
+- Workspace sessions don't have access to this metadata
+- User can't see costs when browsing workspace sessions
+
+**Solution:** Sync metadata from OpenCode to workspace
+
+**Refactoring:**
+```javascript
+// When workspace switches sessions, fetch OpenCode metadata
+async switchToSession(workspaceId) {
+  const workspace = await this.db.workspaces.get(workspaceId);
+  
+  // Load OpenCode metadata
+  if (workspace.opencodeSessionId) {
+    const metadata = await this.opencodeComponent.getSessionMetadata(
+      workspace.opencodeSessionId
+    );
+    
+    // Store in workspace record
+    await this.db.workspaces.update(workspaceId, {
+      opencodeMetadata: metadata
+    });
+  }
+}
+
+// In lively-opencode.js, add metadata getter
+async getSessionMetadata(sessionId) {
+  const response = await fetch(`${this.serverUrl}/session/${sessionId}/info`);
+  const data = await response.json();
+  
+  return {
+    totalTokens: data.usage?.total_tokens || 0,
+    totalCost: data.usage?.total_cost || 0,
+    filesRead: data.files?.read || [],
+    filesWritten: data.files?.written || []
+  };
+}
+
+// Display in workspace UI
+updateSessionInfo() {
+  const metadata = this.currentWorkspace?.opencodeMetadata;
+  if (metadata) {
+    this.get('#sessionCost').textContent = `$${metadata.totalCost.toFixed(4)}`;
+    this.get('#sessionTokens').textContent = metadata.totalTokens;
+  }
+}
+```
+
+**Files to change:**
+- `lively-ai-workspace.js` - Add metadata sync on session switch
+- `lively-opencode.js` - Add `getSessionMetadata()` method
+- `lively-ai-workspace.html` - Add UI elements for metadata display
+
+**Reference:** [tasks.md](browse://src/ai-workspace/tasks.md#L24)
+
+
+
+---
+
+## Bug Fixes
+
+### 18. Method Render Double Bug
+
+**Problem:** Unclear bug related to method rendering
+
+**Status:** NEEDS INVESTIGATION
+
+**Action items:**
+1. Reproduce the bug (what symptoms?)
+2. Identify root cause
+3. Create test case
+4. Implement fix
+5. Verify fix with test
+
+**Reference:** [tasks.md](browse://src/ai-workspace/tasks.md#L23)
+
+
+
+---
+
+### 19. Voice Chat Timestamp Issues
+
+**Problem:** Voice chat entries not correctly timestamped, causing bad replay rendering
+
+**Current behavior:**
+- Realtime messages may have incorrect timestamps
+- Replay renders messages out of order
+- Timeline jumps during replay
+
+**Root cause candidates:**
+- Client-side timestamp vs server timestamp mismatch
+- Missing timestamp in some OpenAI events
+- Timestamp format inconsistency
+
+**Solution:** Audit timestamp handling in realtime chat
+
+**Investigation needed:**
+```javascript
+// Check where timestamps are assigned
+captureEvent(type, data, sessionId) {
+  this._eventCapture.push({
+    type,
+    data,
+    sessionId,
+    timestamp: Date.now(),  // Client timestamp
+    eventSource: this.constructor.name.toLowerCase()
+  });
+}
+
+// vs OpenAI event timestamps
+{
+  type: "conversation.item.created",
+  item: {
+    created_at: 1234567890  // Server timestamp?
+  }
+}
+```
+
+**Action items:**
+1. Log all timestamps during capture
+2. Compare client vs server timestamps
+3. Standardize on single timestamp source
+4. Add timestamp validation
+5. Test replay rendering with fixed timestamps
+
+**Files to investigate:**
+- `openai-realtime-chat.js` - Event capture and timestamp logic
+- `lively-chat.js` - Base event capture
+- `lively-ai-workspace.js` - Replay rendering
+
+**Reference:** [tasks.md](browse://src/ai-workspace/tasks.md#L20)
+
+
 
 ---
 
 ## Technical Debt
 
-### 15. Remove Duplicate Method
+### 20. Remove Duplicate Method
 
 **Problem:** CRITICAL BUG - Duplicate method definition
 
@@ -1089,13 +1415,11 @@ async updateOpenCodeMessage(msg) {
 **Files to change:**
 - `lively-ai-workspace.js` - Remove duplicate
 
-**Estimated effort:** 30 minutes
 
-**Priority:** CRITICAL - Do this first!
 
 ---
 
-### 16. Remove Commented Code
+### 17. Remove Commented Code
 
 **Problem:** Lots of commented-out code
 
@@ -1161,11 +1485,10 @@ disconnectedCallback() {
 - `openai-realtime-chat.js`
 - `lively-opencode.js`
 
-**Estimated effort:** 2 hours
 
 ---
 
-### 17. Remove Deprecated Aliases
+### 18. Remove Deprecated Aliases
 
 **Problem:** Backward compatibility aliases
 
@@ -1184,11 +1507,10 @@ get responses() {
 **Files to audit:**
 - All workspace components
 
-**Estimated effort:** 1 hour
 
 ---
 
-### 18. Fix or Remove Deprecated Methods
+### 19. Fix or Remove Deprecated Methods
 
 **Problem:** Methods marked deprecated
 
@@ -1207,136 +1529,157 @@ getSubmorph(selector) {  // #Deprecated, please use either "get" or "querySelect
 **Files to audit:**
 - Check usage of `getSubmorph()`
 
-**Estimated effort:** 1 hour
 
 ---
 
 ## Refactoring Roadmap
 
-### Phase 1: Critical Bugs (Week 1)
+### Phase 1: Critical Bugs
 
-**Priority: CRITICAL**
-
-1. ✅ **Remove duplicate `updateOpenCodeMessage`** (30 min)
+1. ✅ **Remove duplicate `updateOpenCodeMessage`** - COMPLETED
    - Impact: Bug fix
    - Risk: Low
    - Files: `lively-ai-workspace.js`
 
-2. ✅ **Fix or remove commented polling code** (1 hour)
+2. ✅ **Fix or remove commented polling code** - COMPLETED
    - Impact: Clean up technical debt
    - Risk: Low (already disabled)
    - Files: `lively-ai-workspace.js`
 
-### Phase 2: Naming Standardization (Week 2-3)
+### Phase 2: Naming Standardization
 
-**Priority: HIGH**
-
-3. ✅ **Rename debug method in OpenCode** (15 min)
+3. ✅ **Rename debug method in OpenCode** - COMPLETED
    - Impact: Consistency
    - Risk: Very low
    - Files: `lively-opencode.js`
 
-4. ✅ **Standardize container names** (2 hours)
+4. ✅ **Standardize container names** - COMPLETED
    - Impact: Consistency across components
    - Risk: Medium (many call sites)
    - Files: `lively-ai-workspace.js`, `.html`
 
-5. ✅ **Standardize method names** (15 min)
+5. ✅ **Standardize method names** - COMPLETED
    - Impact: Clearer API
    - Risk: Low (all call sites updated)
    - Files: All 3 chat components
 
-6. ✅ **Audit button handler naming** (2 hours)
+6. ✅ **Audit button handler naming** - COMPLETED
    - Impact: Consistency
    - Risk: Low
    - Files: All component HTML/JS
 
-### Phase 3: Code Duplication (Week 4-5)
+7. **Message rendering duplication**
+   - Impact: Single source of truth, reduced duplication
+   - Risk: Medium (affects core rendering logic)
+   - Files: `lively-chat.js`, `lively-opencode.js`, `lively-ai-workspace.js`
 
-**Priority: MEDIUM**
+### Phase 3: Code Duplication
 
-7. ✅ **Remove scroll wrapper methods** (1 hour)
+8. ✅ **Remove scroll wrapper methods** - COMPLETED
    - Impact: Less code to maintain
    - Risk: Low
    - Files: `lively-ai-workspace.js`
 
-8. ✅ **Move deduplication to base class** (2 hours)
+9. ✅ **Move deduplication to base class** - COMPLETED
    - Impact: Reusable pattern
    - Risk: Medium
    - Files: `lively-chat.js`, `openai-realtime-chat.js`
 
-9. ✅ **Document temporary messages** (30 min)
-   - Impact: Clarity
-   - Risk: None (docs only)
-   - Files: `lively-opencode.js`
+10. ✅ **Document temporary messages** - COMPLETED
+     - Impact: Clarity
+     - Risk: None (docs only)
+     - Files: `lively-opencode.js`
 
-10. ✅ **Document health checking** (30 min)
-    - Impact: Clarity
-    - Risk: None (docs only)
-    - Files: `lively-opencode.js`
+11. ✅ **Document health checking** - COMPLETED
+     - Impact: Clarity
+     - Risk: None (docs only)
+     - Files: `lively-opencode.js`
 
-### Phase 4: Architecture Improvements (Week 6-8)
+### Phase 4: Architecture Improvements
 
-**Priority: MEDIUM**
+12. ✅ **Extract MessageWidgetManager** - COMPLETED
+     - Impact: Reusable component
+     - Risk: High (major refactor)
+     - Files: New file + all 3 components
 
-11. ✅ **Extract MessageWidgetManager** (6 hours)
-    - Impact: Reusable component
-    - Risk: High (major refactor)
-    - Files: New file + all 3 components
+13. ✅ **Standardize event dispatching** - COMPLETED
+     - Impact: Clearer event contracts
+     - Risk: Medium
+     - Files: All components, new docs
 
-12. ✅ **Standardize event dispatching** (4 hours)
-    - Impact: Clearer event contracts
-    - Risk: Medium
-    - Files: All components, new docs
+14. ✅ **Document persistence strategies** - COMPLETED
+     - Impact: Clarity
+     - Risk: None (docs only)
+     - Files: `architecture.md`
 
-13. ✅ **Document persistence strategies** (1 hour)
-    - Impact: Clarity
-    - Risk: None (docs only)
-    - Files: `architecture.md`
+15. ✅ **Extract WorkspaceBlackboard** - COMPLETED
+     - Impact: Reusable coordination pattern
+     - Risk: Medium
+     - Files: New file + `lively-ai-workspace.js`
 
-14. ✅ **Extract WorkspaceBlackboard** (4 hours)
-    - Impact: Reusable coordination pattern
-    - Risk: Medium
-    - Files: New file + `lively-ai-workspace.js`
+16. ✅ **Create Toolset interface** - COMPLETED
+     - Impact: Extensible tool system
+     - Risk: Medium
+     - Files: `openai-realtime-chat-tools.js`, new docs
 
-15. ✅ **Create Toolset interface** (4 hours)
-    - Impact: Extensible tool system
-    - Risk: Medium
-    - Files: `openai-realtime-chat-tools.js`, new docs
+### Phase 5: UI/UX & Bug Fixes
 
-### Phase 5: Cleanup (Week 9)
+17. **Auto-scroll message container**
+     - Impact: Better UX during streaming
+     - Risk: Medium (affects all chat components)
+     - Files: All chat components
 
-**Priority: LOW**
+18. **Session metadata sync**
+     - Impact: Complete session information in workspace
+     - Risk: Low
+     - Files: `lively-ai-workspace.js`, `lively-opencode.js`
 
-16. ✅ **Remove commented code** (2 hours)
-    - Impact: Cleaner codebase
-    - Risk: Low
-    - Files: All components
+19. **Method render double bug**
+     - Impact: Bug fix
+     - Risk: TBD (needs investigation)
+     - Files: TBD
 
-17. ✅ **Remove deprecated aliases** (1 hour)
-    - Impact: Cleaner API
-    - Risk: Low
-    - Files: `openai-realtime-chat.js`
+20. **Voice chat timestamp issues**
+     - Impact: Correct replay rendering
+     - Risk: Medium
+     - Files: `openai-realtime-chat.js`, `lively-chat.js`
 
-18. ✅ **Document deprecated methods** (1 hour)
-    - Impact: Clarity
-    - Risk: None
-    - Files: `lively-morph.js`
+### Phase 6: Cleanup
+
+21. ✅ **Remove commented code** - COMPLETED
+     - Impact: Cleaner codebase
+     - Risk: Low
+     - Files: All components
+
+22. ✅ **Remove deprecated aliases** - COMPLETED
+     - Impact: Cleaner API
+     - Risk: Low
+     - Files: `openai-realtime-chat.js`
+
+23. ✅ **Document deprecated methods** - COMPLETED
+     - Impact: Clarity
+     - Risk: None
+     - Files: `lively-morph.js`
 
 ---
 
-## Estimated Total Effort
+## Progress Summary
 
-| Phase | Hours | Weeks |
-|-------|-------|-------|
-| Phase 1: Critical Bugs | 1.5 | 0.5 |
-| Phase 2: Naming | 7.25 | 1.5 |
-| Phase 3: Duplication | 5 | 1 |
-| Phase 4: Architecture | 19 | 3 |
-| Phase 5: Cleanup | 4 | 0.5 |
-| **Total** | **~37 hours** | **~6.5 weeks** |
+**Completed (Phases 1-4, 6):**
+- ✅ All critical bugs fixed
+- ✅ Naming standardization complete
+- ✅ Code duplication reduced
+- ✅ Major architecture improvements done
+- ✅ Cleanup tasks completed
 
-*Assumes 1 developer working ~6 hours/week on refactoring*
+**Remaining (Phase 5):**
+- 🔄 Message rendering duplication (#6, #7)
+- 🔄 Auto-scroll improvements (#17)
+- 🔄 Session metadata sync (#18)
+- 🔄 Method render double bug (#19)
+- 🔄 Voice chat timestamp issues (#20)
+
+**Next:** Message rendering duplication
 
 ---
 

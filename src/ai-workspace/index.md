@@ -80,6 +80,7 @@ All components use event capture system to maintain conversation history and ena
 
 ## Documentation
 
+- [Refactoring Guide](doc/refactoring.md) - **Consolidated refactoring tasks and architecture improvements**
 - [Architecture Overview](doc/ai-workspace.md) - Main architecture documentation
 - [AI Workspace Overview](doc/ai-workspace-overview.md) - High-level overview and concepts
 - [Task Management](doc/ai-workspace-tasks.md) - Task handling and coordination

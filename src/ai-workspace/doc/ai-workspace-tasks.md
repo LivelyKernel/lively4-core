@@ -232,25 +232,25 @@ This document tracks tasks related to implementing task division between the voi
 
 ---
 
-## Architecture Improvements
+## Architecture Improvements & Refactoring
 
-### Workspace Coordination
-- [ ] Extract `WorkspaceBlackboard` class
-- [ ] Create `MessageWidgetManager` class
-- [ ] Standardize event dispatching patterns
-- [ ] Unify terminology (workspace/conversation/session)
+**See [refactoring.md](refactoring.md) for complete architecture refactoring tasks.**
 
-### Message Rendering
+Most architecture improvements have been completed:
+- ✅ Extract `WorkspaceBlackboard` class
+- ✅ Extract `MessageWidgetManager` class  
+- ✅ Standardize event dispatching patterns
+- ✅ Standardize container names (`#messagesContainer`)
+- ✅ Standardize method names across components
+- ✅ Removed duplicate `updateOpenCodeMessage` in workspace
+- ✅ Renamed `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
+
+**Remaining tasks:**
 - [ ] Unify `setMessage()` APIs in lively-chat-message
 - [ ] Create extensible tool parser registry
 - [ ] Make `isLocalFunction()` configurable
 - [ ] Decompose `formatToolMessage()` method
-
-### Code Quality
-- [ ] Remove duplicate `updateOpenCodeMessage` in workspace
-- [ ] Rename `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
-- [ ] Standardize container names (`#messagesContainer`)
-- [ ] Standardize method names across components
+- [ ] Unify terminology (workspace/conversation/session) in documentation
 
 ---
 
