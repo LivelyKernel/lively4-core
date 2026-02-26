@@ -1672,7 +1672,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     // Display messages
-    this.displayMessages();
+    this.renderMessages();
     
     // Notify workspace that session is loaded with all data
     this.dispatchMessageEvent('opencode:session-loaded', {
@@ -2248,10 +2248,10 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
   
-  async displayMessages() {
+  async renderMessages() {  // Renamed for consistency
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
-    this.log("[opencode] displayMessages WARNING!");
+    this.log("[opencode] renderMessages WARNING! Only use on session switch");
     
     const container = this.get('#messagesContainer');
     if (!container) return;
@@ -3277,7 +3277,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     this.updateSessionList();
-    this.displayMessages();
+    this.renderMessages();
     this.updateServerButton();
     this.updateVariantButton();
     this.updateProjectSelector();

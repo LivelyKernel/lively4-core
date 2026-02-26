@@ -241,23 +241,23 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Incremental UI Updates', () => {
 
-    it('should use addMessageToUI and updateMessageInUI instead of displayMessages', async () => {
+    it('should use addMessageToUI and updateMessageInUI instead of renderMessages', async () => {
       // Test that OpenCode uses incremental updates during event streaming
       const opencode = await lively.create('lively-opencode');
       opencode.messagesUI = true; // Enable UI updates for this test
       opencode._replayMode = true; // Skip IndexedDB access (not available in CI)
 
       // Track method calls
-      let displayMessagesCalls = 0;
+      let renderMessagesCalls = 0;
       let addMessageCalls = 0;
       let updateMessageCalls = 0;
 
-      const originalDisplay = opencode.displayMessages.bind(opencode);
+      const originalDisplay = opencode.renderMessages.bind(opencode);
       const originalAdd = opencode.renderMessage.bind(opencode);
       const originalUpdate = opencode.updateOpenCodeMessage.bind(opencode);
 
-      opencode.displayMessages = async function() {
-        displayMessagesCalls++;
+      opencode.renderMessages = async function() {
+        renderMessagesCalls++;
         return await originalDisplay();
       };
 
@@ -303,8 +303,8 @@ describe('LivelyAiWorkspace', () => {
       // Verify updateOpenCodeMessage was called
       expect(updateMessageCalls).to.be.at.least(1, 'Should call updateOpenCodeMessage for streaming update');
 
-      // displayMessages should NOT be called during streaming
-      expect(displayMessagesCalls).to.equal(0, 'Should NOT call displayMessages during event streaming');
+      // renderMessages should NOT be called during streaming
+      expect(renderMessagesCalls).to.equal(0, 'Should NOT call renderMessages during event streaming');
     });
   });
 });

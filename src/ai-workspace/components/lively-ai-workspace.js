@@ -117,7 +117,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Initialize panel tabs (default to Board tab)
     this.switchPanelTab('board');
     
-    this.renderAllMessages()
+    this.renderMessages()
     
     this.log('AI Workspace initialized');
   }
@@ -307,7 +307,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       this.workspaceId = workspaceId;
 
-      await this.renderAllMessages();
+      await this.renderMessages();
 
       await this.updateSessionUI();
 
@@ -553,7 +553,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
-  async renderAllMessages() {
+  async renderMessages() {  // Renamed for consistency
 
     if (!this.messagesContainer || !this.workspaceId) return;
 

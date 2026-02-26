@@ -222,7 +222,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     await this.setupModelSelecton()
     this.setupUI();
-    await this.renderConversation();
+    await this.renderMessages();
     lively.ensureID(this);
 
     // Don't auto-connect - wait for user to click "Start"
@@ -698,8 +698,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return messageData;
   }
 
-  async renderConversation() {
-    this.log(`[realtime] renderConversation: full redisplay (${this.conversation.length} messages)`);
+  async renderMessages() {  // Renamed for consistency
+    this.log(`[realtime] renderMessages: full redisplay (${this.conversation.length} messages)`);
     for (let ea of this.conversation) {
       await this.renderMessage(ea);
     }
@@ -825,7 +825,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.clearEventCapture();
 
       this.get('#messagesContainer').innerHTML = '';
-      await this.renderConversation();
+      await this.renderMessages();
 
       // Disconnect if currently connected - user can press Start to reconnect with this conversation
       if (this.peerConnection && this.isStreamingActive) {
