@@ -278,7 +278,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         if (workspace.conversationId) {
           await this.realtimeComponent.setConversation(workspace.conversationId);
         } else {
-          this.realtimeComponent.responses.innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
+          this.realtimeComponent.get('#messagesContainer').innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
         }
       }
 

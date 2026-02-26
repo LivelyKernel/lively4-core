@@ -138,9 +138,10 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     component.conversation = [];
     component.messageSequence = 0;
 
-    // Clear responses container
-    if (component.responses) {
-      component.responses.innerHTML = '';
+    // Clear messages container
+    const messagesContainer = component.get('#messagesContainer');
+    if (messagesContainer) {
+      messagesContainer.innerHTML = '';
     }
   });
 

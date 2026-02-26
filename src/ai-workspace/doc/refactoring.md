@@ -1440,28 +1440,6 @@ disconnectedCallback() {
 
 ---
 
-### 22. Remove Deprecated Aliases
-
-**Problem:** Backward compatibility aliases
-
-```javascript
-// openai-realtime-chat.js
-get responses() {
-  return this.messagesContainer;  // Backward compatibility alias
-}
-```
-
-**Action:**
-1. Search codebase for usage of `responses`
-2. If used, replace with `messagesContainer`
-3. If not used, remove the alias
-
-**Files to audit:**
-- All workspace components
-
-
----
-
 ### 23. Fix or Remove Deprecated Methods
 
 **Problem:** Methods marked deprecated

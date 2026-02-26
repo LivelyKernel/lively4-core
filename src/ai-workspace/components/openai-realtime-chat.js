@@ -1785,9 +1785,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     super.cleanupSession();
 
     // Clear conversation display
-    const responses = this.get('#responses');
-    if (responses) {
-      responses.innerHTML = '';
+    const messagesContainer = this.get('#messagesContainer');
+    if (messagesContainer) {
+      messagesContainer.innerHTML = '';
     }
 
     // Clear conversation data

@@ -1159,19 +1159,7 @@ applyPositioning(messageObj) {
 
 ## Potential Unused Code
 
-### 1. **Deprecated Aliases**
-
-```javascript
-// openai-realtime-chat.js
-get responses() {
-  return this.messagesContainer;  // Backward compatibility alias
-}
-```
-
-**Status:** Marked as backward compatibility
-**Recommendation:** Check if workspace still uses `responses`, if not remove
-
-### 2. **Deprecated getSubmorph**
+### 1. **Deprecated getSubmorph**
 
 ```javascript
 // lively-morph.js
@@ -1183,7 +1171,7 @@ getSubmorph(selector) {  // #Deprecated, please use either "get" or "querySelect
 **Status:** Marked deprecated but still used by `get()`
 **Recommendation:** Keep for now as internal implementation
 
-### 3. **Commented Out Code**
+### 2. **Commented Out Code**
 
 ```javascript
 // lively-ai-workspace.js (lines 793-804)
@@ -1201,7 +1189,7 @@ getSubmorph(selector) {  // #Deprecated, please use either "get" or "querySelect
 **Status:** Disabled polling for connection status
 **Recommendation:** Remove or fix the issue and re-enable
 
-### 4. **Old Event Handling**
+### 3. **Old Event Handling**
 
 ```javascript
 // openai-realtime-chat.js (lines 1300-1307)
@@ -1216,7 +1204,7 @@ case "response.audio.delta":
 **Status:** Commented debug logging
 **Recommendation:** Remove commented code
 
-### 5. **Duplicate updateOpenCodeMessage Methods**
+### 4. **Duplicate updateOpenCodeMessage Methods**
 
 ```javascript
 // lively-ai-workspace.js
