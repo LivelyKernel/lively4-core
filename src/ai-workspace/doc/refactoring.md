@@ -1,60 +1,30 @@
-# AI Workspace Refactoring Guide
+# AI Workspace Refactoring
 
-**Consolidated refactoring tasks and architecture improvements for AI Workspace**
+**Consolidated refactoring tasks and architecture improvements**
 
-**Last Updated:** 2026-02-26  
-**Target Audience:** Human-Agent development teams
+**Last Updated:** 2026-02-26
 
-This document consolidates all refactoring tasks from:
-- `tasks.md` - Daily task tracking
-- `ai-workspace-tasks.md` - Feature development tasks
-- `ai-workspace.md` - Architecture documentation
+## Open Tasks
 
----
-
-## Status
-
-**✅ Completed:**
-- Phase 1: Critical bugs fixed
-- Phase 2: Naming standardization complete
-- Phase 3: Code duplication reduced
-- Phase 4: Major architecture improvements
-- Phase 6: Cleanup tasks done
-
-**🔄 In Progress:**
-- Phase 5: UI/UX improvements & bug fixes
-  - Message rendering duplication
-  - Auto-scroll behavior
-  - Session metadata sync
-  - Bug investigations
-
-**Next:** Message rendering duplication
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Naming & Terminology](#naming--terminology)
-3. [Code Duplication](#code-duplication)
-4. [Architecture Improvements](#architecture-improvements)
-5. [Technical Debt](#technical-debt)
-6. [Refactoring Roadmap](#refactoring-roadmap)
-
----
-
-## Overview
-
-The AI workspace has grown organically, resulting in inconsistencies across the three main chat components:
-- `LivelyAiWorkspace` (coordinator)
-- `OpenaiRealtimeChat` (voice agent)
-- `LivelyOpencode` (coding agent)
-
-This document identifies opportunities to:
-- **Reduce redundancy** - Move shared logic to base class
-- **Standardize interfaces** - Consistent naming and patterns
-- **Extract patterns** - Reusable components and utilities
-- **Remove technical debt** - Clean up deprecated/commented code
+- [ ] #3 Session vs Conversation Terminology
+- [ ] #5 Button Handler Naming
+- [ ] #6 Message Rendering Duplication
+- [ ] #7 Scroll Wrapper Methods
+- [ ] #8 Temporary Message Handling
+- [ ] #9 Event Capture Deduplication
+- [ ] #10 Health Check / Reconnection
+- [ ] #11 Extract Message Widget Manager
+- [ ] #12 Standardize Event Dispatching
+- [ ] #13 Unify Session Persistence
+- [ ] #14 Extract Blackboard Pattern
+- [ ] #15 Toolset Interface
+- [ ] #16 Auto-Scroll Message Container
+- [ ] #17 Session Metadata Sync
+- [ ] #18 Method Render Double Bug
+- [ ] #19 Voice Chat Timestamp Issues
+- [ ] #21 Remove Commented Code
+- [ ] #22 Remove Deprecated Aliases
+- [ ] #23 Fix or Remove Deprecated Methods
 
 ---
 
@@ -1387,7 +1357,7 @@ captureEvent(type, data, sessionId) {
 
 ## Technical Debt
 
-### 20. Remove Duplicate Method
+### 20. ✅ Remove Duplicate Method - COMPLETED
 
 **Problem:** CRITICAL BUG - Duplicate method definition
 
@@ -1419,7 +1389,7 @@ async updateOpenCodeMessage(msg) {
 
 ---
 
-### 17. Remove Commented Code
+### 21. Remove Commented Code
 
 **Problem:** Lots of commented-out code
 
@@ -1488,7 +1458,7 @@ disconnectedCallback() {
 
 ---
 
-### 18. Remove Deprecated Aliases
+### 22. Remove Deprecated Aliases
 
 **Problem:** Backward compatibility aliases
 
@@ -1510,7 +1480,7 @@ get responses() {
 
 ---
 
-### 19. Fix or Remove Deprecated Methods
+### 23. Fix or Remove Deprecated Methods
 
 **Problem:** Methods marked deprecated
 
@@ -1529,157 +1499,6 @@ getSubmorph(selector) {  // #Deprecated, please use either "get" or "querySelect
 **Files to audit:**
 - Check usage of `getSubmorph()`
 
-
----
-
-## Refactoring Roadmap
-
-### Phase 1: Critical Bugs
-
-1. ✅ **Remove duplicate `updateOpenCodeMessage`** - COMPLETED
-   - Impact: Bug fix
-   - Risk: Low
-   - Files: `lively-ai-workspace.js`
-
-2. ✅ **Fix or remove commented polling code** - COMPLETED
-   - Impact: Clean up technical debt
-   - Risk: Low (already disabled)
-   - Files: `lively-ai-workspace.js`
-
-### Phase 2: Naming Standardization
-
-3. ✅ **Rename debug method in OpenCode** - COMPLETED
-   - Impact: Consistency
-   - Risk: Very low
-   - Files: `lively-opencode.js`
-
-4. ✅ **Standardize container names** - COMPLETED
-   - Impact: Consistency across components
-   - Risk: Medium (many call sites)
-   - Files: `lively-ai-workspace.js`, `.html`
-
-5. ✅ **Standardize method names** - COMPLETED
-   - Impact: Clearer API
-   - Risk: Low (all call sites updated)
-   - Files: All 3 chat components
-
-6. ✅ **Audit button handler naming** - COMPLETED
-   - Impact: Consistency
-   - Risk: Low
-   - Files: All component HTML/JS
-
-7. **Message rendering duplication**
-   - Impact: Single source of truth, reduced duplication
-   - Risk: Medium (affects core rendering logic)
-   - Files: `lively-chat.js`, `lively-opencode.js`, `lively-ai-workspace.js`
-
-### Phase 3: Code Duplication
-
-8. ✅ **Remove scroll wrapper methods** - COMPLETED
-   - Impact: Less code to maintain
-   - Risk: Low
-   - Files: `lively-ai-workspace.js`
-
-9. ✅ **Move deduplication to base class** - COMPLETED
-   - Impact: Reusable pattern
-   - Risk: Medium
-   - Files: `lively-chat.js`, `openai-realtime-chat.js`
-
-10. ✅ **Document temporary messages** - COMPLETED
-     - Impact: Clarity
-     - Risk: None (docs only)
-     - Files: `lively-opencode.js`
-
-11. ✅ **Document health checking** - COMPLETED
-     - Impact: Clarity
-     - Risk: None (docs only)
-     - Files: `lively-opencode.js`
-
-### Phase 4: Architecture Improvements
-
-12. ✅ **Extract MessageWidgetManager** - COMPLETED
-     - Impact: Reusable component
-     - Risk: High (major refactor)
-     - Files: New file + all 3 components
-
-13. ✅ **Standardize event dispatching** - COMPLETED
-     - Impact: Clearer event contracts
-     - Risk: Medium
-     - Files: All components, new docs
-
-14. ✅ **Document persistence strategies** - COMPLETED
-     - Impact: Clarity
-     - Risk: None (docs only)
-     - Files: `architecture.md`
-
-15. ✅ **Extract WorkspaceBlackboard** - COMPLETED
-     - Impact: Reusable coordination pattern
-     - Risk: Medium
-     - Files: New file + `lively-ai-workspace.js`
-
-16. ✅ **Create Toolset interface** - COMPLETED
-     - Impact: Extensible tool system
-     - Risk: Medium
-     - Files: `openai-realtime-chat-tools.js`, new docs
-
-### Phase 5: UI/UX & Bug Fixes
-
-17. **Auto-scroll message container**
-     - Impact: Better UX during streaming
-     - Risk: Medium (affects all chat components)
-     - Files: All chat components
-
-18. **Session metadata sync**
-     - Impact: Complete session information in workspace
-     - Risk: Low
-     - Files: `lively-ai-workspace.js`, `lively-opencode.js`
-
-19. **Method render double bug**
-     - Impact: Bug fix
-     - Risk: TBD (needs investigation)
-     - Files: TBD
-
-20. **Voice chat timestamp issues**
-     - Impact: Correct replay rendering
-     - Risk: Medium
-     - Files: `openai-realtime-chat.js`, `lively-chat.js`
-
-### Phase 6: Cleanup
-
-21. ✅ **Remove commented code** - COMPLETED
-     - Impact: Cleaner codebase
-     - Risk: Low
-     - Files: All components
-
-22. ✅ **Remove deprecated aliases** - COMPLETED
-     - Impact: Cleaner API
-     - Risk: Low
-     - Files: `openai-realtime-chat.js`
-
-23. ✅ **Document deprecated methods** - COMPLETED
-     - Impact: Clarity
-     - Risk: None
-     - Files: `lively-morph.js`
-
----
-
-## Progress Summary
-
-**Completed (Phases 1-4, 6):**
-- ✅ All critical bugs fixed
-- ✅ Naming standardization complete
-- ✅ Code duplication reduced
-- ✅ Major architecture improvements done
-- ✅ Cleanup tasks completed
-
-**Remaining (Phase 5):**
-- 🔄 Message rendering duplication (#6, #7)
-- 🔄 Auto-scroll improvements (#17)
-- 🔄 Session metadata sync (#18)
-- 🔄 Method render double bug (#19)
-- 🔄 Voice chat timestamp issues (#20)
-
-**Next:** Message rendering duplication
 
 ---
 
@@ -1722,35 +1541,6 @@ For each refactoring:
 - Document breaking changes
 
 **Rollback Plan:**
-- Git branches for each phase
-- Can revert phase without affecting others
-- Document what changed for each phase
-
----
-
-## Success Metrics
-
-After refactoring:
-
-1. **Code Metrics:**
-   - Reduced LOC (remove duplication)
-   - Fewer methods per component
-   - Higher code reuse
-
-2. **Developer Experience:**
-   - Easier to add new chat components
-   - Clearer API surface
-   - Better documentation
-
-3. **Maintainability:**
-   - Fewer bugs (less duplication)
-   - Easier to debug (clearer patterns)
-   - Faster onboarding for new developers
-
----
-
-**End of Refactoring Guide**
-
-*This is a living document - update as refactorings are completed*
-
-*Mark items with ✅ when done, add notes on lessons learned*
+- Use git branches for major refactorings
+- Document what changed
+- Keep tests passing throughout
