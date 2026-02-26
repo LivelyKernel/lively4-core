@@ -87,7 +87,7 @@
   overflow: hidden;
 }
 
-.shared-messages-pane {
+.messages-container {
   flex: 1.5;
   min-height: 0;
   overflow-y: auto;
@@ -97,7 +97,7 @@
   display: block;
 }
 
-.shared-messages-pane lively-chat-message {
+.messages-container lively-chat-message {
   display: block;
   margin-bottom: 5px;
 }
@@ -328,7 +328,7 @@
     </div>
     <lively-separator></lively-separator>
 
-    <div class="shared-messages-pane" id="sharedMessagesPane">
+    <div class="messages-container" id="messagesContainer">
       <!-- Unified messages from both audio and code sources displayed here -->
     </div>
     <lively-separator></lively-separator>

@@ -921,36 +921,29 @@ AI responds → response.audio.delta (audio chunks)
 
 ## Refactoring Opportunities
 
-### 1. **Message Rendering Inconsistencies**
+### 1. ✅ **Message Rendering Inconsistencies** - COMPLETED
 
-**Issue:** Different components have different message container names
+**Status:** All components now use consistent naming
 
-- `lively-ai-workspace`: `#sharedMessagesPane`
-- `openai-realtime-chat`: `#messagesContainer` (alias: `responses`)
+- `lively-ai-workspace`: `#messagesContainer`
+- `openai-realtime-chat`: `#messagesContainer`
 - `lively-opencode`: `#messagesContainer`
 
-**Recommendation:**
-- Standardize on `#messagesContainer` across all components
-- Remove `responses` alias from realtime-chat
-- Update workspace to use consistent naming
+All components now use the standardized `#messagesContainer` naming.
+See [refactoring.md](refactoring.md#1-inconsistent-container-names) for details.
 
-### 2. **Duplicate Scroll Logic**
+### 2. ✅ **Duplicate Scroll Logic** - COMPLETED
 
-**Issue:** Multiple scroll-to-bottom implementations
+**Status:** Wrapper methods removed, using base class directly
 
+All components now use base class methods directly:
 ```javascript
-// Workspace has wrappers:
-isSharedPaneAtBottom(threshold)
-scrollSharedPaneToBottom(force)
-
-// These just call base class:
-isAtBottom(this.sharedMessagesPane, threshold)
-scrollToBottom(this.sharedMessagesPane, force)
+// All components use:
+isAtBottom(this.messagesContainer, threshold)
+scrollToBottom(this.messagesContainer, force)
 ```
 
-**Recommendation:**
-- Remove wrapper methods, use base class directly
-- Or make wrappers consistent across all components
+Removed unnecessary wrapper methods `isSharedPaneAtBottom()` and `scrollSharedPaneToBottom()`.
 
 ### 3. **Inconsistent Method Naming**
 
@@ -1697,7 +1690,7 @@ Document complete lifecycle:
 3. Rename `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
 
 **Phase 2 - Standardization:**
-4. Standardize container names (`#messagesContainer`)
+4. ✅ Standardize container names (`#messagesContainer`) - COMPLETED
 5. Standardize method names (`renderMessages`, `renderMessage`, `updateMessage`)
 6. Standardize button handler names (`on[ButtonId]Button`)
 7. Remove or document backward compatibility aliases

@@ -55,8 +55,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Initialize MD*/
   // #override
   updateMessagesDebugState() {
-    if (this.sharedMessagesPane) {
-      Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => {
+    if (this.messagesContainer) {
+      Array.from(this.messagesContainer.querySelectorAll("lively-chat-message")).forEach(ea => {
         ea.showDebug = this.showDebug;
       });
     }
@@ -88,7 +88,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.realtimeComponent = null;
     this.sessionsComponent = this.get('#sessionsComponent');
 
-    this.sharedMessagesPane = this.get('#sharedMessagesPane');
+    this.messagesContainer = this.get('#messagesContainer');
 
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;
@@ -416,7 +416,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
   // #important
   async createOpenCodeMessage(msg) {
-    if (!this.sharedMessagesPane || !msg) return;
+    if (!this.messagesContainer || !msg) return;
        this.log(`[workspace] createOpenCodeMessage`, msg);
     
     const msgId = msg.info?.id;
@@ -438,14 +438,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
     chatMessage.showDebug = this.showDebug;
 
-    this.sharedMessagesPane.appendChild(chatMessage);
+    this.messagesContainer.appendChild(chatMessage);
     this.displayedMessages.set(msgId, chatMessage);
 
     this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
 
     // Skip scrolling during batch rendering to avoid layout thrashing
     if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
+      this.scrollToBottom(this.messagesContainer);
     }
   }
 
@@ -555,7 +555,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
   async renderAllMessages() {
 
-    if (!this.sharedMessagesPane || !this.workspaceId) return;
+    if (!this.messagesContainer || !this.workspaceId) return;
 
     this.displayedMessages.clear();
     this.realtimeMessageWidgets.clear();
@@ -580,19 +580,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Clear batch rendering flag and scroll once at the end
     this._batchRendering = false;
-    this.scrollSharedPaneToBottom(true);
+    this.scrollToBottom(this.messagesContainer, true);
 
-  }
-
-
-  // Wrapper for base class method for backwards compatibility
-  isSharedPaneAtBottom(threshold = 50) {
-    return this.isAtBottom(this.sharedMessagesPane, threshold);
-  }
-
-  // Wrapper for base class method for backwards compatibility
-  scrollSharedPaneToBottom(force = false) {
-    this.scrollToBottom(this.sharedMessagesPane, force);
   }
 
   /*MD ## Live Message Updates MD*/
@@ -622,7 +611,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       source: 'audio',
       streamType: 'realtime'
     });
-    this.scrollSharedPaneToBottom();
+    this.scrollToBottom(this.messagesContainer);
   }
 
   // #important
@@ -637,11 +626,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     widget.showDebug = this.showDebug;
 
     this.realtimeMessageWidgets.set(item_id, widget);
-    this.sharedMessagesPane.appendChild(widget);
+    this.messagesContainer.appendChild(widget);
 
     // Skip scrolling during batch rendering to avoid layout thrashing
     if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
+      this.scrollToBottom(this.messagesContainer);
     }
   }
 
@@ -657,11 +646,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     widget.showDebug = this.showDebug;
 
     this.realtimeMessageWidgets.set(messageId, widget);
-    this.sharedMessagesPane.appendChild(widget);
+    this.messagesContainer.appendChild(widget);
 
     // Skip scrolling during batch rendering to avoid layout thrashing
     if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
+      this.scrollToBottom(this.messagesContainer);
     }
   }
 
@@ -679,7 +668,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Update widget - pass the FULL message object, don't create partial copies
     await widget.setMessage(messageData);
-    this.scrollSharedPaneToBottom();
+    this.scrollToBottom(this.messagesContainer);
 
     // Trigger debounced save for message stream backup
     if (this.isEventStorageEnabled) {
@@ -1557,7 +1546,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const replayWorkspaceId = `replay-workspace-${Date.now()}`;
     this.workspaceId = replayWorkspaceId;
 
-    this.get('#sharedMessagesPane').innerHTML = '';
+    this.get('#messagesContainer').innerHTML = '';
     this.displayedMessages.clear();
     this.realtimeMessageWidgets.clear();
 
@@ -1598,7 +1587,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.workspaceId = null;
 
-    this.get('#sharedMessagesPane').innerHTML = '';
+    this.get('#messagesContainer').innerHTML = '';
     this.displayedMessages.clear();
     this.realtimeMessageWidgets.clear();
 
