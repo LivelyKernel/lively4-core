@@ -1,7 +1,7 @@
 import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
-import { WorkspaceToolset } from "./openai-realtime-chat-tools.js";
+import { WorkspaceToolset } from "./realtime-chat-tools/workspace-toolset.js";
 
 import OpenaiRealtimeChat from './openai-realtime-chat.js';
 
@@ -1386,6 +1386,18 @@ export default class LivelyAiWorkspace extends LivelyChat {
       lively.preferences.set("ai-workspace-prompt", promptCombobox.value);
       await this.applyPromptSelection(promptCombobox.value);
     });
+  }
+
+  async onPromptEditButton() {
+    const promptCombobox = this.get("#promptCombobox");
+    if (!promptCombobox) return;
+    
+    const promptName = promptCombobox.value;
+    const filename = promptName.endsWith('.txt') ? promptName : `${promptName}.txt`;
+    const promptPath = lively4url + `/src/config/prompts/${filename}`;
+    
+    // Open in browser for live editing
+    await lively.openBrowser(promptPath, true);
   }
 
   async loadAvailablePrompts() {

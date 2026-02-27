@@ -712,10 +712,10 @@ Code Agent: lively4_evaluate-code → ? (different session?)
 ## References
 
 - [AI Workspace Architecture](./ai-workspace.md) - Main architecture documentation
-- [OpenAI Realtime Chat Tools](browse://src/components/tools/openai-realtime-chat-tools.js) - Voice agent toolset
+- [Realtime Chat Toolsets](browse://src/ai-workspace/components/realtime-chat-tools/) - Voice agent toolset directory
 - [AI Workspace Public API](browse://src/components/tools/lively-ai-workspace.js#1048) - Coordination API
-- [BasicToolset](browse://src/components/tools/openai-realtime-chat-tools.js#97) - Voice agent tools
-- [WorkspaceToolset](browse://src/components/tools/openai-realtime-chat-tools.js#190) - Workspace integration tools
+- [BasicToolset](browse://src/ai-workspace/components/realtime-chat-tools/basic-toolset.js) - Voice agent tools
+- [WorkspaceToolset](browse://src/ai-workspace/components/realtime-chat-tools/workspace-toolset.js) - Workspace integration tools
 
 ---
 

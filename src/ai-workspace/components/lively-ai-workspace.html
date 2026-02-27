@@ -106,8 +106,14 @@
   color: #495057;
 }
 
+.prompt-controls {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
 .prompt-selector input-combobox {
-  width: 100%;
+  flex: 1;
 }
 
 .prompt-selector input-combobox input {
@@ -116,6 +122,28 @@
   font-size: 12px;
   border: 1px solid #ced4da;
   border-radius: 3px;
+}
+
+.prompt-edit-button {
+  padding: 6px 10px;
+  font-size: 11px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  background: white;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.prompt-edit-button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #212529;
+}
+
+.prompt-edit-button i {
+  font-size: 12px;
 }
 
 .messages-container {
@@ -357,7 +385,12 @@
     <div class="sidebar">
       <div class="prompt-selector">
         <label class="prompt-label">Prompt</label>
-        <input-combobox id="promptCombobox"></input-combobox>
+        <div class="prompt-controls">
+          <input-combobox id="promptCombobox"></input-combobox>
+          <button class="prompt-edit-button" id="promptEditButton" title="Edit prompt file">
+            <i class="fa fa-pencil"></i>
+          </button>
+        </div>
       </div>
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>

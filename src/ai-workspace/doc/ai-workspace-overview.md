@@ -245,7 +245,7 @@ PLANNING MODE:
 ```
 
 **Implementation:**
-- Generate tool descriptions from openai-realtime-chat-tools.js
+- Generate tool descriptions from realtime-chat-tools/ toolset classes
 - Fetch MCP tool descriptions from lively4-server/tools.json
 - Build comprehensive prompt in workspace initialization
 - Update realtime-chat configuration

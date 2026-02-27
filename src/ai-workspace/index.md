@@ -48,9 +48,10 @@ Integrated AI coding assistance for Lively4, providing multiple AI agents that w
   - Session links (project focus, files read/written)
   - Reusable across AI components
 
-- **[openai-realtime-chat-tools](components/openai-realtime-chat-tools.js)** - Tool integration for OpenAI Realtime API
-  - BasicToolset - Standalone tools for openai-realtime-chat
-  - WorkspaceToolset - Coordinated tools for lively-ai-workspace
+- **Realtime Chat Toolsets** - Tool integration for OpenAI Realtime API
+  - [BasicToolset](components/realtime-chat-tools/basic-toolset.js) - Standalone tools (code evaluation, helpers)
+  - [WorkspaceToolset](components/realtime-chat-tools/workspace-toolset.js) - Workspace integration (OpenCode tasks)
+  - [CompositeToolset](components/realtime-chat-tools/composite-toolset.js) - Tool composition
 
 - **[chat-tool-helpers](components/chat-tool-helpers.js)** - Helper utilities for tool rendering
   - Common functions for tool display and interaction

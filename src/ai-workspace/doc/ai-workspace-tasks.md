@@ -392,7 +392,7 @@ Most architecture improvements have been completed:
 - [AI Workspace Architecture](./ai-workspace.md) - Main architecture documentation
 - [AI Workspace Modes](./ai-workspace-modes.md) - Task division strategies
 - [CLAUDE.md](../../CLAUDE.md) - Development guidelines
-- [OpenAI Realtime Chat Tools](browse://src/components/tools/openai-realtime-chat-tools.js)
+- [Realtime Chat Toolsets](browse://src/ai-workspace/components/realtime-chat-tools/)
 - [AI Workspace Component](browse://src/components/tools/lively-ai-workspace.js)
 
 ---

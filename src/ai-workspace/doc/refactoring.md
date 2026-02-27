@@ -1011,7 +1011,7 @@ class LivelyAiWorkspace extends LivelyChat {
 **Problem:** Two toolsets without documented interface
 
 ```javascript
-// openai-realtime-chat-tools.js
+// realtime-chat-tools/
 class BasicToolset { ... }
 class WorkspaceToolset { ... }
 class CompositeToolset { ... }
@@ -1110,7 +1110,7 @@ export class BasicToolset extends Toolset {
 ```
 
 **Files to change:**
-- `openai-realtime-chat-tools.js` - Add base class, update subclasses
+- `realtime-chat-tools/*.js` - Add base class, update subclasses
 
 **Files to create:**
 - `src/ai-workspace/doc/toolsets.md` - Toolset documentation
