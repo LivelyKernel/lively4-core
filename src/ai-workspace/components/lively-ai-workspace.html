@@ -87,6 +87,37 @@
   overflow: hidden;
 }
 
+/* Prompt selector - matching OpenCode style */
+.prompt-selector {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prompt-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #495057;
+}
+
+.prompt-selector input-combobox {
+  width: 100%;
+}
+
+.prompt-selector input-combobox input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
 .messages-container {
   flex: 1.5;
   min-height: 0;
@@ -324,6 +355,10 @@
 <div class="main-layout">
   <div class="workspace-content">
     <div class="sidebar">
+      <div class="prompt-selector">
+        <label class="prompt-label">Prompt</label>
+        <input-combobox id="promptCombobox"></input-combobox>
+      </div>
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>
     <lively-separator></lively-separator>

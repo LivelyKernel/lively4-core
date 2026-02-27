@@ -111,6 +111,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     await this.setupSessionsComponent();
     
+    await this.setupPromptSelection();
+    
     // Initialize panel tabs (default to Board tab)
     this.switchPanelTab('board');
     
@@ -730,11 +732,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.messagesUI = false;
         this.realtimeComponent.log = (...args) => this.log(...args)
 
-        // Configure as workspace bridge - focused on forwarding to coding agent
-        var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
-        // lively.notify("prompt", prompt)
-        this.realtimeComponent.setInstructions(prompt);
-
+        // Note: Prompt is now user-configurable via dropdown in realtime component
+        // Toolset configured for workspace integration
         this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
         // Setup hooks BEFORE adding to DOM to ensure they're active from the start
@@ -1358,6 +1357,80 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Called after switching sessions - refresh the sessions list to update active state
     await this.renderSessionsList();
     this.log('[workspace] Session UI updated');
+  }
+
+  /*MD ## Prompt Selection Setup MD*/
+
+  async setupPromptSelection() {
+    const promptCombobox = this.get("#promptCombobox");
+    if (!promptCombobox) return;
+    
+    // Dynamically load all .txt files from prompts directory
+    const prompts = await this.loadAvailablePrompts();
+    
+    // Strip .txt extension for display
+    const displayNames = prompts.map(f => f.replace(/\.txt$/, ''));
+    promptCombobox.setOptions(displayNames);
+    
+    // Load saved preference (without .txt) or use first available prompt
+    const savedPrompt = lively.preferences.get("ai-workspace-prompt") 
+      || displayNames[0] 
+      || "ai-workspace-audio-chat";
+    promptCombobox.value = savedPrompt;
+    
+    // Apply current prompt (add .txt back for file loading)
+    await this.applyPromptSelection(savedPrompt);
+    
+    // Listen for changes
+    promptCombobox.addEventListener("change", async () => {
+      lively.preferences.set("ai-workspace-prompt", promptCombobox.value);
+      await this.applyPromptSelection(promptCombobox.value);
+    });
+  }
+
+  async loadAvailablePrompts() {
+
+      const promptsDir = lively4url + "/src/config/prompts/";
+      
+      // Get directory listing from lively4-server
+      const stat = await lively.files.stats(promptsDir);
+      
+      if (!stat || !stat.contents) {
+        throw new Error("Failed to read prompts directory");
+      }
+      
+      // Filter for .txt files and extract just the names
+      return stat.contents
+        .filter(f => f.type === 'file' && f.name.endsWith('.txt'))
+        .map(f => f.name);
+        
+    
+  }
+
+  async applyPromptSelection(promptName) {
+    if (!this.realtimeComponent) {
+      this.log('[workspace] Realtime component not ready yet');
+      return;
+    }
+    
+    try {
+      // Add .txt extension if not already present
+      const filename = promptName.endsWith('.txt') ? promptName : `${promptName}.txt`;
+      
+      const prompt = await lively.files.loadFile(lively4url + `/src/config/prompts/${filename}`);
+      this.realtimeComponent.setInstructions(prompt);
+      this.log(`[workspace] Prompt loaded: ${filename}`);
+      
+      // Notify user
+      if (this.realtimeComponent.isDataChannelOpen && this.realtimeComponent.isDataChannelOpen()) {
+        lively.notify("Prompt applied", "Session updated with new prompt");
+      } else {
+        lively.notify("Prompt loaded", "Will apply on next connection");
+      }
+    } catch (error) {
+      console.error("Failed to load prompt:", error);
+      lively.notify("Error", `Failed to load prompt: ${promptName}`);
+    }
   }
 
   /*MD ## Session Event Handlers MD*/
