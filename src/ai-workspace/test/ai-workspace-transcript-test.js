@@ -72,9 +72,9 @@ xdescribe('AI Workspace Transcript Display', function() {
     expect(workspace.realtimeComponent.tagName.toLowerCase()).to.equal('openai-realtime-chat');
   });
 
-  it('should have shared messages pane', () => {
-    expect(workspace.sharedMessagesPane).to.exist;
-    expect(workspace.sharedMessagesPane.id).to.equal('sharedMessagesPane');
+  it('should have messages container', () => {
+    expect(workspace.messagesContainer).to.exist;
+    expect(workspace.messagesContainer.id).to.equal('messagesContainer');
   });
 
   it('should have ContextJS hooks active', () => {
@@ -106,8 +106,8 @@ xdescribe('AI Workspace Transcript Display', function() {
       expect(workspace.currentLiveSharedMessageElement).to.exist;
       expect(workspace.currentLiveSharedMessageRole).to.equal('user');
 
-      // Check that it's in the shared pane
-      const messagesInPane = workspace.sharedMessagesPane.querySelectorAll('lively-chat-message');
+      // Check that it's in the messages container
+      const messagesInPane = workspace.messagesContainer.querySelectorAll('lively-chat-message');
       expect(messagesInPane.length).to.be.greaterThan(0);
     });
 
@@ -168,8 +168,8 @@ xdescribe('AI Workspace Transcript Display', function() {
       
       await lively.sleep(0)
 
-      // Check that message is still in shared pane
-      const messagesInPane = workspace.sharedMessagesPane.querySelectorAll('lively-chat-message');
+      // Check that message is still in messages container
+      const messagesInPane = workspace.messagesContainer.querySelectorAll('lively-chat-message');
       expect(messagesInPane.length).to.be.greaterThan(0);
 
       // Check that the last message has the correct content
@@ -218,8 +218,8 @@ xdescribe('AI Workspace Transcript Display', function() {
       }
       await lively.sleep(0)
       
-      // Check that shared pane has the message
-      const messagesInPane = workspace.sharedMessagesPane.querySelectorAll('lively-chat-message');
+      // Check that messages container has the message
+      const messagesInPane = workspace.messagesContainer.querySelectorAll('lively-chat-message');
       expect(messagesInPane.length).to.equal(3);
         
       var found = ""

@@ -1,6 +1,6 @@
 import OpenAI from "src/client/openai.js";
 import LivelyChat from './lively-chat.js';
-import { BasicToolset } from "./openai-realtime-chat-tools.js";
+import { BasicToolset } from "./realtime-chat-tools/basic-toolset.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -158,6 +158,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       conversations: 'id, timestamp, lastMessageTime',
       messages: '++id, conversationId, timestamp, type, role'
     }).upgrade(function () {});
+    // Version 2: Add sequence index for correct message ordering
+    db.version(2).stores({
+      conversations: 'id, timestamp, lastMessageTime',
+      messages: '++id, conversationId, sequence, timestamp, type, role'
+    });
     return db;
   }
 
@@ -189,8 +194,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Track saved response items by OpenAI item_id to prevent duplicates
     this.savedResponseItems = this.savedResponseItems || new Set();
 
-    // Track message widgets by OpenAI item_id for updates
-    this.messageWidgets = this.messageWidgets || new Map();
+    // Note: chatMessages map inherited from base class (lively-chat.js)
 
     // Track accumulated transcripts for assistant streaming messages
     this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
@@ -222,7 +226,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     await this.setupModelSelecton()
     this.setupUI();
-    await this.renderConversation();
+    await this.renderMessages();
     lively.ensureID(this);
 
     // Don't auto-connect - wait for user to click "Start"
@@ -247,7 +251,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         if (conversations.length > 0) {
           // Load existing conversation
           const convId = conversations[0].id;
-          const messages = await this.getMessages(convId).sortBy('timestamp');
+          // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+          const messages = await this.getMessages(convId).toArray();
+          messages.sort((a, b) => {
+            if (a.sequence !== undefined && b.sequence !== undefined) {
+              return a.sequence - b.sequence;
+            }
+            return (a.timestamp || 0) - (b.timestamp || 0);
+          });
           this.currentConversationId = convId;
           this.conversation = messages;
 
@@ -610,6 +621,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Use provided content or fallback to placeholder
     const content = initialContent || (role === 'user' ? '_Listening..._' : '');
 
+    // IMPORTANT: Assign timestamp ONCE at message creation time
+    const timestamp = Date.now();
+
     // Create message data structure
     const messageData = {
       role: role,
@@ -617,7 +631,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence,
-      timestamp: Date.now(),
+      timestamp: timestamp,  // Use single timestamp
       item_id: item_id
     };
 
@@ -628,7 +642,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Optionally render UI widget
     if (this.messagesUI !== false) {
       const widget = await this.renderMessage(messageData);
-      this.messageWidgets.set(item_id, widget);
+      this.chatMessages.set(item_id, widget);
       this.log(`[item_id] Created widget for ${item_id} (${role})`);
     }
 
@@ -638,7 +652,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role,
         content: initialContent,
         sequence: this.messageSequence++,
-        timestamp: Date.now()
+        timestamp: timestamp  // Reuse same timestamp
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -650,15 +664,18 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
 
   async updateMessage(item_id, role, content, persist = false) {
+    // IMPORTANT: Assign timestamp ONCE at update time
+    const timestamp = Date.now();
+    
     // Create update message data
-    const widget = this.messageWidgets.get(item_id);
+    const widget = this.chatMessages.get(item_id);
     const messageData = {
       role: role,
       content: content,
       source: 'audio',
       streamType: 'realtime',
       sequence: widget?.message?.sequence || this.messageSequence,
-      timestamp: Date.now(),
+      timestamp: timestamp,  // Use single timestamp
       item_id: item_id  // Include item_id for workspace lookup
     };
 
@@ -688,7 +705,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role,
         content,
         sequence: messageData.sequence || this.messageSequence++,
-        timestamp: Date.now()
+        timestamp: timestamp  // Reuse same timestamp
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -698,8 +715,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return messageData;
   }
 
-  async renderConversation() {
-    this.log(`[realtime] renderConversation: full redisplay (${this.conversation.length} messages)`);
+  async renderMessages() {  // Renamed for consistency
+    this.log(`[realtime] renderMessages: full redisplay (${this.conversation.length} messages)`);
     for (let ea of this.conversation) {
       await this.renderMessage(ea);
     }
@@ -739,21 +756,17 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       });
 
       // Dispatch event for workspace integration
-      this.dispatchEvent(new CustomEvent('realtime:message-saved', {
-        detail: {
-          conversationId: this.currentConversationId,
-          message: {
-            role: message.role,
-            content: message.content,
-            type: message.type || "message",
-            metadata: message.metadata || {},
-            sequence: message.sequence,
-            timestamp: message.timestamp || Date.now()
-          }
-        },
-        bubbles: true,
-        composed: true
-      }));
+      this.dispatchMessageEvent('realtime:message-saved', {
+        conversationId: this.currentConversationId,
+        message: {
+          role: message.role,
+          content: message.content,
+          type: message.type || "message",
+          metadata: message.metadata || {},
+          sequence: message.sequence,
+          timestamp: message.timestamp || Date.now()
+        }
+      });
     } catch (error) {
       console.error("Failed to save message to DB:", error);
     }
@@ -812,7 +825,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         console.error("Conversation not found:", conversationId);
         return;
       }
-      const messages = await this.getMessages(conversationId).sortBy('timestamp');
+      // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+      const messages = await this.getMessages(conversationId).toArray();
+      messages.sort((a, b) => {
+        if (a.sequence !== undefined && b.sequence !== undefined) {
+          return a.sequence - b.sequence;
+        }
+        return (a.timestamp || 0) - (b.timestamp || 0);
+      });
 
       this.conversation = messages;
 
@@ -825,7 +845,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.clearEventCapture();
 
       this.get('#messagesContainer').innerHTML = '';
-      await this.renderConversation();
+      await this.renderMessages();
 
       // Disconnect if currently connected - user can press Start to reconnect with this conversation
       if (this.peerConnection && this.isStreamingActive) {
@@ -1242,7 +1262,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           const role = message.item.role;
 
           // Skip if already created
-          if (this.messageWidgets.has(item_id)) {
+          if (this.chatMessages.has(item_id)) {
             this.log(`[item_id] Message already exists for ${item_id}`);
             break;
           }
@@ -1409,7 +1429,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.messageSequence = 0;
 
     // Clear tracking maps to allow replay to create new widgets
-    this.messageWidgets.clear();
+    this.chatMessages.clear();
     this.savedResponseItems.clear();
     this.accumulatedTranscripts.clear();
 
@@ -1432,7 +1452,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.currentConversationId = null;
       this.conversation = [];
       this.get('#messagesContainer').innerHTML = '';
-      this.messageWidgets.clear();
+      this.chatMessages.clear();
       this.savedResponseItems.clear();
       this.accumulatedTranscripts.clear();
     }
@@ -1767,7 +1787,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.conversation = other.conversation;
     this.realtimeVoice = other.realtimeVoice;
     this.savedResponseItems = other.savedResponseItems || new Set();
-    this.messageWidgets = other.messageWidgets || new Map();
+    // Note: chatMessages migration handled by base class
     this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
 
     this.get("#voiceBox").value = other.get("#voiceBox").value
@@ -1790,9 +1810,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     super.cleanupSession();
 
     // Clear conversation display
-    const responses = this.get('#responses');
-    if (responses) {
-      responses.innerHTML = '';
+    const messagesContainer = this.get('#messagesContainer');
+    if (messagesContainer) {
+      messagesContainer.innerHTML = '';
     }
 
     // Clear conversation data

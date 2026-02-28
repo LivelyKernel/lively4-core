@@ -1,7 +1,7 @@
 import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
-import { WorkspaceToolset } from "./openai-realtime-chat-tools.js";
+import { WorkspaceToolset } from "./realtime-chat-tools/workspace-toolset.js";
 
 import OpenaiRealtimeChat from './openai-realtime-chat.js';
 
@@ -55,8 +55,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Initialize MD*/
   // #override
   updateMessagesDebugState() {
-    if (this.sharedMessagesPane) {
-      Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => {
+    if (this.messagesContainer) {
+      Array.from(this.messagesContainer.querySelectorAll("lively-chat-message")).forEach(ea => {
         ea.showDebug = this.showDebug;
       });
     }
@@ -70,8 +70,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.windowTitle = "AI Workspace";
 
-    // Initialize debug log visibility (controlled by showDebug property)
-    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
+    // Always show logging panel (contains board) - independent of debug view
+    this.setAttribute("hide-debug-log", "false");
 
     this.blackboard = this.blackboard || {
       currentTask: null,
@@ -88,16 +88,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.realtimeComponent = null;
     this.sessionsComponent = this.get('#sessionsComponent');
 
-    this.sharedMessagesPane = this.get('#sharedMessagesPane');
+    this.messagesContainer = this.get('#messagesContainer');
 
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;
 
-    // Track displayed messages to avoid duplicates (Map<messageId, element>)
-    this.displayedMessages = this.displayedMessages || new Map();
-
-    // Track realtime message widgets by item_id for updates
-    this.realtimeMessageWidgets = this.realtimeMessageWidgets || new Map();
+    // Note: chatMessages map now inherited from base class (lively-chat.js)
+    // Tracks all message widgets (both OpenCode and realtime) by messageId
 
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
@@ -114,9 +111,58 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     await this.setupSessionsComponent();
     
-    this.renderAllMessages()
+    await this.setupPromptSelection();
+    
+    // Initialize panel tabs (default to Board tab)
+    this.switchPanelTab('board');
+    
+    this.renderMessages()
     
     this.log('AI Workspace initialized');
+  }
+
+  /*MD ## Panel Tab Management MD*/
+  
+  onDebugLogTab() {
+    this.switchPanelTab('debugLog')
+  }
+  
+  onBoardTab() {
+    this.switchPanelTab('board')
+  }
+  
+  switchPanelTab(panelName) {
+    // Update tab buttons
+    const debugLogTab = this.get('#debugLogTab');
+    const boardTab = this.get('#boardTab');
+    
+    if (debugLogTab) {
+      debugLogTab.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardTab) {
+      boardTab.classList.toggle('active', panelName === 'board');
+    }
+    
+    // Update content panels
+    const debugLogContent = this.get('#debugLogContent');
+    const boardContent = this.get('#boardContent');
+    
+    if (debugLogContent) {
+      debugLogContent.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardContent) {
+      boardContent.classList.toggle('active', panelName === 'board');
+    }
+  }
+
+  /**
+   * Clear debug log button handler
+   */
+  onClearLogButton() {
+    const debugLog = this.get('#debugLog');
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
   }
 
   /**
@@ -234,7 +280,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         if (workspace.conversationId) {
           await this.realtimeComponent.setConversation(workspace.conversationId);
         } else {
-          this.realtimeComponent.responses.innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
+          this.realtimeComponent.get('#messagesContainer').innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
         }
       }
 
@@ -260,7 +306,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       this.workspaceId = workspaceId;
 
-      await this.renderAllMessages();
+      await this.renderMessages();
 
       await this.updateSessionUI();
 
@@ -369,8 +415,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
   // #important
   async createOpenCodeMessage(msg) {
-    if (!this.sharedMessagesPane || !msg) return;
-       this.log(`[workspace] createOpenCodeMessage`, msg);
+    if (!this.messagesContainer || !msg) return;
+    this.log(`[workspace] createOpenCodeMessage`, msg);
     
     const msgId = msg.info?.id;
     if (!msgId) {
@@ -378,28 +424,22 @@ export default class LivelyAiWorkspace extends LivelyChat {
       return;
     }
 
-    if (this.displayedMessages.has(msgId)) {
+    if (this.chatMessages.has(msgId)) {
       this.log(`[workspace] message already displayed (id: ${msgId.substring(0, 5)}), skipping`);
       return;
     }
 
-    // Create and append new message element
-    const chatMessage = await lively.create('lively-chat-message');
-    await chatMessage.setOpenCodeMessage(msg, {
-      source: 'code',
-      streamType: 'opencode'
+    // Use base class method for consistent rendering
+    await this.renderChatMessage(msg, msgId, {
+      container: this.messagesContainer,
+      enableBuffering: true,  // Use full OpenCode streaming logic
+      metadata: {
+        source: 'code',
+        streamType: 'opencode'
+      }
     });
-    chatMessage.showDebug = this.showDebug;
-
-    this.sharedMessagesPane.appendChild(chatMessage);
-    this.displayedMessages.set(msgId, chatMessage);
 
     this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
-    }
   }
 
   // #important
@@ -409,7 +449,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const msgId = msg.info?.id;
     if (!msgId) return;
 
-    const chatMessage = this.displayedMessages.get(msgId);
+    const chatMessage = this.chatMessages.get(msgId);
     if (chatMessage) {
       await chatMessage.setOpenCodeMessage(msg, {
         source: 'code',
@@ -469,15 +509,48 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
+  /*MD ## Workspace Board Updates MD*/
+  
+  /**
+   * Update the workspace board from an OpenCode message.
+   * Extracts file operations and tool usage from message parts.
+   */
+  updateWorkspaceBoardFromMessage(message) {
+    const board = this.get('#agentBoard');
+    if (!board || !this.opencodeComponent) return;
+    
+    // Let board handle message parsing and updates
+    board.updateFromMessage(message, {
+      workingDirectory: this.opencodeComponent.workingDirectory,
+      projectPath: this.opencodeComponent.currentProject?.path,
+      urlBase: this.opencodeComponent.loadProjectUrlBase()
+    });
+    
+    // Update project focus link if opencode has a project selected
+    if (this.opencodeComponent.currentProject) {
+      board.updateProjectFocus(this.opencodeComponent.currentProject);
+    }
+  }
+
+  /**
+   * Update the workspace board with TODOs from OpenCode.
+   * Called when OpenCode receives a todo.updated event.
+   */
+  updateWorkspaceBoardTodos(todos) {
+    const board = this.get('#agentBoard');
+    if (!board || !board.updateTodos) return;
+    
+    board.updateTodos(todos);
+  }
+
 
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
-  async renderAllMessages() {
+  async renderMessages() {  // Renamed for consistency
 
-    if (!this.sharedMessagesPane || !this.workspaceId) return;
+    if (!this.messagesContainer || !this.workspaceId) return;
 
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.chatMessages.clear();
 
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)
@@ -492,30 +565,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
         // Handle tool messages with metadata
         await this.createRealtimeToolMessage(msg);
       } else {
-        // Regular user/assistant messages
-        await this.createRealtimeMessage(msg.role, {
-          id: msg.id,
-          item_id: msg.item_id,
-          content: msg.content
-        });
+        // Regular user/assistant messages - pass full message to preserve metadata
+        await this.createRealtimeMessage(msg.role, msg);
       }
     }
 
     // Clear batch rendering flag and scroll once at the end
     this._batchRendering = false;
-    this.scrollSharedPaneToBottom(true);
+    this.scrollToBottom(this.messagesContainer, true);
 
-  }
-
-
-  // Wrapper for base class method for backwards compatibility
-  isSharedPaneAtBottom(threshold = 50) {
-    return this.isAtBottom(this.sharedMessagesPane, threshold);
-  }
-
-  // Wrapper for base class method for backwards compatibility
-  scrollSharedPaneToBottom(force = false) {
-    this.scrollToBottom(this.sharedMessagesPane, force);
   }
 
   /*MD ## Live Message Updates MD*/
@@ -545,7 +603,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       source: 'audio',
       streamType: 'realtime'
     });
-    this.scrollSharedPaneToBottom();
+    this.scrollToBottom(this.messagesContainer);
   }
 
   // #important
@@ -554,23 +612,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const item_id = messageData.item_id || messageData.id;
     this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
 
-    // Create widget
-    const widget = await lively.create('lively-chat-message');
-    await widget.setMessage({
-      role: role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime'
+    // Use base class method (simple mode - no buffering needed for realtime)
+    await this.renderChatMessage(messageData, item_id, {
+      container: this.messagesContainer,
+      enableBuffering: false  // Realtime messages don't have race conditions like OpenCode
     });
-    widget.showDebug = this.showDebug;
-
-    this.realtimeMessageWidgets.set(item_id, widget);
-    this.sharedMessagesPane.appendChild(widget);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
-    }
   }
 
   // #important
@@ -579,27 +625,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const messageId = `tool-${messageData.sequence}`;
     this.log(`[workspace] createRealtimeToolMessage(${messageData.role}, seq: ${messageData.sequence})`);
 
-    // Create widget with full message data including metadata
-    const widget = await lively.create('lively-chat-message');
-    await widget.setMessage({
-      role: messageData.role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime',
-      metadata: messageData.metadata,
-      type: messageData.type,
-      sequence: messageData.sequence,
-      timestamp: messageData.timestamp
+    // Use base class method (simple mode - no buffering needed for tool messages)
+    await this.renderChatMessage(messageData, messageId, {
+      container: this.messagesContainer,
+      enableBuffering: false
     });
-    widget.showDebug = this.showDebug;
-
-    this.realtimeMessageWidgets.set(messageId, widget);
-    this.sharedMessagesPane.appendChild(widget);
-
-    // Skip scrolling during batch rendering to avoid layout thrashing
-    if (!this._batchRendering) {
-      this.scrollSharedPaneToBottom();
-    }
   }
 
   // #important
@@ -608,20 +638,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
 
     // Look up widget by item_id
-    const widget = this.realtimeMessageWidgets.get(item_id);
+    const widget = this.chatMessages.get(item_id);
     if (!widget) {
       // this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
       return;
     }
 
-    // Update widget
-    await widget.setMessage({
-      role: role,
-      content: messageData.content,
-      source: 'audio',
-      streamType: 'realtime'
-    });
-    this.scrollSharedPaneToBottom();
+    // Update widget - pass the FULL message object, don't create partial copies
+    await widget.setMessage(messageData);
+    this.scrollToBottom(this.messagesContainer);
 
     // Trigger debounced save for message stream backup
     if (this.isEventStorageEnabled) {
@@ -685,6 +710,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.opencodeComponent.sessionUI = false;
         this.opencodeComponent.messagesUI = false;
+        this.opencodeComponent.loggingUI = false; // Hide opencode's logging panel when embedded
         this.opencodeComponent.log = (...args) => this.log(...args)
 
         this.setupOpenCodeEvents();
@@ -706,11 +732,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.messagesUI = false;
         this.realtimeComponent.log = (...args) => this.log(...args)
 
-        // Configure as workspace bridge - focused on forwarding to coding agent
-        var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
-        // lively.notify("prompt", prompt)
-        this.realtimeComponent.setInstructions(prompt);
-
+        // Note: Prompt is now user-configurable via dropdown in realtime component
+        // Toolset configured for workspace integration
         this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
         // Setup hooks BEFORE adding to DOM to ensure they're active from the start
@@ -780,10 +803,26 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Listen for status changes from OpenCode component via CustomEvents
     if (!this.opencodeComponent) return;
 
+    // Listen for connection status changes
+    this.opencodeComponent.addEventListener('opencode:connection-status', (evt) => {
+      const { status, connected } = evt.detail;
+      this.log(`[workspace] OpenCode connection status: ${status}`);
+      
+      // Update workspace status display
+      this.updateOpenCodeStatus(status, connected);
+      
+      // When OpenCode connects, ensure workspace session is linked
+      if (status === 'Connected' && connected) {
+        this.onOpenCodeConnected();
+      }
+    });
+
     this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
       const { message } = evt.detail;
       if (message) {
         this.createOpenCodeMessage(message);
+        // Update board with file operations from this new message
+        this.updateWorkspaceBoardFromMessage(message);
       } else {
         this.log('[workspace] message-added event has no message object');
       }
@@ -793,23 +832,41 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const { message } = evt.detail;
       if (message) {
         this.updateOpenCodeMessage(message);
+        // Update board with file operations from this message
+        this.updateWorkspaceBoardFromMessage(message);
       } else {
         this.log('[workspace] message-updated event has no message object');
       }
     });
 
     this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const { messageObj } = evt.detail;
-      // Update status
+      // Update status (for message-level status like 'working', 'idle')
       this.updateOpenCodeStatusMessage(evt.detail);
-      // If there's a message update, handle it
-      if (messageObj && evt.detail.type === 'message.part.updated') {
-        this.updateOpenCodeMessage(messageObj);
-      }
+      // Note: Message updates are handled by dedicated opencode:message-updated event
+      // Removed redundant updateOpenCodeMessage call that caused duplicate message creation
+      // Note: Connection status is now handled by opencode:connection-status event
+    });
 
-      // When OpenCode connects, ensure workspace session is linked
-      if (evt.detail.status === 'Connected' && evt.detail.connected) {
-        this.onOpenCodeConnected();
+    // Listen for TODO updates from OpenCode (incremental update - just TODOs)
+    this.opencodeComponent.addEventListener('opencode:todos-updated', (evt) => {
+      const { todos } = evt.detail;
+      if (todos) {
+        const board = this.get('#agentBoard');
+        if (board) {
+          board.updateTodos(todos);
+        }
+      }
+    });
+    
+    // Listen for session loaded events to update board with existing session data
+    this.opencodeComponent.addEventListener('opencode:session-loaded', async (evt) => {
+      const { sessionId } = evt.detail;
+      this.log(`[workspace] Session loaded: ${sessionId}, updating board`);
+      
+      // Board pulls what it needs from OpenCode component - OO approach!
+      const board = this.get('#agentBoard');
+      if (board && board.updateFromOpenCode) {
+        await board.updateFromOpenCode(this.opencodeComponent);
       }
     });
 
@@ -1302,6 +1359,92 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.log('[workspace] Session UI updated');
   }
 
+  /*MD ## Prompt Selection Setup MD*/
+
+  async setupPromptSelection() {
+    const promptCombobox = this.get("#promptCombobox");
+    if (!promptCombobox) return;
+    
+    // Dynamically load all .txt files from prompts directory
+    const prompts = await this.loadAvailablePrompts();
+    
+    // Strip .txt extension for display
+    const displayNames = prompts.map(f => f.replace(/\.txt$/, ''));
+    promptCombobox.setOptions(displayNames);
+    
+    // Load saved preference (without .txt) or use first available prompt
+    const savedPrompt = lively.preferences.get("ai-workspace-prompt") 
+      || displayNames[0] 
+      || "ai-workspace-audio-chat";
+    promptCombobox.value = savedPrompt;
+    
+    // Apply current prompt (add .txt back for file loading)
+    await this.applyPromptSelection(savedPrompt);
+    
+    // Listen for changes
+    promptCombobox.addEventListener("change", async () => {
+      lively.preferences.set("ai-workspace-prompt", promptCombobox.value);
+      await this.applyPromptSelection(promptCombobox.value);
+    });
+  }
+
+  async onPromptEditButton() {
+    const promptCombobox = this.get("#promptCombobox");
+    if (!promptCombobox) return;
+    
+    const promptName = promptCombobox.value;
+    const filename = promptName.endsWith('.txt') ? promptName : `${promptName}.txt`;
+    const promptPath = lively4url + `/src/config/prompts/${filename}`;
+    
+    // Open in browser for live editing
+    await lively.openBrowser(promptPath, true);
+  }
+
+  async loadAvailablePrompts() {
+
+      const promptsDir = lively4url + "/src/config/prompts/";
+      
+      // Get directory listing from lively4-server
+      const stat = await lively.files.stats(promptsDir);
+      
+      if (!stat || !stat.contents) {
+        throw new Error("Failed to read prompts directory");
+      }
+      
+      // Filter for .txt files and extract just the names
+      return stat.contents
+        .filter(f => f.type === 'file' && f.name.endsWith('.txt'))
+        .map(f => f.name);
+        
+    
+  }
+
+  async applyPromptSelection(promptName) {
+    if (!this.realtimeComponent) {
+      this.log('[workspace] Realtime component not ready yet');
+      return;
+    }
+    
+    try {
+      // Add .txt extension if not already present
+      const filename = promptName.endsWith('.txt') ? promptName : `${promptName}.txt`;
+      
+      const prompt = await lively.files.loadFile(lively4url + `/src/config/prompts/${filename}`);
+      this.realtimeComponent.setInstructions(prompt);
+      this.log(`[workspace] Prompt loaded: ${filename}`);
+      
+      // Notify user
+      if (this.realtimeComponent.isDataChannelOpen && this.realtimeComponent.isDataChannelOpen()) {
+        lively.notify("Prompt applied", "Session updated with new prompt");
+      } else {
+        lively.notify("Prompt loaded", "Will apply on next connection");
+      }
+    } catch (error) {
+      console.error("Failed to load prompt:", error);
+      lively.notify("Error", `Failed to load prompt: ${promptName}`);
+    }
+  }
+
   /*MD ## Session Event Handlers MD*/
 
   async onSessionSelected(sessionId) {
@@ -1464,9 +1607,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const replayWorkspaceId = `replay-workspace-${Date.now()}`;
     this.workspaceId = replayWorkspaceId;
 
-    this.get('#sharedMessagesPane').innerHTML = '';
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.get('#messagesContainer').innerHTML = '';
+    this.chatMessages.clear();
 
     // Suppress replay controls in child components (use unified controls)
     this.realtimeComponent._suppressReplayControls = true;
@@ -1505,9 +1647,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.workspaceId = null;
 
-    this.get('#sharedMessagesPane').innerHTML = '';
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
+    this.get('#messagesContainer').innerHTML = '';
+    this.chatMessages.clear();
 
     this.realtimeComponent.cleanupSession();
     this.opencodeComponent.cleanupSession();
@@ -1615,8 +1756,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (this.isEventStorageEnabled) {
       items.push(
         ["---"], // Separator
-        ["Copy Message Stream", () => this.copyMessageStream()],
-        ["Replay Message Stream", () => this.replayMessageStream()]
+        ["Copy Message Stream (DB)", () => this.copyMessageStream()],
+        ["Replay Message Stream (DB)", () => this.replayMessageStream()]
       );
     } else {
       items.push(
@@ -1636,7 +1777,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     super.livelyMigrate(other)
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
-    this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
+    // Note: chatMessages migration handled by base class
   }
 
 }

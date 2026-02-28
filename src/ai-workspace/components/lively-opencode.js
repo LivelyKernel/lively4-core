@@ -36,7 +36,29 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
-  static sharedWorkingDirectory = null;
+  
+  // Shared state via localStorage (survives page reload, shared across instances)
+  static get sharedWorkingDirectory() {
+    return localStorage.getItem('opencode.workingDirectory');
+  }
+  static set sharedWorkingDirectory(value) {
+    if (value) {
+      localStorage.setItem('opencode.workingDirectory', value);
+    } else {
+      localStorage.removeItem('opencode.workingDirectory');
+    }
+  }
+  
+  static get sharedSessionId() {
+    return localStorage.getItem('opencode.currentSessionId');
+  }
+  static set sharedSessionId(value) {
+    if (value) {
+      localStorage.setItem('opencode.currentSessionId', value);
+    } else {
+      localStorage.removeItem('opencode.currentSessionId');
+    }
+  }
   
   // Event type tracking across all instances
   static eventTypeLog = [];
@@ -48,10 +70,10 @@ export default class LivelyOpencode extends LivelyChat {
    */
   static get sessionMetaDB() {
     var db = new Dexie("opencode-session-metadata");
-    db.version(1).stores({
+    db.version(31).stores({
       sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
     }).upgrade(function () {});
-    db.version(2).stores({
+    db.version(32).stores({
       sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime, parentSessionId'
     }).upgrade(function () {});
     return db;
@@ -86,16 +108,29 @@ export default class LivelyOpencode extends LivelyChat {
 
   async initialize() {
     // Call parent initialize to setup event capture system
-    await super.initialize();
+    super.initialize();
 
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();
 
+    this.registerAttribute('variant');
+
     // Server configuration
     this.serverUrl = 'http://localhost:9100';
 
-    // Working directory state - sync with shared state if server already running
+    // Restore from shared state (hot-reload safe: preserves live state first)
     this.workingDirectory = this.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    this.currentSessionId = this.currentSessionId || LivelyOpencode.sharedSessionId;
+
+    // Use defaults if still not set
+    if (!this.workingDirectory) {
+      const recent = this.getRecentWorkingDirectories();
+      this.workingDirectory = recent.length > 0 ? recent[0] : null;
+      if (this.workingDirectory) {
+        LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
+      }
+    }
+    
     this.allSessions = []; // All sessions from server
 
     // Session state
@@ -103,9 +138,8 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = null;
     this.messages = new Map(); // sessionId -> messages array (pure server data)
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
-    this.messageElements = this.messageElements || new Map(); // messageId -> DOM element for fast updates
-    this.pendingUpdates = this.pendingUpdates || new Map(); // messageId -> array of pending update messages
-    this.renderingMessages = this.renderingMessages || new Set(); // messageIds currently being rendered
+    
+    // Note: chatMessages, pendingUpdates, renderingMessages inherited from base class
 
     // Set event source for capture system (parent class property)
     this.eventSource = 'opencode';
@@ -115,6 +149,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.connected = false;
     this.shouldReconnect = true;
     this.reconnectTimer = null;
+    this._hasTriedAutoStart = false; // Track if we've tried auto-starting server
 
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
@@ -122,12 +157,18 @@ export default class LivelyOpencode extends LivelyChat {
     this.generatingSessions = this.generatingSessions || new Set(); // Track generating state per session
     this._busyTimeouts = new Map(); // Per-session debounce timers for idle detection (always fresh)
 
-    // Variant (thinking mode) state - preserve during live updates
-    this.variant = this.variant || 'high'; // none, high, max
+    // Set default variant if not present
+    if (!this.variant) {
+      this.variant = 'high';
+    }
 
-    // Project focus state - preserve during live updates
+    // Project focus state - preserve during hot reload
     this.currentProject = this.currentProject || null; // { path, name, indexContent } or null
-    // Per-session project mapping: sessionId -> projectPath (or null for "none")
+    if (this.projectPath && !this.currentProject) {
+      // Restore project if projectPath is set (hot reload scenario)
+      await this.selectProject(this.projectPath);
+    }
+    // Per-session project mapping: sessionId -> projectPath (persisted to localStorage)
     this.sessionProjects = this.sessionProjects || this.loadSessionProjectsFromStorage();
 
     // Event capture already initialized by parent, but preserve existing logic for safety
@@ -151,8 +192,6 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup project selector
     this.setupProjectSelector();
-    
-
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -166,7 +205,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   connectedCallback() {
     this.shouldReconnect = true;
-    // Connect to OpenCode server
+    // Auto-reconnect to running server (AUTOSTART disabled - server must be started manually)
     this.connectToServer();
   }
 
@@ -247,12 +286,31 @@ export default class LivelyOpencode extends LivelyChat {
 
       this.updateStatus('Connected', true);
       this.connected = true;
+      
+      // Reset auto-start flag on successful connection
+      this._hasTriedAutoStart = false;
 
       // Load existing sessions
       await this.loadSessions();
 
+      // Restore saved session if present
+      if (this.currentSessionId && !this.currentSession) {
+        const savedSession = this.sessions.find(s => s.id === this.currentSessionId);
+        if (savedSession) {
+          this.log(`Restoring saved session: ${savedSession.id}`);
+          await this.selectSession(savedSession);
+        }
+      }
+
       // Connect to event stream
       this.connectEventStream();
+
+      // Notify workspace of successful connection
+      this.dispatchMessageEvent('opencode:connection-status', {
+        status: 'Connected',
+        connected: true,
+        timestamp: Date.now()
+      });
 
       lively.success('Connected to OpenCode server');
 
@@ -260,11 +318,35 @@ export default class LivelyOpencode extends LivelyChat {
       this.updateStatus('Disconnected', false);
       this.connected = false;
       
+      // Notify workspace of disconnection
+      this.dispatchMessageEvent('opencode:connection-status', {
+        status: 'Disconnected',
+        connected: false,
+        error: error.message,
+        timestamp: Date.now()
+      });
+      
+      // AUTOSTART DISABLED - Server must be started manually via button
+      // Try to auto-start server on first failure (only once)
+      // if (this.shouldReconnect && !this._hasTriedAutoStart) {
+      //   this._hasTriedAutoStart = true;
+      //   this.log('Server not running - attempting to start automatically...');
+      //   await this.startServer();
+      //   // startServer() already schedules connection attempt
+      //   return;
+      // }
+      
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
         this.reconnectTimer = setTimeout(() => {
           // this.log('Attempting to reconnect to OpenCode server...');
           this.updateStatus('Reconnecting...', false);
+          // Notify workspace of reconnection attempt
+          this.dispatchMessageEvent('opencode:connection-status', {
+            status: 'Reconnecting',
+            connected: false,
+            timestamp: Date.now()
+          });
           this.connectToServer();
         }, 5000);
       }
@@ -286,6 +368,14 @@ export default class LivelyOpencode extends LivelyChat {
 
     this.connected = false;
     this.updateStatus('Disconnected', false);
+    
+    // Notify workspace of intentional disconnection
+    this.dispatchMessageEvent('opencode:connection-status', {
+      status: 'Disconnected',
+      connected: false,
+      intentional: true,
+      timestamp: Date.now()
+    });
   }
 
   connectEventStream() {
@@ -357,6 +447,8 @@ export default class LivelyOpencode extends LivelyChat {
         sessionId = data.properties?.info?.id || data.properties?.sessionID;
       } else if (data.type === 'todo.updated') {
         sessionId = data.properties?.sessionID;
+      } else if (data.type === 'permission.asked') {
+        sessionId = data.properties?.sessionID;
       }
     }
 
@@ -409,6 +501,17 @@ export default class LivelyOpencode extends LivelyChat {
           this.updateBoard(todos);
         }
       }
+    } else if (data.type === 'permission.asked') {
+      // Permission request - show UI to approve/deny
+      if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
+        const permission = data.properties;
+        if (permission) {
+          this.log(`Permission requested: ${permission.permission} - ${permission.patterns}`);
+          await this.handlePermissionRequest(permission);
+        } else {
+          console.warn('[opencode] permission.asked event has no properties:', data);
+        }
+      }
     } else if (data.type === 'session') {
       this.loadSessions();
     }
@@ -416,6 +519,139 @@ export default class LivelyOpencode extends LivelyChat {
     const statusInfo = this.inferStatusFromEvent(data, sessionId);
     if (statusInfo) {
       this.dispatchMessageEvent('opencode:status-change', statusInfo);
+    }
+  }
+
+  /**
+   * Handle a permission request from the OpenCode server.
+   * Shows a dialog to the user and sends their response back to the server.
+   * 
+   * @param {Object} permission - The permission request object
+   * @param {string} permission.id - Permission request ID
+   * @param {string} permission.sessionID - Session ID
+   * @param {string} permission.permission - Permission type (e.g., "tool.external_directory")
+   * @param {string[]} permission.patterns - Patterns being requested (e.g., ["/etc/group"])
+   * @param {Object} permission.metadata - Additional metadata
+   */
+  async handlePermissionRequest(permission) {
+    const { id, sessionID, permission: permType, patterns, metadata } = permission;
+    
+    // Show notification
+    lively.warn(`Permission requested: ${permType} - ${patterns?.join(', ')}`);
+    
+    // Show permission UI in the chat
+    await this.showPermissionUI(permission);
+  }
+
+  /**
+   * Show permission request UI in the chat area
+   */
+  async showPermissionUI(permission) {
+    const { id, sessionID, permission: permType, patterns, metadata } = permission;
+    
+    // Create permission UI element
+    const permissionDiv = document.createElement('div');
+    permissionDiv.className = 'permission-request-ui';
+    permissionDiv.innerHTML = `
+      <div class="permission-header">🔒 Permission Request</div>
+      <div class="permission-body">
+        <div class="permission-type"><strong>Type:</strong> ${permType}</div>
+        ${patterns && patterns.length > 0 ? `
+          <div class="permission-patterns">
+            <strong>Files/Patterns:</strong>
+            <ul>${patterns.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+        ` : ''}
+        ${metadata && Object.keys(metadata).length > 0 ? `
+          <details class="permission-metadata">
+            <summary>Additional details</summary>
+            <pre>${JSON.stringify(metadata, null, 2)}</pre>
+          </details>
+        ` : ''}
+      </div>
+      <div class="permission-actions">
+        <button class="permission-btn permission-approve-once">Approve Once</button>
+        <button class="permission-btn permission-approve-always">Approve Always</button>
+        <button class="permission-btn permission-reject">Reject</button>
+      </div>
+    `;
+    
+    // Add to messages container
+    const messagesContainer = this.get('#messagesContainer');
+    
+    if (messagesContainer) {
+      messagesContainer.appendChild(permissionDiv);
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } else {
+      console.error('[opencode] messagesContainer not found! Cannot show permission UI.');
+      // Fallback to native dialog
+      const approved = confirm(`Permission requested: ${permType}\n\nPatterns: ${patterns?.join(', ')}\n\nApprove?`);
+      const response = approved ? 'once' : 'reject';
+      await this.submitPermissionResponse(id, sessionID, response, permType, patterns);
+      return;
+    }
+    
+    // Set up button handlers
+    const approveOnceBtn = permissionDiv.querySelector('.permission-approve-once');
+    const approveAlwaysBtn = permissionDiv.querySelector('.permission-approve-always');
+    const rejectBtn = permissionDiv.querySelector('.permission-reject');
+    
+    const submitResponse = async (response) => {
+      // Disable all buttons
+      approveOnceBtn.disabled = true;
+      approveAlwaysBtn.disabled = true;
+      rejectBtn.disabled = true;
+      
+      const success = await this.submitPermissionResponse(id, sessionID, response, permType, patterns);
+      
+      if (success) {
+        // Update UI to show submitted state
+        permissionDiv.innerHTML = `
+          <div class="permission-submitted">
+            Permission ${response === 'reject' ? 'rejected' : 'approved'} ${response === 'always' ? '(remembered)' : ''} - waiting for agent...
+          </div>
+        `;
+      } else {
+        // Re-enable buttons on error
+        approveOnceBtn.disabled = false;
+        approveAlwaysBtn.disabled = false;
+        rejectBtn.disabled = false;
+      }
+    };
+    
+    approveOnceBtn.addEventListener('click', () => submitResponse('once'));
+    approveAlwaysBtn.addEventListener('click', () => submitResponse('always'));
+    rejectBtn.addEventListener('click', () => submitResponse('reject'));
+  }
+
+  /**
+   * Submit permission response to server
+   */
+  async submitPermissionResponse(permissionId, sessionID, response, permType, patterns) {
+    try {
+      const url = `${this.serverUrl}/session/${sessionID}/permissions/${permissionId}`;
+      
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response })
+      });
+      
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error(`[opencode] Permission response error:`, errorText);
+        lively.error(`Failed to submit permission response: ${resp.status}`);
+        return false;
+      }
+      
+      this.log(`Permission ${response} for ${permType}: ${patterns}`);
+      lively.notify(`Permission ${response}`);
+      return true;
+    } catch (error) {
+      console.error('[opencode] Error submitting permission response:', error);
+      lively.error('Error submitting permission: ' + error.message);
+      return false;
     }
   }
 
@@ -445,6 +681,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Mark a session as idle (not generating). Clears any pending debounce timer.
+   * Also refreshes the session title from server (auto-generated after first exchange).
    */
   markSessionIdle(sessionId) {
     if (!sessionId) return;
@@ -456,6 +693,54 @@ export default class LivelyOpencode extends LivelyChat {
       this.generatingSessions.delete(sessionId);
       if (sessionId === this.currentSession?.id) this.isGenerating = false;
       this.updateSessionList();
+      
+      // Refresh session title from server (auto-generated)
+      this.refreshSessionTitle(sessionId);
+    }
+  }
+
+  /**
+   * Refresh a session's title from the server.
+   * The OpenCode server auto-generates meaningful titles based on conversation content.
+   * This is called when a session goes idle to pick up the auto-generated title.
+   */
+  async refreshSessionTitle(sessionId) {
+    if (!sessionId || this._replayMode) return;
+    
+    try {
+      // Fetch the updated session data from server
+      const response = await fetch(`${this.serverUrl}/session/${sessionId}`);
+      if (!response.ok) {
+        console.warn(`Failed to refresh session title for ${sessionId}: ${response.status}`);
+        return;
+      }
+      
+      const updatedSession = await response.json();
+      
+      // Update in allSessions array
+      const allIndex = this.allSessions.findIndex(s => s.id === sessionId);
+      if (allIndex >= 0) {
+        this.allSessions[allIndex] = updatedSession;
+      }
+      
+      // Update in filtered sessions array
+      const filteredIndex = this.sessions.findIndex(s => s.id === sessionId);
+      if (filteredIndex >= 0) {
+        this.sessions[filteredIndex] = updatedSession;
+      }
+      
+      // Update current session if it's the active one
+      if (this.currentSession?.id === sessionId) {
+        this.currentSession = updatedSession;
+      }
+      
+      // Refresh the session list UI to show updated title
+      await this.updateSessionList();
+      
+      this.log(`[opencode] Refreshed session title: "${updatedSession.title}"`);
+    } catch (error) {
+      console.error('Error refreshing session title:', error);
+      // Non-fatal - just log and continue
     }
   }
 
@@ -563,9 +848,8 @@ export default class LivelyOpencode extends LivelyChat {
     const recentDirs = this.getRecentWorkingDirectories();
     workdirCombobox.setOptions(recentDirs);
 
-    // Set default to current lively4-core directory if nothing selected
-    if (!this.workingDirectory && recentDirs.length > 0) {
-      this.workingDirectory = recentDirs[0];
+    // Update combobox to show current value
+    if (this.workingDirectory) {
       workdirCombobox.value = this.workingDirectory;
     }
 
@@ -628,8 +912,9 @@ export default class LivelyOpencode extends LivelyChat {
       await this.stopServer();
     }
 
-    // Update working directory
+    // Update working directory and sync to shared state
     this.workingDirectory = newDir;
+    LivelyOpencode.sharedWorkingDirectory = newDir;
     this.saveRecentWorkingDirectory(newDir);
 
     // Update combobox
@@ -782,53 +1067,29 @@ export default class LivelyOpencode extends LivelyChat {
     }
     
     // Update project focus link
-    if (board.setProjectFocus && this.currentProject) {
-      const indexUrl = this.currentProject.url ? this.currentProject.url + 'index.md' : `${this.currentProject.path}/index.md`;
-      board.setProjectFocus(indexUrl);
+    if (this.currentProject) {
+      board.updateProjectFocus(this.currentProject);
     }
+    
+    // Dispatch event for workspace to listen to
+    this.dispatchMessageEvent('opencode:todos-updated', { todos });
   }
 
   /**
-   * Scan message parts for Read/Write tool uses and update the board
+   * Scan message parts for tool uses and update the board
+   * Tracks all tool usages and file operations
    * @param {Object} message - OpenCode message object with parts
    */
   updateBoardWithFileOperations(message) {
     const board = this.get('#agentBoard');
     if (!board) return;
     
-    // Update context for URL building and path shortening
-    if (board.setContext) {
-      board.setContext({
-        workingDirectory: this.workingDirectory,
-        projectPath: this.currentProject?.path,
-        urlBase: this.loadProjectUrlBase()
-      });
-    }
-    
-    const parts = message.parts || [];
-    
-    for (const part of parts) {
-      const toolName = part.name || part.tool;
-      const input = part.input || part.state?.input || {};
-      const filePath = input.filePath || input.path;
-      
-      if (!filePath) continue;
-      
-      // Check for Read tools
-      if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
-        if (board.addFileRead) {
-          board.addFileRead(filePath);
-        }
-      }
-      
-      // Check for Write tools  
-      if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
-          toolName === 'mcp_edit' || toolName === 'edit') {
-        if (board.addFileWritten) {
-          board.addFileWritten(filePath);
-        }
-      }
-    }
+    // Let board handle message parsing and updates
+    board.updateFromMessage(message, {
+      workingDirectory: this.workingDirectory,
+      projectPath: this.currentProject?.path,
+      urlBase: this.loadProjectUrlBase()
+    });
   }
 
   /**
@@ -892,6 +1153,9 @@ export default class LivelyOpencode extends LivelyChat {
     };
 
     this.currentProject = project;
+    
+    // Save to temp property (persisted via session binding)
+    this.projectPath = projectPath;
 
     // Remember this path for the current working directory
     this.saveRecentProject(this.workingDirectory, projectPath);
@@ -912,6 +1176,9 @@ export default class LivelyOpencode extends LivelyChat {
    */
   clearProject() {
     this.currentProject = null;
+    
+    // Clear temp property
+    this.projectPath = null;
 
     // Bind "none" to current session
     if (this.currentSession) {
@@ -962,6 +1229,7 @@ export default class LivelyOpencode extends LivelyChat {
     if (!storedPath) {
       // Explicitly set to "none"
       this.currentProject = null;
+      this.projectPath = null;
     } else if (!this.currentProject || this.currentProject.path !== storedPath) {
       // Different project - load it silently (no success toast)
       const content = await this.tryFetchProjectFile(storedPath, 'index.md');
@@ -971,6 +1239,7 @@ export default class LivelyOpencode extends LivelyChat {
         name: storedPath.split('/').pop(),
         indexContent: content
       };
+      this.projectPath = storedPath;
     }
 
     this.updateProjectSelector();
@@ -1121,8 +1390,9 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Build the context message to inject as the first user message in a session.
-   * The project context is wrapped in [lively4:project] markers so the renderer
-   * displays it as a collapsible details block.
+   * The project context is wrapped in <system-reminder> tags so the renderer
+   * displays it as a collapsible details block, and Claude Code treats it as
+   * contextual information rather than the primary message.
    *
    * The subproject's index.md acts as a second-level CLAUDE.md — it can store
    * project-focus-specific insights, conventions, and notes for AI assistants.
@@ -1148,7 +1418,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     const context = contextParts.join('\n');
-    return `[lively4:project]\n${context}\n[/lively4:project]\n\n${message}`;
+    return `${message}\n\n<system-reminder>\n${context}\n</system-reminder>`;
   }
 
 
@@ -1377,6 +1647,11 @@ export default class LivelyOpencode extends LivelyChat {
     this.cleanupArtificialSession();
 
     this.currentSession = session;
+    
+    // Save session ID and sync to shared state
+    this.currentSessionId = session.id;
+    LivelyOpencode.sharedSessionId = session.id;
+    
     await this.updateSessionList();
 
     // Load messages for this session
@@ -1386,24 +1661,23 @@ export default class LivelyOpencode extends LivelyChat {
     const input = this.get('#messageInput');
     if (input) input.disabled = false;
 
-    // Clear board before loading new session data
+    // Restore project focus for this session (needed before board update)
+    await this.applyProjectForSession(session.id);
+
+    // Update board using OO approach - board pulls what it needs
     const board = this.get('#agentBoard');
-    if (board && board.clearAll) {
-      board.clearAll();
+    if (board && board.updateFromOpenCode) {
+      await board.updateFromOpenCode(this);
     }
 
-    // Restore project focus for this session
-    await this.applyProjectForSession(session.id);
-    
-    // Load TODOs for this session
-    const todos = await this.fetchTodosForSession(session.id);
-    this.updateBoard(todos);
-    
-    // Update board with file operations from all messages
-    this.updateBoardWithAllMessages(session.id);
-
     // Display messages
-    this.displayMessages();
+    this.renderMessages();
+    
+    // Notify workspace that session is loaded with all data
+    this.dispatchMessageEvent('opencode:session-loaded', {
+      sessionId: session.id,
+      messageCount: this.messages.get(session.id)?.length || 0
+    });
   }
 
   /**
@@ -1454,7 +1728,7 @@ export default class LivelyOpencode extends LivelyChat {
       } else {
         // No parts in event - just update debug stats panel
         if (this.showDebug) {
-          const chatMessage = this.messageElements.get(messageInfo.id);
+          const chatMessage = this.chatMessages.get(messageInfo.id);
           if (chatMessage && chatMessage.renderUsageStats) {
             const usageEl = chatMessage.get('#usageStats');
             if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
@@ -1655,6 +1929,38 @@ export default class LivelyOpencode extends LivelyChat {
           this.updateBoardWithFileOperations(msg);
         }
       } 
+    } else {
+      // Handle all other part types (reasoning, step-start, step-finish, etc.)
+      // These parts were being logged but silently dropped, causing data loss in workspace UI
+      let messageIndex = messages.findIndex(m => m.info?.id === messageId);
+      
+      if (messageIndex >= 0) {
+        const msg = messages[messageIndex];
+        
+        // Find existing part by ID and update, or add new part
+        let existingPart = msg.parts.find(p => p.id === part.id);
+        if (existingPart) {
+          // Update existing part (e.g., streaming reasoning text)
+          Object.assign(existingPart, part);
+        } else {
+          // Add new part (step-start, step-finish, initial reasoning, etc.)
+          msg.parts.push(part);
+        }
+        
+        // Update lastModified timestamp and save to IndexedDB (skip in replay mode)
+        msg.lastModified = Date.now();
+        if (!this._replayMode) {
+          await LivelyOpencode.messagesdb.messages.put({
+            sessionId: sessionId,
+            messageId: msg.info.id,
+            localTimestamp: msg.localTimestamp,  // Keep original creation time
+            lastModified: msg.lastModified,       // Update modification time
+            message: msg
+          });
+        }
+        
+        this.updateOpenCodeMessage(messageId, msg);
+      }
     }
     // For tool_use/tool_result: these come from server fetch after tool completion
   }
@@ -1895,7 +2201,7 @@ export default class LivelyOpencode extends LivelyChat {
     if (!sessionId) {
       return []
     }
-    return this.messages.get(sessionId)
+    return this.messages.get(sessionId) || []
   }
 
   /**
@@ -1941,10 +2247,10 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
   
-  async displayMessages() {
+  async renderMessages() {  // Renamed for consistency
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
-    this.log("[opencode] displayMessages WARNING!");
+    this.log("[opencode] renderMessages WARNING! Only use on session switch");
     
     const container = this.get('#messagesContainer');
     if (!container) return;
@@ -1952,7 +2258,7 @@ export default class LivelyOpencode extends LivelyChat {
     container.innerHTML = '';
 
     // Clear message elements tracking since we're rebuilding
-    if (this.messageElements) this.messageElements.clear();
+    if (this.chatMessages) this.chatMessages.clear();
 
     if (!this.currentSession) {
       container.innerHTML = `
@@ -1990,7 +2296,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Track element for future updates
       if (opencodeMsg.info?.id) {
-        this.messageElements.set(opencodeMsg.info.id, chatMessage);
+        this.chatMessages.set(opencodeMsg.info.id, chatMessage);
       }
     }
 
@@ -2001,6 +2307,23 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Incrementally add a single message to the UI without full rebuild
    * @param {Object} opencodeMsg - OpenCode message object with info and parts
+   */
+  /**
+   * Render an OpenCode message to the UI.
+   * 
+   * NOTE: This method doesn't use the base class renderChatMessage() because it needs
+   * specialized handling for SSE streaming edge cases:
+   * 
+   * 1. Buffered part merging (parts that arrive before message.created)
+   * 2. Immediate DOM insertion + tracking BEFORE async setOpenCodeMessage
+   *    (critical for preserving message order in streaming scenarios)
+   * 3. Rendering completion tracking to handle late updates
+   * 4. Post-render update application (updates that arrive during rendering)
+   * 
+   * The base method assumes simple batch rendering (like workspace DB loading),
+   * while OpenCode needs real-time streaming with race condition protection.
+   * Both follow the same PATTERN (create widget → set content → append → track),
+   * but OpenCode controls the exact sequence for streaming correctness.
    */
   async renderMessage(opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
@@ -2035,6 +2358,12 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
+    // Clear placeholder if this is the first message
+    const emptyChat = container.querySelector('.empty-chat');
+    if (emptyChat) {
+      emptyChat.remove();
+    }
+
     const chatMessage = await lively.create('lively-chat-message');
 
     // IMPORTANT: Append to DOM IMMEDIATELY to preserve message order
@@ -2044,7 +2373,7 @@ export default class LivelyOpencode extends LivelyChat {
     // IMPORTANT: Track element IMMEDIATELY after creation, before any async operations
     // This prevents race conditions where part updates arrive before rendering completes
     if (messageId) {
-      this.messageElements.set(messageId, chatMessage);
+      this.chatMessages.set(messageId, chatMessage);
     }
 
     // Use setOpenCodeMessage() which handles all the rendering logic
@@ -2098,7 +2427,7 @@ export default class LivelyOpencode extends LivelyChat {
     
     // Check if message is currently being rendered or not ready yet
     const isRendering = this.renderingMessages.has(messageId);
-    const hasElement = this.messageElements.has(messageId);
+    const hasElement = this.chatMessages.has(messageId);
 
     if (isRendering || !hasElement) {
       // Buffer this update - it will be applied after rendering completes
@@ -2110,7 +2439,7 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    const chatMessage = this.messageElements.get(messageId);
+    const chatMessage = this.chatMessages.get(messageId);
 
     // Update the existing message element
     await chatMessage.setOpenCodeMessage(opencodeMsg, {
@@ -2170,11 +2499,11 @@ export default class LivelyOpencode extends LivelyChat {
     for (const tempMsg of tempMessages) {
       const msgId = tempMsg.info?.id;
       if (msgId) {
-        const element = this.messageElements.get(msgId);
+        const element = this.chatMessages.get(msgId);
         if (element && element.parentNode) {
           element.parentNode.removeChild(element);
         }
-        this.messageElements.delete(msgId);
+        this.chatMessages.delete(msgId);
       }
     }
 
@@ -2206,7 +2535,8 @@ export default class LivelyOpencode extends LivelyChat {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          title: `Session ${new Date().toLocaleTimeString()}`
+          // Title will be auto-generated based on conversation content
+          // title: `Session ${new Date().toLocaleTimeString()}`
         })
       });
 
@@ -2492,7 +2822,7 @@ export default class LivelyOpencode extends LivelyChat {
       // Check if server is already running (shared across all instances)
       if (LivelyOpencode.sharedServerRunning && LivelyOpencode.sharedServerTerminal) {
         lively.notify('OpenCode server is already running');
-        this.updateServerButton();
+        await this.updateServerButton();
         return;
       }
 
@@ -2500,6 +2830,7 @@ export default class LivelyOpencode extends LivelyChat {
       if (!this.workingDirectory) {
         const recentDirs = this.getRecentWorkingDirectories();
         this.workingDirectory = recentDirs[0] || '/home/jens/lively4/lively4-core';
+        LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
       }
 
       // Create a hidden terminal for running the server
@@ -2522,7 +2853,7 @@ export default class LivelyOpencode extends LivelyChat {
       LivelyOpencode.sharedServerTerminal = terminal;
       LivelyOpencode.sharedServerRunning = true;
       LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
-      this.updateServerButton();
+      await this.updateServerButton();
 
       lively.success(`OpenCode server starting in ${this.workingDirectory}...`);
 
@@ -2575,7 +2906,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       LivelyOpencode.sharedServerRunning = false;
       LivelyOpencode.sharedWorkingDirectory = null;
-      this.updateServerButton();
+      await this.updateServerButton();
 
       lively.notify('OpenCode server stopped');
 
@@ -2585,13 +2916,40 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  updateServerButton() {
+  /**
+   * Check if server is actually running by attempting to connect
+   * @returns {Promise<boolean>} True if server is running and responding
+   */
+  async checkIfServerRunning() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // Quick 2s timeout
+
+      const response = await fetch(`${this.serverUrl}/config`, {
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async updateServerButton() {
     const button = this.get('#serverButton');
     if (!button) return;
 
-    if (LivelyOpencode.sharedServerRunning) {
-      button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
-      button.title = 'Stop OpenCode server (shared across all instances)';
+    const isRunning = await this.checkIfServerRunning();
+    
+    if (isRunning) {
+      if (LivelyOpencode.sharedServerRunning) {
+        button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
+        button.title = 'Stop OpenCode server (started by this instance)';
+      } else {
+        button.innerHTML = '<i class="fa fa-link"></i> Connected';
+        button.title = 'Connected to external OpenCode server';
+      }
     } else {
       button.innerHTML = '<i class="fa fa-play"></i> Start Server';
       button.title = 'Start OpenCode server';
@@ -2751,7 +3109,7 @@ export default class LivelyOpencode extends LivelyChat {
     // Clear UI for fresh replay
     const messagesContainer = this.get('#messagesContainer');
     if (messagesContainer) messagesContainer.innerHTML = '';
-    this.messageElements.clear();
+    this.chatMessages.clear();
 
     return replaySessionId;
   }
@@ -2775,7 +3133,7 @@ export default class LivelyOpencode extends LivelyChat {
       this.currentSession = null;
       const messagesContainer = this.get('#messagesContainer');
       if (messagesContainer) messagesContainer.innerHTML = '';
-      this.messageElements.clear();
+      this.chatMessages.clear();
     }
   }
 
@@ -2898,6 +3256,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
 
+
   livelyPreMigrate() {
     this.disconnectFromServer();
     this.stopConnectionHealthCheck();
@@ -2934,7 +3293,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     this.updateSessionList();
-    this.displayMessages();
+    this.renderMessages();
     this.updateServerButton();
     this.updateVariantButton();
     this.updateProjectSelector();

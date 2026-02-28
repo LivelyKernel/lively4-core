@@ -132,8 +132,6 @@ export default class Morph extends HTMLElement {
     });
   }
 
-  
-  
   toString() {
     return "[" + this.constructor.name + "]"
   }

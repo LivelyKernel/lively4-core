@@ -203,32 +203,32 @@ describe("Lively Agent Board", function() {
       board.addFileRead('/path/to/file1.js');
       board.addFileRead('/path/to/file2.js');
       
-      expect(board.links.filesRead).to.have.length(2);
-      expect(board.links.filesRead).to.include('/path/to/file1.js');
-      expect(board.links.filesRead).to.include('/path/to/file2.js');
+      expect(board.fileReadCounts.size).to.equal(2);
+      expect(board.fileReadCounts.has('/path/to/file1.js')).to.be.true;
+      expect(board.fileReadCounts.has('/path/to/file2.js')).to.be.true;
     });
 
     it("should add file written links", () => {
       board.addFileWritten('/path/to/output1.js');
       board.addFileWritten('/path/to/output2.js');
       
-      expect(board.links.filesWritten).to.have.length(2);
-      expect(board.links.filesWritten).to.include('/path/to/output1.js');
-      expect(board.links.filesWritten).to.include('/path/to/output2.js');
+      expect(board.fileWriteCounts.size).to.equal(2);
+      expect(board.fileWriteCounts.has('/path/to/output1.js')).to.be.true;
+      expect(board.fileWriteCounts.has('/path/to/output2.js')).to.be.true;
     });
 
     it("should not add duplicate file reads", () => {
       board.addFileRead('/path/to/file.js');
       board.addFileRead('/path/to/file.js');
       
-      expect(board.links.filesRead).to.have.length(1);
+      expect(board.fileReadCounts.size).to.equal(1);
     });
 
     it("should not add duplicate file writes", () => {
       board.addFileWritten('/path/to/file.js');
       board.addFileWritten('/path/to/file.js');
       
-      expect(board.links.filesWritten).to.have.length(1);
+      expect(board.fileWriteCounts.size).to.equal(1);
     });
 
     it("should clear file links", () => {
@@ -237,8 +237,8 @@ describe("Lively Agent Board", function() {
       
       board.clearFileLinks();
       
-      expect(board.links.filesRead).to.be.empty;
-      expect(board.links.filesWritten).to.be.empty;
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
     });
 
     it("should clear all data", () => {
@@ -249,10 +249,264 @@ describe("Lively Agent Board", function() {
       
       board.clearAll();
       
-      expect(board.links.filesRead).to.be.empty;
-      expect(board.links.filesWritten).to.be.empty;
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
       expect(board.links.projectFocus).to.be.null;
       expect(board.todos).to.be.empty;
+    });
+  });
+
+  describe("File Operation Counts", () => {
+    it("should count file reads", () => {
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      
+      expect(board.fileReadCounts.get('/path/to/file.js')).to.equal(3);
+      expect(board.fileReadCounts.size).to.equal(1); // Still only one unique file
+    });
+
+    it("should count file writes", () => {
+      board.addFileWritten('/path/to/file.js');
+      board.addFileWritten('/path/to/file.js');
+      
+      expect(board.fileWriteCounts.get('/path/to/file.js')).to.equal(2);
+      expect(board.fileWriteCounts.size).to.equal(1);
+    });
+
+    it("should track counts for multiple files", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file2.js');
+      
+      expect(board.fileReadCounts.get('/path/to/file1.js')).to.equal(2);
+      expect(board.fileReadCounts.get('/path/to/file2.js')).to.equal(1);
+    });
+
+    it("should clear file counts when clearing file links", () => {
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      board.addFileWritten('/path/to/file.js');
+      
+      board.clearFileLinks();
+      
+      expect(board.fileReadCounts.size).to.equal(0);
+      expect(board.fileWriteCounts.size).to.equal(0);
+    });
+  });
+
+  describe("Tool Usage Tracking", () => {
+    it("should track tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      board.addToolUsage('mcp_read');
+      
+      expect(board.toolUsages.get('mcp_read')).to.equal(2);
+      expect(board.toolUsages.get('mcp_write')).to.equal(1);
+    });
+
+    it("should calculate total tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      board.addToolUsage('mcp_bash');
+      
+      expect(board.getTotalToolUsages()).to.equal(4);
+    });
+
+    it("should clear tool usages", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.clearToolUsages();
+      
+      expect(board.toolUsages.size).to.equal(0);
+      expect(board.getTotalToolUsages()).to.equal(0);
+    });
+
+    it("should clear tool usages when clearing all", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.clearAll();
+      
+      expect(board.toolUsages.size).to.equal(0);
+    });
+
+    it("should handle multiple tool types", () => {
+      const tools = ['mcp_read', 'mcp_write', 'mcp_edit', 'mcp_bash', 'mcp_glob', 'mcp_grep'];
+      tools.forEach(tool => {
+        board.addToolUsage(tool);
+        board.addToolUsage(tool);
+      });
+      
+      expect(board.toolUsages.size).to.equal(6);
+      expect(board.getTotalToolUsages()).to.equal(12);
+    });
+  });
+
+  describe("Statistics Section Rendering", () => {
+    it("should render tool usage statistics", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.exist;
+      expect(statsSection.textContent).to.include('Tool Usage');
+      expect(statsSection.textContent).to.include('mcp_read');
+      expect(statsSection.textContent).to.include('mcp_write');
+    });
+
+    it("should show total tool usage count", () => {
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_read');
+      board.addToolUsage('mcp_write');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.include('Total: 3');
+    });
+
+    it("should render file operation summary", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file2.js');
+      board.addFileWritten('/path/to/file3.js');
+      
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.exist;
+      expect(statsSection.textContent).to.include('File Operations');
+      expect(statsSection.textContent).to.include('Total Reads');
+      expect(statsSection.textContent).to.include('3'); // 3 total reads
+      expect(statsSection.textContent).to.include('2 files'); // 2 unique files read
+      expect(statsSection.textContent).to.include('Total Writes');
+      expect(statsSection.textContent).to.include('1'); // 1 total write
+    });
+
+    it("should not render stats section when no stats", () => {
+      board.render();
+      
+      const content = board.get('#content');
+      const statsSection = content.querySelector('.stats-section');
+      
+      expect(statsSection).to.not.exist;
+    });
+  });
+
+  describe("Message Parsing", () => {
+    it("should extract and track tool usages from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file.js' } },
+          { name: 'mcp_write', input: { filePath: '/test/output.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.toolUsages.get('mcp_read')).to.equal(1);
+      expect(board.toolUsages.get('mcp_write')).to.equal(1);
+      expect(board.getTotalToolUsages()).to.equal(2);
+    });
+
+    it("should track file reads from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file1.js' } },
+          { name: 'read_file', input: { filePath: '/test/file2.js' } },
+          { name: 'read', input: { path: '/test/file3.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.fileReadCounts.get('/test/file1.js')).to.equal(1);
+      expect(board.fileReadCounts.get('/test/file2.js')).to.equal(1);
+      expect(board.fileReadCounts.get('/test/file3.js')).to.equal(1);
+    });
+
+    it("should track file writes from message", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_write', input: { filePath: '/test/file1.js' } },
+          { name: 'mcp_edit', input: { filePath: '/test/file2.js' } },
+          { name: 'write', input: { path: '/test/file3.js' } }
+        ]
+      };
+      
+      board.updateFromMessage(message);
+      
+      expect(board.fileWriteCounts.get('/test/file1.js')).to.equal(1);
+      expect(board.fileWriteCounts.get('/test/file2.js')).to.equal(1);
+      expect(board.fileWriteCounts.get('/test/file3.js')).to.equal(1);
+    });
+
+    it("should set context from message update", () => {
+      const message = {
+        parts: [
+          { name: 'mcp_read', input: { filePath: '/test/file.js' } }
+        ]
+      };
+      
+      const context = {
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: 'src/ai-workspace',
+        urlBase: 'http://localhost:9005/lively4-core/'
+      };
+      
+      board.updateFromMessage(message, context);
+      
+      expect(board.workingDirectory).to.equal('/home/jens/lively4/lively4-core');
+      expect(board.projectPath).to.equal('src/ai-workspace');
+      expect(board.urlBase).to.equal('http://localhost:9005/lively4-core/');
+    });
+
+    it("should handle messages without parts", () => {
+      const message = {};
+      
+      expect(() => board.updateFromMessage(message)).to.not.throw();
+    });
+
+    it("should handle null/undefined messages", () => {
+      expect(() => board.updateFromMessage(null)).to.not.throw();
+      expect(() => board.updateFromMessage(undefined)).to.not.throw();
+    });
+  });
+
+  describe("Project Focus", () => {
+    it("should update project focus from project object with url", () => {
+      const project = {
+        url: 'http://localhost:9005/lively4-core/src/ai-workspace/',
+        path: 'src/ai-workspace'
+      };
+      
+      board.updateProjectFocus(project);
+      
+      expect(board.links.projectFocus).to.equal('http://localhost:9005/lively4-core/src/ai-workspace/index.md');
+    });
+
+    it("should update project focus from project object without url", () => {
+      const project = {
+        path: 'src/ai-workspace'
+      };
+      
+      board.updateProjectFocus(project);
+      
+      expect(board.links.projectFocus).to.equal('src/ai-workspace/index.md');
+    });
+
+    it("should handle null project", () => {
+      expect(() => board.updateProjectFocus(null)).to.not.throw();
     });
   });
 });

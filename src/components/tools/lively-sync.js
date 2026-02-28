@@ -389,6 +389,114 @@ export default class Sync extends Morph {
     this.gitControl("squash");
   }
 
+  async onCheckpointButton() {
+    // Get porcelain status (machine-readable, no ANSI codes)
+    const status = await this.gitControl("status", () => {}, { "gitporcelain": "true" });
+    
+    // Parse changed files from porcelain output
+    const changedFiles = this.parseChangedFilesFromPorcelainStatus(status);
+    
+    if (changedFiles.length === 0) {
+      lively.notify("No changes to checkpoint");
+      return;
+    }
+    
+    // Build commit message with file names (basenames only for brevity)
+    const MAX_FILES_IN_MESSAGE = 3;
+    const baseNames = changedFiles
+      .slice(0, MAX_FILES_IN_MESSAGE)
+      .map(f => f.split('/').pop());  // Just the filename, no path
+    const fileList = baseNames.join('-');
+    const suffix = changedFiles.length > MAX_FILES_IN_MESSAGE ? '-and-more' : '';
+    const commitMessage = `AUTO-COMMIT-AI-${fileList}${suffix}`;
+    
+    // Commit using checkpoint endpoint (adds all files including untracked)
+    // Pass message via header without touching the UI field
+    await this.gitControl("checkpoint", null, { "gitcommitmessage": commitMessage });
+    
+    lively.notify(`AI checkpoint created`);
+  }
+
+  parseChangedFilesFromPorcelainStatus(statusOutput) {
+    const lines = statusOutput.split('\n');
+    const files = [];
+    
+    // Parse git status --porcelain output
+    // Format: XY filename
+    // Examples:
+    //  M modified-file.js
+    //  D deleted-file.js
+    // ?? untracked-file.js
+    //  A new-file.js
+    for (const line of lines) {
+      if (line.trim() === '') continue;
+      
+      // Porcelain format: first two chars are status, rest is filename
+      if (line.length > 3) {
+        const filename = line.substring(3).trim();
+        files.push(filename);
+      }
+    }
+    
+    return files;
+  }
+
+  parseChangedFilesFromStatus(statusOutput) {
+    const lines = statusOutput.split('\n');
+    const files = [];
+    let inUntrackedSection = false;
+    
+    // Helper to strip ANSI color codes
+    const stripAnsi = (str) => str.replace(/\x1b\[[0-9;]*m/g, '');
+    
+    // Parse git status output for modified/new/deleted/untracked files
+    // Format examples:
+    //   modified:   src/file.js
+    //   new file:   src/another.js
+    //   deleted:    src/old.js
+    // Untracked files:
+    //   foo
+    //   bar/baz.js
+    for (const line of lines) {
+      // Check if we're entering the untracked files section
+      if (line.match(/^Untracked files:/)) {
+        inUntrackedSection = true;
+        continue;
+      }
+      
+      // Exit untracked section if we hit an empty line or another section
+      if (inUntrackedSection && (line.trim() === '' || !line.match(/^\s+\S/))) {
+        inUntrackedSection = false;
+      }
+      
+      // Parse untracked files (tab-indented lines in untracked section)
+      if (inUntrackedSection) {
+        const untrackedMatch = line.match(/^\s+(.+)$/);
+        if (untrackedMatch) {
+          const file = stripAnsi(untrackedMatch[1].trim());
+          // Skip the "(use "git add" ...)" hint lines
+          if (!file.startsWith('(')) {
+            files.push(file);
+          }
+        }
+        continue;
+      }
+      
+      // Parse staged/unstaged changes
+      // Strip ANSI codes from line first, then match patterns
+      const cleanLine = stripAnsi(line);
+      const modifiedMatch = cleanLine.match(/^\s*modified:\s+(.+)$/);
+      const newFileMatch = cleanLine.match(/^\s*new file:\s+(.+)$/);
+      const deletedMatch = cleanLine.match(/^\s*deleted:\s+(.+)$/);
+      
+      if (modifiedMatch) files.push(modifiedMatch[1].trim());
+      else if (newFileMatch) files.push(newFileMatch[1].trim());
+      else if (deletedMatch) files.push(deletedMatch[1].trim());
+    }
+    
+    return files;
+  }
+
   async onResetButton(){
     const answer = await lively.confirm("This will hard reset to the current remote working index.");
     if(answer){

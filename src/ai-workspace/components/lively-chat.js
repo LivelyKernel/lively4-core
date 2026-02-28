@@ -36,7 +36,7 @@ export default class LivelyChat extends Morph {
 
   /*MD ## Initialization MD*/
 
-  async initialize() {
+  initialize() {
 
     // IMPORTANT: Preserve event capture across live updates
     // Map<sessionId, event[]> - accumulates across sessions, survives livelyMigrate
@@ -47,6 +47,12 @@ export default class LivelyChat extends Morph {
 
     // Event source identifier (override in subclasses)
     this.eventSource = this.eventSource || null;
+
+    // Message rendering state (unified across all chat components)
+    // Use || pattern to handle race conditions where methods are called before initialize() completes
+    this.chatMessages = this.chatMessages || new Map();           // messageId -> widget element
+    this.pendingUpdates = this.pendingUpdates || new Map();       // messageId -> array of updates that arrived early
+    this.renderingMessages = this.renderingMessages || new Set(); // messageIds currently being rendered
   }
 
   /**
@@ -110,9 +116,9 @@ export default class LivelyChat extends Morph {
 
   /*MD ## Custom Events MD*/
 
-  dispatchMessageEvent(name, msg) {
+  dispatchMessageEvent(name, data) {
     this.dispatchEvent(new CustomEvent(name, {
-        detail: msg,
+        detail: data,
         bubbles: true,
         composed: true
       }));
@@ -158,6 +164,25 @@ export default class LivelyChat extends Morph {
     return true; // default is visible
   }
 
+  set loggingUI(value) {
+    // Control whether logging panel is shown
+    // Default (undefined/true) shows the logging panel
+    // Set to false to hide when embedded or managed externally
+    if (value === false || value === "false") {
+      this.setAttribute("logging-ui", "false");
+    } else if (value === true || value === "true") {
+      this.setAttribute("logging-ui", "true");
+    } else {
+      this.removeAttribute("logging-ui");
+    }
+  }
+
+  get loggingUI() {
+    const attr = this.getAttribute("logging-ui");
+    if (attr === "false") return false;
+    return true; // default is visible
+  }
+
   set showDebug(value) {
     // Control whether debug annotations are shown in messages
     this._showDebug = value;
@@ -179,6 +204,122 @@ export default class LivelyChat extends Morph {
    */
   updateMessagesDebugState() {
     // Override in subclass with specific container selector
+  }
+
+  /*MD ## Message Rendering - Shared Logic MD*/
+
+  /**
+   * Render a chat message widget and track it (SINGLE SOURCE OF TRUTH)
+   * 
+   * This method handles message rendering with support for:
+   * - Simple messages (realtime voice chat)
+   * - Complex streaming with race conditions (OpenCode SSE)
+   * - Buffering for parts that arrive before message creation
+   * - Late updates that arrive during rendering
+   * 
+   * The complexity here solves real streaming problems:
+   * 1. Parts can arrive via SSE before the message.created event
+   * 2. Updates can arrive while setOpenCodeMessage() is still running (async)
+   * 3. Multiple components render into same container (workspace)
+   * 
+   * @param {Object} message - Message object (OpenCode format or simple {role, content})
+   * @param {string} messageId - Unique message ID for tracking
+   * @param {Object} options - Configuration options
+   * @param {HTMLElement} options.container - Container to append to (defaults to this.messagesContainer)
+   * @param {boolean} options.enableBuffering - Enable race condition protection (default: true)
+   * @param {Object} options.metadata - Metadata passed to setOpenCodeMessage (e.g., {source, streamType})
+   * @returns {HTMLElement} The created message widget
+   */
+  async renderChatMessage(message, messageId, options = {}) {
+    const {
+      container = this.messagesContainer,
+      enableBuffering = true,
+      metadata = null
+    } = options;
+    
+    if (!container) return null;
+
+    // Step 1: Pre-render buffering (for streaming with race conditions)
+    if (enableBuffering && messageId) {
+      this.renderingMessages.add(messageId);
+
+      // IMPORTANT: Merge any buffered parts that arrived before message creation
+      // This happens when SSE sends parts before message.created event
+      if (this.pendingUpdates.has(messageId)) {
+        const pending = this.pendingUpdates.get(messageId);
+        this.log(`[chat] merging ${pending.length} buffered parts into message before rendering`);
+        
+        // Merge parts from all buffered updates
+        for (const bufferedMsg of pending) {
+          if (bufferedMsg.parts && message.parts) {
+            for (const part of bufferedMsg.parts) {
+              // Only add if not already present
+              if (!message.parts.find(p => p.id === part.id)) {
+                message.parts.push(part);
+              }
+            }
+          }
+        }
+        
+        // Clear pending updates since we've merged them
+        this.pendingUpdates.delete(messageId);
+      }
+    }
+
+    // Step 2: Create widget
+    const widget = await lively.create('lively-chat-message');
+
+    // Step 3: Append to DOM IMMEDIATELY to preserve message order
+    // CRITICAL: Must happen before async setOpenCodeMessage() call
+    // Otherwise messages can appear out of order when streaming
+    container.appendChild(widget);
+    
+    // Step 4: Track element IMMEDIATELY after creation
+    // This prevents race conditions where part updates arrive before rendering completes
+    if (messageId) {
+      this.chatMessages.set(messageId, widget);
+    }
+
+    // Step 5: Set content (auto-detect format and call appropriate method)
+    if (message.info && message.parts) {
+      // OpenCode format: {info: {id, role, time}, parts: [...]}
+      await widget.setOpenCodeMessage(message, metadata);
+    } else {
+      // Simple format: {role, content} or {role, content, item_id, ...}
+      await widget.setMessage(message);
+    }
+    
+    // Apply debug state from parent
+    widget.showDebug = this.showDebug;
+
+    // Step 6: Post-render handling (for streaming with race conditions)
+    if (enableBuffering && messageId) {
+      this.log(`[chat] renderMessage complete for ${messageId}`);
+      this.renderingMessages.delete(messageId);
+
+      // Check if new updates arrived while we were rendering (after merge but during render)
+      if (this.pendingUpdates.has(messageId)) {
+        const pending = this.pendingUpdates.get(messageId);
+        this.log(`[chat] applying ${pending.length} updates that arrived during rendering`);
+        
+        // Apply only the latest update (it contains all the current parts)
+        const latestUpdate = pending[pending.length - 1];
+        if (latestUpdate.info && latestUpdate.parts) {
+          await widget.setOpenCodeMessage(latestUpdate, metadata);
+        } else {
+          await widget.setMessage(latestUpdate);
+        }
+        
+        this.pendingUpdates.delete(messageId);
+      }
+    }
+    
+    // Step 7: Scroll to bottom (unless batching)
+    if (!this._batchRendering) {
+      this.scrollToBottom(container);
+    }
+    
+    return widget;
   }
 
   /**
@@ -1008,6 +1149,11 @@ export default class LivelyChat extends Morph {
   livelyMigrate(other) {
     this.showDebug = other.showDebug;
     this._eventCapture = other._eventCapture || new Map();
+    
+    // Preserve message rendering state across hot reloads
+    this.chatMessages = other.chatMessages || new Map();
+    this.pendingUpdates = other.pendingUpdates || new Map();
+    this.renderingMessages = other.renderingMessages || new Set();
   }
   
 }

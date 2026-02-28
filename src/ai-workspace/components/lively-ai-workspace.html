@@ -1,7 +1,7 @@
 <template id="lively-ai-workspace">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
-<style data-src="/src/components/tools/lively-chat.css"></style>
+<style data-src="/src/ai-workspace/components/lively-chat.css"></style>
 <style>
 :host {
   display: block;
@@ -87,7 +87,66 @@
   overflow: hidden;
 }
 
-.shared-messages-pane {
+/* Prompt selector - matching OpenCode style */
+.prompt-selector {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prompt-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #495057;
+}
+
+.prompt-controls {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.prompt-selector input-combobox {
+  flex: 1;
+}
+
+.prompt-selector input-combobox input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
+.prompt-edit-button {
+  padding: 6px 10px;
+  font-size: 11px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  background: white;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.prompt-edit-button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #212529;
+}
+
+.prompt-edit-button i {
+  font-size: 12px;
+}
+
+.messages-container {
   flex: 1.5;
   min-height: 0;
   overflow-y: auto;
@@ -97,16 +156,97 @@
   display: block;
 }
 
-.shared-messages-pane lively-chat-message {
+.messages-container lively-chat-message {
   display: block;
   margin-bottom: 5px;
 }
 
 /* Component-specific logging panel sizing */
 .logging-panel {
-  width: 400px;
-  flex-shrink: 0;
+  flex: 0 0 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-bottom: 1px solid #e0e0e0;
+}
+
+/* Panel tabs and content - same structure as opencode */
+.panel-tabs {
+  display: flex;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.panel-tab {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.panel-tab:hover {
+  color: #495057;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.panel-tab.active {
+  color: #4a90e2;
+  border-bottom-color: #4a90e2;
+  background: white;
+}
+
+.panel-content {
+  flex: 1;
+  overflow: auto;
+  display: none;
+}
+
+.panel-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Debug log and board content */
+#debugLog {
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  background: white;
+}
+
+#agentBoard {
+  background: white;
+}
+
+.debug-log-actions {
+  padding: 8px 12px;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.debug-log-actions button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.debug-log-actions button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #495057;
 }
 
 .subchats-container {
@@ -243,23 +383,46 @@
 <div class="main-layout">
   <div class="workspace-content">
     <div class="sidebar">
+      <div class="prompt-selector">
+        <label class="prompt-label">Prompt</label>
+        <div class="prompt-controls">
+          <input-combobox id="promptCombobox"></input-combobox>
+          <button class="prompt-edit-button" id="promptEditButton" title="Edit prompt file">
+            <i class="fa fa-pencil"></i>
+          </button>
+        </div>
+      </div>
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>
     <lively-separator></lively-separator>
 
-    <div class="shared-messages-pane" id="sharedMessagesPane">
+    <div class="messages-container" id="messagesContainer">
       <!-- Unified messages from both audio and code sources displayed here -->
     </div>
     <lively-separator></lively-separator>
 
     <div class="logging-panel" id="loggingPanel">
-      <div class="logging-header">
-        <span>Debug Log</span>
-        <button id="clearLogButton" title="Clear log">
-          <i class="fa fa-trash"></i>
+      <div class="panel-tabs">
+        <button class="panel-tab active" id="boardTab">
+          Board
+        </button>
+        <button class="panel-tab" id="debugLogTab">
+          Debug Logs
         </button>
       </div>
-      <ul id="debugLog"></ul>
+      
+      <div class="panel-content active" id="boardContent">
+        <lively-agent-board id="agentBoard"></lively-agent-board>
+      </div>
+      
+      <div class="panel-content" id="debugLogContent">
+        <div class="debug-log-actions">
+          <button id="clearLogButton" title="Clear log">
+            <i class="fa fa-trash"></i> Clear
+          </button>
+        </div>
+        <ul id="debugLog"></ul>
+      </div>
     </div>
   </div>
 

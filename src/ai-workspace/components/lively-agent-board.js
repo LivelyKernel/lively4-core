@@ -3,15 +3,19 @@ import Morph from 'src/components/widgets/lively-morph.js';
 /*MD
 # Lively Agent Board
 
-Display board for agent-related information like TODOs, session links, and other session data.
+Display board for agent-related information like TODOs, session links, tool usage statistics, and file operations.
 
 **Features:**
 - Display TODOs grouped by status
 - Priority-based color coding
+- Tool usage statistics:
+  - Count of each tool used during session
+  - Total tool usage count
+  - File operation summary (total reads/writes)
 - Session links section showing:
   - Project Focus (index.md link)
-  - Files read during session
-  - Files written during session
+  - Files read during session (with read counts)
+  - Files written during session (with write counts)
 - Reusable across different AI components (lively-opencode, lively-ai-workspace)
 
 **Usage:**
@@ -21,8 +25,13 @@ const board = await lively.create("lively-agent-board");
 // Set project focus
 board.setProjectFocus("src/ai-workspace/index.md");
 
-// Add file operations
+// Track tool usages
+board.addToolUsage("mcp_read");
+board.addToolUsage("mcp_write");
+
+// Add file operations (counts are tracked automatically)
 board.addFileRead("path/to/file.js");
+board.addFileRead("path/to/file.js"); // Read again - count increments
 board.addFileWritten("path/to/file.js");
 
 // Update TODOs
@@ -46,38 +55,26 @@ export default class LivelyAgentBoard extends Morph {
     this.windowTitle = "Agent Board";
     this.todos = [];
     this.links = {
-      projectFocus: null,
-      filesRead: [],
-      filesWritten: []
+      projectFocus: null
     };
-    // Context for building URLs and shortening paths
+    this.toolUsages = new Map();
+    this.fileReadCounts = new Map();
+    this.fileWriteCounts = new Map();
     this.workingDirectory = null;
     this.projectPath = null;
     this.urlBase = null;
   }
 
-  /**
-   * Update the TODO list display
-   * @param {Array} todos - Array of TODO items from server
-   */
   updateTodos(todos) {
     this.todos = todos || [];
     this.render();
   }
 
-  /**
-   * Set the project focus link
-   * @param {string} path - Path to the project focus index.md
-   */
   setProjectFocus(path) {
     this.links.projectFocus = path;
     this.render();
   }
 
-  /**
-   * Set context for URL building and path shortening
-   * @param {Object} context - { workingDirectory, projectPath, urlBase }
-   */
   setContext(context) {
     this.workingDirectory = context.workingDirectory;
     this.projectPath = context.projectPath;
@@ -85,45 +82,170 @@ export default class LivelyAgentBoard extends Morph {
     this.render();
   }
 
-  /**
-   * Add a file read link
-   * @param {string} path - Path to the file that was read
-   */
   addFileRead(path) {
-    if (!this.links.filesRead.includes(path)) {
-      this.links.filesRead.push(path);
-      this.render();
-    }
+    const count = this.fileReadCounts.get(path) || 0;
+    this.fileReadCounts.set(path, count + 1);
+    this.render();
   }
 
-  /**
-   * Add a file written link
-   * @param {string} path - Path to the file that was written
-   */
   addFileWritten(path) {
-    if (!this.links.filesWritten.includes(path)) {
-      this.links.filesWritten.push(path);
-      this.render();
-    }
+    const count = this.fileWriteCounts.get(path) || 0;
+    this.fileWriteCounts.set(path, count + 1);
+    this.render();
   }
 
-  /**
-   * Clear all file links (reads and writes)
-   */
-  clearFileLinks() {
-    this.links.filesRead = [];
-    this.links.filesWritten = [];
+  addToolUsage(toolName) {
+    const count = this.toolUsages.get(toolName) || 0;
+    this.toolUsages.set(toolName, count + 1);
     this.render();
   }
 
   /**
-   * Clear everything (TODOs and file links)
+   * Update board from an OpenCode message.
+   * Scans message parts for tool uses and tracks file operations.
+   * 
+   * @param {Object} message - OpenCode message object with parts array
+   * @param {Object} context - Optional context for URL building and path shortening
+   * @param {string} context.workingDirectory - Current working directory
+   * @param {string} context.projectPath - Project path for URL shortening
+   * @param {string} context.urlBase - Base URL for building file links
    */
+  updateFromMessage(message, context) {
+    if (!message) return;
+    
+    // Update context if provided
+    if (context) {
+      this.setContext(context);
+    }
+    
+    const parts = message.parts || [];
+    
+    for (const part of parts) {
+      const toolName = part.name || part.tool;
+      if (!toolName) continue;
+      
+      // Track all tool usages
+      this.addToolUsage(toolName);
+      
+      // Track file operations specifically
+      const input = part.input || part.state?.input || {};
+      const filePath = input.filePath || input.path;
+      
+      if (!filePath) continue;
+      
+      // Check for Read tools
+      if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
+        this.addFileRead(filePath);
+      }
+      
+      // Check for Write tools  
+      if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
+          toolName === 'mcp_edit' || toolName === 'edit') {
+        this.addFileWritten(filePath);
+      }
+    }
+  }
+
+  /**
+   * Update project focus from a project object.
+   * 
+   * @param {Object} project - Project object with url and path
+   * @param {string} project.url - Project URL (optional)
+   * @param {string} project.path - Project path
+   */
+  updateProjectFocus(project) {
+    if (!project) return;
+    
+    const indexUrl = project.url 
+      ? project.url + 'index.md' 
+      : `${project.path}/index.md`;
+    this.setProjectFocus(indexUrl);
+  }
+
+  /**
+   * Get total number of tool usages across all tools
+   * @returns {number}
+   */
+  getTotalToolUsages() {
+    let total = 0;
+    for (const count of this.toolUsages.values()) {
+      total += count;
+    }
+    return total;
+  }
+
+  clearFileLinks() {
+    this.fileReadCounts.clear();
+    this.fileWriteCounts.clear();
+    this.render();
+  }
+
+  clearToolUsages() {
+    this.toolUsages.clear();
+    this.render();
+  }
+
   clearAll() {
     this.todos = [];
     this.links.projectFocus = null;
-    this.links.filesRead = [];
-    this.links.filesWritten = [];
+    this.fileReadCounts.clear();
+    this.fileWriteCounts.clear();
+    this.toolUsages.clear();
+    this.render();
+  }
+
+  /**
+   * Update board by pulling data directly from an OpenCode component.
+   * This is the OO approach - the board knows what it needs and fetches it itself.
+   * 
+   * @param {LivelyOpencode} opencodeComponent - The OpenCode component to pull data from
+   */
+  async updateFromOpenCode(opencodeComponent) {
+    if (!opencodeComponent) return;
+    
+    const session = opencodeComponent.currentSession;
+    if (!session) {
+      // No session - clear board
+      this.clearAll();
+      return;
+    }
+    
+    // Set context for URL building and path shortening
+    this.setContext({
+      workingDirectory: opencodeComponent.workingDirectory,
+      projectPath: opencodeComponent.currentProject?.path,
+      urlBase: opencodeComponent.loadProjectUrlBase()
+    });
+    
+    // Clear file operations before loading new session data
+    this.fileReadCounts.clear();
+    this.fileWriteCounts.clear();
+    this.toolUsages.clear();
+    
+    // Pull and update TODOs
+    const todos = await opencodeComponent.fetchTodosForSession(session.id);
+    this.updateTodos(todos);
+    
+    // Pull and update project focus
+    if (opencodeComponent.currentProject) {
+      this.updateProjectFocus(opencodeComponent.currentProject);
+    } else {
+      this.links.projectFocus = null;
+    }
+    
+    // Pull messages and scan for file operations
+    const messages = opencodeComponent.messages.get(session.id);
+    if (messages) {
+      for (const message of messages) {
+        this.updateFromMessage(message, {
+          workingDirectory: this.workingDirectory,
+          projectPath: this.projectPath,
+          urlBase: this.urlBase
+        });
+      }
+    }
+    
+    // Final render with all data
     this.render();
   }
 
@@ -204,19 +326,97 @@ export default class LivelyAgentBoard extends Morph {
       content.appendChild(todosSection);
     }
 
+    // Render Tool Usage Statistics section (at the bottom)
+    const statsSection = this.renderStatsSection();
+    if (statsSection) {
+      content.appendChild(statsSection);
+    }
+
     // Show empty message if no content
-    if (!linksSection && !todosSection) {
+    if (!statsSection && !linksSection && !todosSection) {
       content.appendChild(<div class="empty-message">No data to display</div>);
     }
   }
 
   /**
-   * Render the session links section
+   * Render the statistics section showing tool usages and file operation counts
    */
+  renderStatsSection() {
+    const hasStats = this.toolUsages.size > 0 || 
+                     this.fileReadCounts.size > 0 || 
+                     this.fileWriteCounts.size > 0;
+
+    if (!hasStats) return null;
+
+    const section = <div class="board-section stats-section">
+      <div class="board-section-title">Session Statistics</div>
+    </div>;
+
+    // Tool Usage Stats
+    if (this.toolUsages.size > 0) {
+      const totalToolUsages = this.getTotalToolUsages();
+      section.appendChild(
+        <div class="stat-group">
+          <div class="stat-group-header">Tool Usage (Total: {totalToolUsages})</div>
+        </div>
+      );
+
+      // Sort tools by usage count (descending)
+      const sortedTools = Array.from(this.toolUsages.entries())
+        .sort((a, b) => b[1] - a[1]);
+
+      sortedTools.forEach(([toolName, count]) => {
+        section.appendChild(
+          <div class="stat-item">
+            <span class="stat-name">{toolName}</span>
+            <span class="stat-count">{count}</span>
+          </div>
+        );
+      });
+    }
+
+    // File Read/Write Summary
+    const totalReads = Array.from(this.fileReadCounts.values())
+      .reduce((sum, count) => sum + count, 0);
+    const totalWrites = Array.from(this.fileWriteCounts.values())
+      .reduce((sum, count) => sum + count, 0);
+
+    if (totalReads > 0 || totalWrites > 0) {
+      section.appendChild(
+        <div class="stat-group">
+          <div class="stat-group-header">File Operations</div>
+        </div>
+      );
+
+      if (totalReads > 0) {
+        section.appendChild(
+          <div class="stat-item">
+            <span class="stat-name">Total Reads</span>
+            <span class="stat-count">{totalReads} ({this.fileReadCounts.size} files)</span>
+          </div>
+        );
+      }
+
+      if (totalWrites > 0) {
+        section.appendChild(
+          <div class="stat-item">
+            <span class="stat-name">Total Writes</span>
+            <span class="stat-count">{totalWrites} ({this.fileWriteCounts.size} files)</span>
+          </div>
+        );
+      }
+    }
+
+    return section;
+  }
+
   renderLinksSection() {
+    const filesRead = Array.from(this.fileReadCounts.keys());
+    const filesWritten = Array.from(this.fileWriteCounts.keys());
+    
     const hasLinks = this.links.projectFocus || 
-                     this.links.filesRead.length > 0 || 
-                     this.links.filesWritten.length > 0;
+                     filesRead.length > 0 || 
+                     filesWritten.length > 0;
 
     if (!hasLinks) return null;
 
@@ -239,43 +439,66 @@ export default class LivelyAgentBoard extends Morph {
       );
     }
 
+    // Project Tasks
+    section.appendChild(
+      <div class="link-item">
+        <span class="link-icon">📋</span>
+        <a class="link-path" click={() => {
+            const tasksUrl = this.buildFileUrl('/home/jens/lively4/lively4-core/src/ai-workspace/tasks.md');
+            lively.openBrowser(tasksUrl, true)
+          }} title="src/ai-workspace/tasks.md">
+          Project Tasks
+        </a>
+      </div>
+    );
+
     // Files Read
-    if (this.links.filesRead.length > 0) {
+    if (filesRead.length > 0) {
       section.appendChild(
-        <div class="link-group-title">Files Read ({this.links.filesRead.length})</div>
+        <div class="link-group-title">Files Read ({filesRead.length})</div>
       );
       
-      this.links.filesRead.forEach(path => {
+      filesRead.forEach(path => {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
-        section.appendChild(
-          <div class="link-item file-read">
-            <span class="link-icon">📖</span>
-            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
-              {displayPath}
-            </a>
-          </div>
-        );
+        const readCount = this.fileReadCounts.get(path) || 0;
+        const linkItem = <div class="link-item file-read">
+          <span class="link-icon">📖</span>
+          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+            {displayPath}
+          </a>
+        </div>;
+        
+        if (readCount > 1) {
+          linkItem.appendChild(<span class="file-count">×{readCount}</span>);
+        }
+        
+        section.appendChild(linkItem);
       });
     }
 
     // Files Written
-    if (this.links.filesWritten.length > 0) {
+    if (filesWritten.length > 0) {
       section.appendChild(
-        <div class="link-group-title">Files Written ({this.links.filesWritten.length})</div>
+        <div class="link-group-title">Files Written ({filesWritten.length})</div>
       );
       
-      this.links.filesWritten.forEach(path => {
+      filesWritten.forEach(path => {
         const url = this.buildFileUrl(path);
         const displayPath = this.shortenPath(path);
-        section.appendChild(
-          <div class="link-item file-written">
-            <span class="link-icon">✏️</span>
-            <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
-              {displayPath}
-            </a>
-          </div>
-        );
+        const writeCount = this.fileWriteCounts.get(path) || 0;
+        const linkItem = <div class="link-item file-written">
+          <span class="link-icon">✏️</span>
+          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+            {displayPath}
+          </a>
+        </div>;
+        
+        if (writeCount > 1) {
+          linkItem.appendChild(<span class="file-count">×{writeCount}</span>);
+        }
+        
+        section.appendChild(linkItem);
       });
     }
 
@@ -354,11 +577,26 @@ export default class LivelyAgentBoard extends Morph {
     // Set project focus
     this.setProjectFocus("src/ai-workspace/index.md");
     
+    // Add some tool usages (simulating AI agent activity)
+    this.addToolUsage('mcp_read');
+    this.addToolUsage('mcp_read');
+    this.addToolUsage('mcp_read');
+    this.addToolUsage('mcp_write');
+    this.addToolUsage('mcp_write');
+    this.addToolUsage('mcp_edit');
+    this.addToolUsage('mcp_bash');
+    this.addToolUsage('mcp_glob');
+    this.addToolUsage('mcp_grep');
+    this.addToolUsage('mcp_grep');
+    
     // Add some file reads/writes with full paths
     // These will be shortened to just the relative path within the project
+    // Multiple reads/writes of same file to demonstrate counts
     this.addFileRead("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.js");
+    this.addFileRead("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.js"); // Read again
     this.addFileRead("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-opencode.js");
     this.addFileWritten("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.html");
+    this.addFileWritten("/home/jens/lively4/lively4-core/src/ai-workspace/components/lively-agent-board.html"); // Write again
     this.addFileWritten("/home/jens/lively4/lively4-core/src/ai-workspace/test/lively-agent-board-test.js");
     
     // Add TODOs

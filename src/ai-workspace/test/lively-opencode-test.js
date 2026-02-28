@@ -485,6 +485,7 @@ describe('OpenCode Chat Event Replay', () => {
       mockBoard = {
         filesRead: [],
         filesWritten: [],
+        toolUsages: [],
         workingDirectory: null,
         projectPath: null,
         urlBase: null,
@@ -498,10 +499,41 @@ describe('OpenCode Chat Event Replay', () => {
             this.filesWritten.push(path);
           }
         },
+        addToolUsage(toolName) {
+          this.toolUsages.push(toolName);
+        },
         setContext(context) {
           this.workingDirectory = context.workingDirectory;
           this.projectPath = context.projectPath;
           this.urlBase = context.urlBase;
+        },
+        updateFromMessage(message, context) {
+          // Delegate to the board's actual implementation logic
+          if (context) {
+            this.setContext(context);
+          }
+          
+          const parts = message.parts || [];
+          for (const part of parts) {
+            const toolName = part.name || part.tool;
+            if (!toolName) continue;
+            
+            this.addToolUsage(toolName);
+            
+            const input = part.input || part.state?.input || {};
+            const filePath = input.filePath || input.path;
+            
+            if (!filePath) continue;
+            
+            if (toolName === 'mcp_read' || toolName === 'read_file' || toolName === 'read') {
+              this.addFileRead(filePath);
+            }
+            
+            if (toolName === 'mcp_write' || toolName === 'write_file' || toolName === 'write' || 
+                toolName === 'mcp_edit' || toolName === 'edit') {
+              this.addFileWritten(filePath);
+            }
+          }
         },
         clearFileLinks() {
           this.filesRead = [];
@@ -510,6 +542,7 @@ describe('OpenCode Chat Event Replay', () => {
         clearAll() {
           this.filesRead = [];
           this.filesWritten = [];
+          this.toolUsages = [];
         }
       };
 

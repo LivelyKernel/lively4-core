@@ -232,25 +232,25 @@ This document tracks tasks related to implementing task division between the voi
 
 ---
 
-## Architecture Improvements
+## Architecture Improvements & Refactoring
 
-### Workspace Coordination
-- [ ] Extract `WorkspaceBlackboard` class
-- [ ] Create `MessageWidgetManager` class
-- [ ] Standardize event dispatching patterns
-- [ ] Unify terminology (workspace/conversation/session)
+**See [refactoring.md](refactoring.md) for complete architecture refactoring tasks.**
 
-### Message Rendering
+Most architecture improvements have been completed:
+- ✅ Extract `WorkspaceBlackboard` class
+- ✅ Extract `MessageWidgetManager` class  
+- ✅ Standardize event dispatching patterns
+- ✅ Standardize container names (`#messagesContainer`)
+- ✅ Standardize method names across components
+- ✅ Removed duplicate `updateOpenCodeMessage` in workspace
+- ✅ Renamed `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
+
+**Remaining tasks:**
 - [ ] Unify `setMessage()` APIs in lively-chat-message
 - [ ] Create extensible tool parser registry
 - [ ] Make `isLocalFunction()` configurable
 - [ ] Decompose `formatToolMessage()` method
-
-### Code Quality
-- [ ] Remove duplicate `updateOpenCodeMessage` in workspace
-- [ ] Rename `updateOpenCodeMessagesDebugState` → `updateMessagesDebugState`
-- [ ] Standardize container names (`#messagesContainer`)
-- [ ] Standardize method names across components
+- [ ] Unify terminology (workspace/conversation/session) in documentation
 
 ---
 
@@ -392,7 +392,7 @@ This document tracks tasks related to implementing task division between the voi
 - [AI Workspace Architecture](./ai-workspace.md) - Main architecture documentation
 - [AI Workspace Modes](./ai-workspace-modes.md) - Task division strategies
 - [CLAUDE.md](../../CLAUDE.md) - Development guidelines
-- [OpenAI Realtime Chat Tools](browse://src/components/tools/openai-realtime-chat-tools.js)
+- [Realtime Chat Toolsets](browse://src/ai-workspace/components/realtime-chat-tools/)
 - [AI Workspace Component](browse://src/components/tools/lively-ai-workspace.js)
 
 ---

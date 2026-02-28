@@ -8,13 +8,13 @@ var treemap = await (<lively-treemap></lively-treemap>);
 var editor1 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor1.setDoitContext(treemap);
 editor1.value =
-`import FileIndex from '../src/client/fileindex.js';
+`import FileIndex from 'src/client/fileindex.js';
 
 // #UserData
 const allClasses = await FileIndex.current().db.classes.toArray();
 this.classData = allClasses
-  .filter(ea => ea.url.startsWith(lively4url))
-  .slice(300, 600);
+  .filter(ea => ea.url.startsWith(lively4url +"/"))
+  .filter(ea => ea.url.match("ai-workspace/"));
 
 this.table.setFromJSO(this.classData);
 `

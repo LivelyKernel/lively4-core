@@ -138,9 +138,10 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     component.conversation = [];
     component.messageSequence = 0;
 
-    // Clear responses container
-    if (component.responses) {
-      component.responses.innerHTML = '';
+    // Clear messages container
+    const messagesContainer = component.get('#messagesContainer');
+    if (messagesContainer) {
+      messagesContainer.innerHTML = '';
     }
   });
 
@@ -276,6 +277,119 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
       // Should not add duplicate
       expect(component.conversation).to.have.length(initialLength);
+    });
+  });
+
+  describe('Message Ordering', () => {
+    it('should maintain correct message order when loading from database', async function() {
+      this.timeout(5000);
+      
+      // Create a new conversation
+      const conversationId = await component.createSession();
+      
+      // Create messages rapidly to stress-test ordering
+      // Use createMessage directly to simulate real-time message flow
+      await component.createMessage('item1', 'user', 'First message', true);
+      await component.createMessage('item2', 'assistant', 'First response', true);
+      await component.createMessage('item3', 'user', 'Second message', true);
+      await component.createMessage('item4', 'assistant', 'Second response', true);
+      
+      // Force a small delay to ensure all DB writes complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Reload conversation from database
+      await component.loadConversation(conversationId);
+      
+      // Verify correct number of messages
+      expect(component.conversation).to.have.length(4);
+      
+      // Verify ordering by sequence numbers (should be monotonically increasing)
+      expect(component.conversation[0].sequence).to.equal(0);
+      expect(component.conversation[1].sequence).to.equal(1);
+      expect(component.conversation[2].sequence).to.equal(2);
+      expect(component.conversation[3].sequence).to.equal(3);
+      
+      // Verify content order matches sequence order
+      expect(component.conversation[0].content).to.equal('First message');
+      expect(component.conversation[1].content).to.equal('First response');
+      expect(component.conversation[2].content).to.equal('Second message');
+      expect(component.conversation[3].content).to.equal('Second response');
+      
+      // Verify roles alternate correctly
+      expect(component.conversation[0].role).to.equal('user');
+      expect(component.conversation[1].role).to.equal('assistant');
+      expect(component.conversation[2].role).to.equal('user');
+      expect(component.conversation[3].role).to.equal('assistant');
+    });
+    
+    it('should handle messages without sequence numbers (backward compatibility)', async function() {
+      this.timeout(5000);
+      
+      // Create a conversation
+      const conversationId = await component.createSession();
+      
+      // Manually insert messages into DB without sequence numbers (simulating old data)
+      const db = component.constructor.conversationdb;
+      
+      await db.messages.add({
+        conversationId: conversationId,
+        timestamp: 1000,
+        role: 'user',
+        content: 'Old message 1',
+        type: 'message'
+      });
+      
+      await db.messages.add({
+        conversationId: conversationId,
+        timestamp: 2000,
+        role: 'assistant',
+        content: 'Old message 2',
+        type: 'message'
+      });
+      
+      // Reload conversation
+      await component.loadConversation(conversationId);
+      
+      // Should fall back to timestamp ordering
+      expect(component.conversation).to.have.length(2);
+      expect(component.conversation[0].content).to.equal('Old message 1');
+      expect(component.conversation[1].content).to.equal('Old message 2');
+    });
+    
+    it('should handle mixed messages (some with sequence, some without)', async function() {
+      this.timeout(5000);
+      
+      // Create a conversation
+      const conversationId = await component.createSession();
+      
+      const db = component.constructor.conversationdb;
+      
+      // Old message without sequence (timestamp 1000)
+      await db.messages.add({
+        conversationId: conversationId,
+        timestamp: 1000,
+        role: 'user',
+        content: 'Old message',
+        type: 'message'
+      });
+      
+      // New message with sequence (timestamp 500 - earlier, but sequence 0)
+      await db.messages.add({
+        conversationId: conversationId,
+        timestamp: 500,
+        sequence: 0,
+        role: 'assistant',
+        content: 'New message with sequence',
+        type: 'message'
+      });
+      
+      // Reload conversation
+      await component.loadConversation(conversationId);
+      
+      // Messages with sequence should come first, then fall back to timestamp
+      expect(component.conversation).to.have.length(2);
+      expect(component.conversation[0].content).to.equal('New message with sequence');
+      expect(component.conversation[1].content).to.equal('Old message');
     });
   });
 });

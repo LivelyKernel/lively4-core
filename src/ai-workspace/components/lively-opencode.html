@@ -1,7 +1,7 @@
 <template id="lively-opencode">
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
-<style data-src="/src/components/tools/lively-chat.css"></style>
+<style data-src="/src/ai-workspace/components/lively-chat.css"></style>
 <style>
 :host {
   display: block;
@@ -198,6 +198,11 @@
   display: none;
 }
 
+/* Hide logging panel when embedded in workspace */
+:host([logging-ui="false"]) .logging-panel {
+  display: none;
+}
+
 .code-user {
   margin-left: 10px;
   margin-right: auto;
@@ -212,16 +217,23 @@
   align-self: flex-end;
 }
 
-/* Component-specific logging panel sizing */
+/* Right Panel - Debug Log and Board Tabs
+ * Structure: .logging-panel (fixed 600px) contains .panel-tabs (fixed)
+ * and .panel-content (scrollable). Each .panel-content has overflow: auto
+ * so tabs stay visible while content scrolls.
+ */
 .logging-panel {
   flex: 0 0 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Tab UI for right panel */
 .panel-tabs {
   display: flex;
   background: #e9ecef;
   border-bottom: 1px solid #dee2e6;
+  flex-shrink: 0;
 }
 
 .panel-tab {
@@ -249,7 +261,7 @@
 
 .panel-content {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   display: none;
 }
 
@@ -258,12 +270,25 @@
   flex-direction: column;
 }
 
+/* Debug log and board content */
+#debugLog {
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  background: white;
+}
+
+#agentBoard {
+  background: white;
+}
+
 .debug-log-actions {
   padding: 8px 12px;
   background: white;
   border-bottom: 1px solid #dee2e6;
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .debug-log-actions button {
@@ -282,26 +307,47 @@
   color: #495057;
 }
 
-/* Working Directory Selector */
-.workdir-selector {
-  background: #f8f9fa;
+/* Sidebar Selectors - shared styles */
+.workdir-selector,
+.project-selector {
   border-right: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
-  padding: 10px 12px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+}
+
+.workdir-selector {
+  background: #f8f9fa;
+  padding: 10px 12px;
   gap: 6px;
 }
 
-.workdir-label {
+.project-selector {
+  background: #f0f4f8;
+}
+
+/* Shared label styles */
+.workdir-label,
+.project-label {
   font-size: 11px;
   font-weight: 600;
-  color: #495057;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.workdir-selector input-combobox {
+.workdir-label {
+  color: #495057;
+}
+
+.project-label {
+  color: #3a6186;
+}
+
+/* Shared combobox width */
+.workdir-selector input-combobox,
+.project-selector input-combobox {
   width: 100%;
 }
 
@@ -313,29 +359,10 @@
   border-radius: 3px;
 }
 
-/* Project Focus Selector */
-.project-selector {
-  background: #f0f4f8;
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 .project-selector-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.project-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #3a6186;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .project-actions {
@@ -355,10 +382,6 @@
 
 .project-actions button:hover {
   background: #dde8f0;
-}
-
-.project-selector input-combobox {
-  width: 100%;
 }
 
 .project-url-base {
@@ -385,6 +408,140 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: help;
+}
+
+/* Permission Request UI */
+.permission-request-ui {
+  border: 2px solid #9b59b6;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  background: linear-gradient(135deg, #f9f5ff 0%, #f0e6ff 100%);
+  box-shadow: 0 2px 8px rgba(155, 89, 182, 0.15);
+}
+
+.permission-header {
+  font-weight: bold;
+  font-size: 15px;
+  color: #6c3483;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #d5b3e8;
+}
+
+.permission-body {
+  margin-bottom: 14px;
+}
+
+.permission-type {
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.permission-patterns {
+  font-size: 13px;
+  margin: 10px 0;
+}
+
+.permission-patterns ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.permission-patterns li {
+  margin: 3px 0;
+  color: #555;
+  font-family: 'Courier New', monospace;
+}
+
+.permission-metadata {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.permission-metadata summary {
+  cursor: pointer;
+  color: #666;
+  user-select: none;
+  font-weight: 500;
+}
+
+.permission-metadata pre {
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 6px;
+  overflow-x: auto;
+  font-size: 11px;
+  border: 1px solid #e0d0f0;
+}
+
+.permission-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  padding-top: 4px;
+}
+
+/* Permission buttons - shared and specific styles */
+.permission-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.permission-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permission-btn:hover:not(:disabled) {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.permission-approve-once {
+  background: #27ae60;
+  color: white;
+}
+
+.permission-approve-once:hover:not(:disabled) {
+  background: #229954;
+}
+
+.permission-approve-always {
+  background: #2ecc71;
+  color: white;
+  border: 2px solid #27ae60;
+}
+
+.permission-approve-always:hover:not(:disabled) {
+  background: #27ae60;
+}
+
+.permission-reject {
+  background: transparent;
+  color: #e74c3c;
+  border: 2px solid #e74c3c;
+}
+
+.permission-reject:hover:not(:disabled) {
+  background: #e74c3c;
+  color: white;
+}
+
+.permission-submitted {
+  color: #555;
+  font-style: italic;
+  font-size: 13px;
+  padding: 10px;
+  text-align: center;
+  background: #e8f5e9;
+  border-radius: 4px;
 }
 
 

@@ -301,6 +301,102 @@
       display: block;
     }
 
+    /* System reminder block - project focus context shown after user message */
+    details.system-reminder-block {
+      margin: 6px 0 0 0;
+      border: 1px solid #b0c4de;
+      border-radius: 3px;
+      background: #f0f4fa;
+    }
+
+    details.system-reminder-block summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #4a6fa5;
+      font-style: italic;
+      user-select: none;
+      list-style: none;
+    }
+
+    details.system-reminder-block summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.system-reminder-block summary::before {
+      content: '▶ ';
+      font-style: normal;
+    }
+
+    details.system-reminder-block[open] summary::before {
+      content: '▼ ';
+    }
+
+    details.system-reminder-block summary:hover {
+      background: #dde8f8;
+      border-radius: 3px 3px 0 0;
+    }
+
+    details.system-reminder-block[open] summary {
+      border-bottom: 1px solid #b0c4de;
+      border-radius: 3px 3px 0 0;
+      margin-bottom: 0;
+    }
+
+    details.system-reminder-block lively-markdown {
+      padding: 4px 10px 6px;
+      font-size: 12px;
+      display: block;
+    }
+
+    /* Legacy project context block - same styling for backward compatibility */
+    details.project-context-block {
+      margin: 0 0 6px 0;
+      border: 1px solid #b0c4de;
+      border-radius: 3px;
+      background: #f0f4fa;
+    }
+
+    details.project-context-block summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #4a6fa5;
+      font-style: italic;
+      user-select: none;
+      list-style: none;
+    }
+
+    details.project-context-block summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.project-context-block summary::before {
+      content: '▶ ';
+      font-style: normal;
+    }
+
+    details.project-context-block[open] summary::before {
+      content: '▼ ';
+    }
+
+    details.project-context-block summary:hover {
+      background: #dde8f8;
+      border-radius: 3px 3px 0 0;
+    }
+
+    details.project-context-block[open] summary {
+      border-bottom: 1px solid #b0c4de;
+      border-radius: 3px 3px 0 0;
+      margin-bottom: 0;
+    }
+
+    details.project-context-block lively-markdown {
+      padding: 4px 10px 6px;
+      font-size: 12px;
+      display: block;
+    }
+
     /* ── Interactive question tool UI ───────────────────────────────────── */
 
     .question-tool-interactive {

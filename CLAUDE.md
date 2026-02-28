@@ -60,6 +60,54 @@ A significant part of this AI collaboration is an **experiment to teach Claude C
 
 This documentation serves dual purposes: guiding AI development work and creating human-readable documentation of Lively4's development practices. The `demos/claude/` directory contains examples and experiments from this collaborative learning process.
 
+## CRITICAL: Git Safety Guidelines
+
+**How to safely work with git and preserve all user work!**
+
+**Guiding Principles:**
+- ✅ **ALWAYS** wait for explicit user request before running any git commands
+- ✅ **ALWAYS** check `git status` and `git diff` first to see the current state
+- ✅ **ALWAYS** ask user for confirmation before making destructive changes
+- ✅ **ALWAYS** verify what other uncommitted work exists before any operation
+
+**Example of WRONG approach:**
+```javascript
+// User: "Let's scrap this feature"
+// ❌ WRONG - immediately destroying work:
+bash("git checkout -- src/file.js")
+
+// What if user had OTHER uncommitted changes?
+// What if the file had important work-in-progress?
+// DISASTER!
+```
+
+**Example of CORRECT approach:**
+```javascript
+// User: "Let's scrap this feature"
+
+// Step 1: Check current state
+bash("git status")
+// Shows: "modified: src/file.js, modified: src/other-important-file.js"
+
+// Step 2: Check what will be lost
+bash("git diff src/file.js")
+// Shows the actual changes
+
+// Step 3: Ask user for confirmation
+"I see you have changes in src/file.js. You also have uncommitted changes in 
+src/other-important-file.js. Should I discard the changes in src/file.js, 
+or do you want to keep working on it?"
+
+// Step 4: Only proceed if user explicitly confirms
+// Then run the git command they requested
+```
+
+**Why this approach is safe:**
+- Users may have hours of uncommitted work
+- Git operations can permanently destroy uncommitted changes
+- User gets to review what will be lost before deciding
+- Verifies no other important work will be affected
+
 ## Essential Commands
 
 **Testing:**
@@ -266,6 +314,10 @@ await lively.openComponentInWindow("component-name")
 ```
 
 ## Development Guidelines
+
+**Avoid Needless Documentation:**
+- Don't document what can be queried from the live system (search event names, grep patterns, runtime inspection)
+- Let method names and parameters speak for themselves - think Smalltalk, not JavaDoc. No verbose JSDoc.
 
 - Always check component template paths and ensure proper .js/.html file pairing
 - Use `lively.components.searchTemplateFilename()` to locate templates programmatically

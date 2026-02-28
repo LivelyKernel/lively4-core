@@ -1,11 +1,11 @@
 import {expect} from 'src/external/chai.js';
-import {
-  BasicToolset,
-  WorkspaceToolset,
-  CompositeToolset,
-  parseLively4EvaluateOutput,
-  getResponseContent
-} from 'src/ai-workspace/components/openai-realtime-chat-tools.js';
+import { BasicToolset } from 'src/ai-workspace/components/realtime-chat-tools/basic-toolset.js';
+import { WorkspaceToolset } from 'src/ai-workspace/components/realtime-chat-tools/workspace-toolset.js';
+import { CompositeToolset } from 'src/ai-workspace/components/realtime-chat-tools/composite-toolset.js';
+
+// Helper functions are now static methods on BasicToolset
+const parseLively4EvaluateOutput = BasicToolset.parseLively4EvaluateOutput;
+const getResponseContent = BasicToolset.getResponseContent;
 
 
 describe('openai-realtime-chat-tools', () => {
