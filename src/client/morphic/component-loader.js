@@ -382,7 +382,7 @@ export default class ComponentLoader {
       ];
 
       const customPaths = this.persistentCustomTemplatePaths
-        .map(path => path.startsWith('/') ? lively4url + path : path);
+        .map(path => path.startsWith('/') ? lively.files.resolve(lively4url + path) : path);
 
       this.templatePaths = defaultPaths.concat(customPaths); 
     } 
