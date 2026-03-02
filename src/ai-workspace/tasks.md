@@ -1,5 +1,9 @@
 # Tasks
 
+
+<lively-import src="_navigation.html"></lively-import>
+
+
 For Human/Agent team:
 
 

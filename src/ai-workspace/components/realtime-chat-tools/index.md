@@ -1,5 +1,9 @@
 # Realtime Chat Toolsets
 
+
+<lively-import src="../../_navigation.html"></lively-import>
+
+
 ### BasicToolset
 - `evaluate_code` - Execute JavaScript in Lively4 environment
 

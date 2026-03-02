@@ -2,30 +2,6 @@
 
 **Consolidated refactoring tasks and architecture improvements**
 
-**Last Updated:** 2026-02-26
-
-## Open Tasks
-
-- [ ] #3 Session vs Conversation Terminology
-- [ ] #5 Button Handler Naming
-- [ ] #8 Temporary Message Handling
-- [ ] #9 Event Capture Deduplication
-- [ ] #10 Health Check / Reconnection
-- [ ] #11 Extract Message Widget Manager
-- [x] #12 Standardize Event Dispatching
-- [ ] #13 Unify Session Persistence
-- [ ] #14 Extract Blackboard Pattern
-- [ ] #15 Toolset Interface
-- [ ] #16 Auto-Scroll Message Container
-- [ ] #17 Session Metadata Sync
-- [ ] #18 Method Render Double Bug
-- [ ] #19 Voice Chat Timestamp Issues
-- [ ] #21 Remove Commented Code
-- [ ] #22 Remove Deprecated Aliases
-- [ ] #23 Fix or Remove Deprecated Methods
-
----
-
 ## Naming & Terminology
 
 ### 1. ✅ Inconsistent Container Names - COMPLETED

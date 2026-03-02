@@ -1,6 +1,6 @@
 # AI Workspace
 
-[tasks](tasks.md) | [doc](doc/) | [components](components/)
+<lively-import src="_navigation.html"></lively-import>
 
 Integrated AI coding assistance for Lively4, providing multiple AI agents that work together through a coordinator component.
 
@@ -81,8 +81,11 @@ All components use event capture system to maintain conversation history and ena
 
 ## Documentation
 
-- [Refactoring Guide](doc/refactoring.md) - **Consolidated refactoring tasks and architecture improvements**
-- [Architecture Overview](doc/ai-workspace.md) - Main architecture documentation
+- [Introduction](doc/introduction.md) - **Motivation and document overview**
+- [Approach](doc/approach.md) - **Design rationale and exploration goals**
+- [Implementation](doc/implementation.md) - **Technical implementation details**
+- [Architecture Overview](doc/ai-workspace.md) - Detailed component APIs and class hierarchy
+- [Refactoring Guide](doc/refactoring.md) - Current refactoring tasks and improvements
 - [AI Workspace Overview](doc/ai-workspace-overview.md) - High-level overview and concepts
 - [Task Management](doc/ai-workspace-tasks.md) - Task handling and coordination
 - [Modes](doc/ai-workspace-modes.md) - Different operational modes
