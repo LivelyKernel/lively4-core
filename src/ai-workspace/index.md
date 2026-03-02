@@ -82,6 +82,7 @@ All components use event capture system to maintain conversation history and ena
 ## Documentation
 
 - [Introduction](doc/introduction.md) - **Motivation and document overview**
+- [Background](doc/background.md) - **State of the art: Code agents vs. realtime voice agents**
 - [Approach](doc/approach.md) - **Design rationale and exploration goals**
 - [Implementation](doc/implementation.md) - **Technical implementation details**
 - [Architecture Overview](doc/ai-workspace.md) - Detailed component APIs and class hierarchy

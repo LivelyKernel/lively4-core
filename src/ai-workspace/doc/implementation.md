@@ -117,8 +117,3 @@ messages: {
 ### OpenCode Sessions
 Managed server-side, accessed via REST API.
 
-## See Also
-
-- [Architecture Documentation](ai-workspace.md) - Detailed class hierarchy and APIs
-- [Approach](approach.md) - Conceptual design and exploration goals
-- [Refactoring Guide](refactoring.md) - Current improvement tasks
