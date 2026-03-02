@@ -223,6 +223,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.ensureConversation();
     await this.setupSessionsComponent();
     await this.setupVoiceSelection();
+    await this.setupVadSelection();
 
     await this.setupModelSelecton()
     this.setupUI();
@@ -292,6 +293,41 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       await this.reconnectWithNewVoice();
     });
     this.realtimeVoice = voiceBox.value;
+  }
+
+  async setupVadSelection() {
+    // Setup VAD type selection
+    const vadTypeBox = this.get("#vadTypeBox");
+    vadTypeBox.setOptions(["server_vad", "semantic_vad"]);
+    vadTypeBox.value = lively.preferences.get("openai-realtime-chat-vad-type") || "server_vad";
+    this.vadType = vadTypeBox.value;
+
+    // Setup VAD eagerness selection (only for semantic_vad)
+    const vadEagernessBox = this.get("#vadEagernessBox");
+    vadEagernessBox.setOptions(["low", "medium", "high", "auto"]);
+    vadEagernessBox.value = lively.preferences.get("openai-realtime-chat-vad-eagerness") || "medium";
+    this.vadEagerness = vadEagernessBox.value;
+
+    // Show/hide eagerness based on VAD type
+    const updateEagernessVisibility = () => {
+      vadEagernessBox.style.display = this.vadType === "semantic_vad" ? "block" : "none";
+    };
+    updateEagernessVisibility();
+
+    // VAD type change handler
+    vadTypeBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-vad-type", vadTypeBox.value);
+      this.vadType = vadTypeBox.value;
+      updateEagernessVisibility();
+      await this.updateVadSettings();
+    });
+
+    // Eagerness change handler
+    vadEagernessBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-vad-eagerness", vadEagernessBox.value);
+      this.vadEagerness = vadEagernessBox.value;
+      await this.updateVadSettings();
+    });
   }
   
   /*MD ## WebRTC Lifecycle MD*/
@@ -1037,6 +1073,26 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const instructions = this.customInstructions ||
       "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way. You have access to several functions that you can call to help the user.";
 
+    // Build turn_detection config based on VAD type
+    const vadType = this.vadType || "server_vad";
+    let turn_detection;
+    
+    if (vadType === "semantic_vad") {
+      turn_detection = {
+        type: "semantic_vad",
+        eagerness: this.vadEagerness || "medium",
+        create_response: true,
+        interrupt_response: true
+      };
+    } else {
+      turn_detection = {
+        type: "server_vad",
+        threshold: 0.5,
+        prefix_padding_ms: 300,
+        silence_duration_ms: 500
+      };
+    }
+
     const sessionConfig = {
       type: "session.update",
       session: {
@@ -1045,12 +1101,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         input_audio_transcription: {
           model: "whisper-1"
         },
-        turn_detection: {
-          type: "server_vad",
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500
-        },
+        turn_detection: turn_detection,
         tools: this.getFunctionDefinitions(),
         tool_choice: "auto"
       }
@@ -1138,6 +1189,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Reconnect with new voice (conversation history is preserved in this.conversation)
     await this.connectRealtimeWebRTC();
     lively.success("Voice changed", `Now using ${this.realtimeVoice}`);
+  }
+
+  async updateVadSettings() {
+    const vadType = this.vadType || "server_vad";
+    const displayName = vadType === "semantic_vad" 
+      ? `Semantic VAD (${this.vadEagerness})`
+      : "Server VAD";
+    
+    this.log('[VAD Settings] VAD type changed to:', displayName);
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+      lively.success("VAD updated", displayName);
+    } else {
+      lively.notify("VAD will be applied", `${displayName} on next connection`);
+    }
   }
 
   // #important

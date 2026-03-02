@@ -33,3 +33,4 @@ See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and 
 - [] Issue with lots of "Bye" etc... in chat: Overly Sensitive VAD (Voice Activity Detection) 
   - The "server_vad" mode might be interpreting short pauses or background noise as the end of your turn, leading it to conclude the conversation prematurey. 
   - Solution: Adjust the silence threshold in your server_vad settings if you are using the API, or speak more continuously.
+  - docs: https://developers.openai.com/api/docs/guides/realtime-vad/
