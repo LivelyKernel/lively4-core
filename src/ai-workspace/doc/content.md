@@ -6,15 +6,17 @@ The is a technical outline / documentation. For the actual draft, go here: [Loca
 
 ## [Introduction](introduction.md)
 
-## Background / Motivation
+## [Background / Motivation](background.md)
 
 ## [Approach](approach.md)
 
 ## [Implementation](implementation.md)
 
-## Evaluation
+## [Evaluation](evaluation.md)
 
-## Related Work
+## [Related Work](related-work.md)
+
+## [Conclusion](conclusion.md)
 
 ## References
 
