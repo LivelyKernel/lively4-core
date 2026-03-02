@@ -118,8 +118,12 @@ MD*/
 
 describe('OpenAI Realtime Chat Event Replay', () => {
   let component;
+  let testConversationIds;
 
   beforeEach(async () => {
+    // Track conversations created during tests for cleanup
+    testConversationIds = [];
+    
     // Create component
     component = await lively.create('openai-realtime-chat');
 
@@ -148,6 +152,17 @@ describe('OpenAI Realtime Chat Event Replay', () => {
   afterEach(async () => {
     if (component) {
       component._replayMode = false;
+
+      // Clean up test conversations from database
+      const db = component.constructor.conversationdb;
+      for (const conversationId of testConversationIds) {
+        try {
+          await db.messages.where('conversationId').equals(conversationId).delete();
+          await db.conversations.delete(conversationId);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
 
       // Clean up test component
       if (component.parentElement) {
@@ -284,8 +299,12 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     it('should maintain correct message order when loading from database', async function() {
       this.timeout(5000);
       
+      // Disable replay mode to allow database writes
+      component._replayMode = false;
+      
       // Create a new conversation
       const conversationId = await component.createSession();
+      testConversationIds.push(conversationId);
       
       // Create messages rapidly to stress-test ordering
       // Use createMessage directly to simulate real-time message flow
@@ -325,8 +344,12 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     it('should handle messages without sequence numbers (backward compatibility)', async function() {
       this.timeout(5000);
       
+      // Disable replay mode to allow database writes
+      component._replayMode = false;
+      
       // Create a conversation
       const conversationId = await component.createSession();
+      testConversationIds.push(conversationId);
       
       // Manually insert messages into DB without sequence numbers (simulating old data)
       const db = component.constructor.conversationdb;
@@ -359,8 +382,12 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     it('should handle mixed messages (some with sequence, some without)', async function() {
       this.timeout(5000);
       
+      // Disable replay mode to allow database writes
+      component._replayMode = false;
+      
       // Create a conversation
       const conversationId = await component.createSession();
+      testConversationIds.push(conversationId);
       
       const db = component.constructor.conversationdb;
       
