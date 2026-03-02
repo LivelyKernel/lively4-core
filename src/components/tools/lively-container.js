@@ -719,9 +719,10 @@ export default class Container extends Morph {
   /*MD ## Testing MD*/
   
   async isTemplate(url) {
+    debugger
     var filename = url.replace(/[#?].*/,"").toString().replace(/.*\//,"") // #Idea #Refactor Extract getFilename, add "filename" to URL class 
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
-    return url == foundTemplate
+    return lively.files.resolve(url) == lively.files.resolve(foundTemplate)
   }
   
   isFullscreen() {
@@ -1255,8 +1256,8 @@ export default class Container extends Morph {
   async onApply() {
     var url = this.getBaseURL();
     var filename = url.replace(/.*\//,"")
-    var foundTemplate = await lively.components.searchTemplateFilename(filename)
-    if (url == foundTemplate) {
+    // var foundTemplate = await lively.components.searchTemplateFilename(filename)
+    if (await this.isTemplate(url)) {
       if(!filename.includes("-")) {
         lively.error("custom elements require a hyphen in their name!") // see https://html.spec.whatwg.org/multipage/custom-elements.html#prod-potentialcustomelementname
       }
