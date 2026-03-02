@@ -1,6 +1,7 @@
 # Lively AI Workspace Ideas
 
 
+
 ## Referencing Sessions and Individual Messages
 
 We could make the opencode sessions and message browseable PolymorphicIdentifier, like `opencode://sessionid/messageid`. 

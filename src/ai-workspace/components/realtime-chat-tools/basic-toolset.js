@@ -7,10 +7,6 @@ Also includes utility functions for parsing and content extraction.
 
 MD*/
 
-/**
- * BasicToolset - Self-contained tools with no dependencies
- * Provides time, notifications, component operations, and code evaluation
- */
 export class BasicToolset {
   /**
    * Parse lively4_evaluate_code structured output
@@ -100,10 +96,8 @@ export class BasicToolset {
           try {
             let result;
             try {
-              // Use eval in the global context for simple evaluation
               result = await eval(code);
             } catch (evalError) {
-              // Catch eval/execution errors and format them properly
               const errorMessage = evalError.message || String(evalError);
               return {
                 success: false,
@@ -112,7 +106,6 @@ export class BasicToolset {
               };
             }
 
-            // Convert result to string
             let resultString;
             if (typeof result === 'object') {
               try {
@@ -145,16 +138,10 @@ export class BasicToolset {
     };
   }
 
-  /**
-   * Get all function definitions in OpenAI format
-   */
   getDefinitions() {
     return Object.values(this.tools).map(tool => tool.definition);
   }
 
-  /**
-   * Execute a tool by name
-   */
   async execute(toolName, args) {
     const tool = this.tools[toolName];
     if (!tool) {
