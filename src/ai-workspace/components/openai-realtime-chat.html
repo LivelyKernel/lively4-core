@@ -112,6 +112,23 @@
       min-width: 100px;
     }
 
+    #vadThresholdContainer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    #vadThresholdSlider {
+      width: 80px;
+    }
+
+    #vadThresholdValue {
+      min-width: 35px;
+      font-weight: 500;
+      color: #333;
+    }
+
     #mainContent {
       display: flex;
       flex: 1;
@@ -258,6 +275,11 @@
       <input-combobox id="modelBox"></input-combobox>
       <input-combobox id="vadTypeBox"></input-combobox>
       <input-combobox id="vadEagernessBox"></input-combobox>
+      <div id="vadThresholdContainer">
+        <label for="vadThresholdSlider">Threshold:</label>
+        <input type="range" id="vadThresholdSlider" min="0" max="1" step="0.05" />
+        <span id="vadThresholdValue">0.85</span>
+      </div>
       <div id="replayControlsPlaceholder"></div>
       <div style="width:20px">
       </div>

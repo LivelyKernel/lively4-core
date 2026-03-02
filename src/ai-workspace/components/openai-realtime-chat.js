@@ -308,17 +308,28 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     vadEagernessBox.value = lively.preferences.get("openai-realtime-chat-vad-eagerness") || "medium";
     this.vadEagerness = vadEagernessBox.value;
 
-    // Show/hide eagerness based on VAD type
-    const updateEagernessVisibility = () => {
+    // Setup VAD threshold slider (only for server_vad)
+    const vadThresholdSlider = this.get("#vadThresholdSlider");
+    const vadThresholdValue = this.get("#vadThresholdValue");
+    const vadThresholdContainer = this.get("#vadThresholdContainer");
+    
+    const savedThreshold = lively.preferences.get("openai-realtime-chat-vad-threshold");
+    this.vadThreshold = savedThreshold !== undefined ? savedThreshold : 0.85;
+    vadThresholdSlider.value = this.vadThreshold;
+    vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
+
+    // Show/hide controls based on VAD type
+    const updateControlsVisibility = () => {
       vadEagernessBox.style.display = this.vadType === "semantic_vad" ? "block" : "none";
+      vadThresholdContainer.style.display = this.vadType === "server_vad" ? "flex" : "none";
     };
-    updateEagernessVisibility();
+    updateControlsVisibility();
 
     // VAD type change handler
     vadTypeBox.addEventListener("change", async () => {
       lively.preferences.set("openai-realtime-chat-vad-type", vadTypeBox.value);
       this.vadType = vadTypeBox.value;
-      updateEagernessVisibility();
+      updateControlsVisibility();
       await this.updateVadSettings();
     });
 
@@ -326,6 +337,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     vadEagernessBox.addEventListener("change", async () => {
       lively.preferences.set("openai-realtime-chat-vad-eagerness", vadEagernessBox.value);
       this.vadEagerness = vadEagernessBox.value;
+      await this.updateVadSettings();
+    });
+
+    // Threshold slider change handler
+    vadThresholdSlider.addEventListener("input", (evt) => {
+      this.vadThreshold = parseFloat(evt.target.value);
+      vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
+    });
+
+    vadThresholdSlider.addEventListener("change", async (evt) => {
+      this.vadThreshold = parseFloat(evt.target.value);
+      lively.preferences.set("openai-realtime-chat-vad-threshold", this.vadThreshold);
+      vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
       await this.updateVadSettings();
     });
   }
@@ -1087,7 +1111,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     } else {
       turn_detection = {
         type: "server_vad",
-        threshold: 0.5,
+        threshold: this.vadThreshold !== undefined ? this.vadThreshold : 0.85,
         prefix_padding_ms: 300,
         silence_duration_ms: 500
       };
