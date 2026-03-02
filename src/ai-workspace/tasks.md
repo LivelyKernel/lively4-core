@@ -28,3 +28,8 @@ See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and 
 - [ ] Session metadata sync (#17 in refactoring.md)
 - [ ] Method render double bug (#18 in refactoring.md)
 - [ ] Voice chat timestamp issues (#19 in refactoring.md)
+
+
+- [] Issue with lots of "Bye" etc... in chat: Overly Sensitive VAD (Voice Activity Detection) 
+  - The "server_vad" mode might be interpreting short pauses or background noise as the end of your turn, leading it to conclude the conversation prematurey. 
+  - Solution: Adjust the silence threshold in your server_vad settings if you are using the API, or speak more continuously.

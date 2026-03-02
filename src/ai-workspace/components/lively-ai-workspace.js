@@ -38,18 +38,34 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Database Schema MD*/
   static get historydb() {
     var db = new Dexie("lively-ai-workspace-history");
-    db.version(7).stores({
-      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
-    }).upgrade(function () {
-      this.log('[workspace] Database upgraded to v6');
-    });
-
+    db.version(8).stores({
+      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId, promptPath',
+    })
 
     return db;
   }
   
   async getWorkspace(workspaceId) {
     return LivelyAiWorkspace.historydb.workspaces.get(workspaceId || this.workspaceId)
+  }
+  
+  async setWorkspacePromptPath(promptPath, workspaceId) {
+    if (!this.canWriteToDatabase()) {
+      return false;
+    }
+    
+    const id = workspaceId || this.workspaceId;
+    
+    await LivelyAiWorkspace.historydb.workspaces.update(id, { 
+      promptPath: promptPath,
+      lastActivityTime: new Date().toISOString()
+    });
+    return true;
+  }
+  
+  async getWorkspacePromptPath(workspaceId) {
+    const workspace = await this.getWorkspace(workspaceId);
+    return workspace?.promptPath;
   }
 
   /*MD ## Initialize MD*/
@@ -241,15 +257,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
     let conversationId = await this.realtimeComponent.createSession()
     let opencodeSessionId = await this.opencodeComponent.createSession()
 
+    // Get current prompt from UI or preferences
+    const promptCombobox = this.get("#promptCombobox");
+    const currentPrompt = promptCombobox?.value || lively.preferences.get("ai-workspace-prompt");
+    const promptPath = currentPrompt ? `/src/config/prompts/${currentPrompt}.txt` : null;
+
     let workspace = {
       id: workspaceId,
       timestamp: now.toISOString(),
       lastActivityTime: now.toISOString(),
       conversationId: conversationId,
-      opencodeSessionId: opencodeSessionId
+      opencodeSessionId: opencodeSessionId,
+      promptPath: promptPath
     }
     await LivelyAiWorkspace.historydb.workspaces.add(workspace);
-    this.log('[workspace] Created workspace session:', workspaceId);
+    this.log('[workspace] Created workspace session:', workspaceId, 'with prompt:', promptPath);
     return workspace
   }
 
@@ -309,6 +331,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
       await this.renderMessages();
 
       await this.updateSessionUI();
+
+      // Restore saved prompt if available
+      if (workspace.promptPath) {
+        const promptName = workspace.promptPath.replace('/src/config/prompts/', '').replace('.txt', '');
+        const promptCombobox = this.get("#promptCombobox");
+        if (promptCombobox) {
+          promptCombobox.value = promptName;
+        }
+        
+        // Apply the prompt (which also saves it to ensure consistency)
+        await this.applyPromptSelection(promptName);
+        this.log('[workspace] Restored prompt:', promptName);
+      }
 
       // If we had a replay UI open, re-enable replay for the new session
       if (hadReplayUI && this._replayUI) {
@@ -1428,10 +1463,16 @@ export default class LivelyAiWorkspace extends LivelyChat {
     try {
       // Add .txt extension if not already present
       const filename = promptName.endsWith('.txt') ? promptName : `${promptName}.txt`;
+      const promptPath = `/src/config/prompts/${filename}`;
       
-      const prompt = await lively.files.loadFile(lively4url + `/src/config/prompts/${filename}`);
+      const prompt = await lively.files.loadFile(lively4url + promptPath);
       this.realtimeComponent.setInstructions(prompt);
       this.log(`[workspace] Prompt loaded: ${filename}`);
+      
+      // Save prompt path to current workspace session
+      if (this.workspaceId) {
+        await this.setWorkspacePromptPath(promptPath);
+      }
       
       // Notify user
       if (this.realtimeComponent.isDataChannelOpen && this.realtimeComponent.isDataChannelOpen()) {
