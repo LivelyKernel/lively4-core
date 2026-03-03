@@ -6,16 +6,16 @@
 
 - [Paper Outline](content.md)
   - [introduction](introduction.md)
+  - [background](background.md)
   - [approach](approach.md)
   - [implementation](implementation.md)
-
+  - [evaluation](evaluation.md)
 
 
 ## Components
 
 - [opencode](opencode.md)
 - [ai-workspace](ai-workspace.md)
-- [agent-board](agent-board.md)
 
 
 
@@ -23,7 +23,6 @@
 
 - [ideas](ideas.md)    
 - [architecture](architecture.md)
-- [refactoring](refactoring.md)
   
 ## [Notes](notes/)
   - [ai-workspace-modes](notes/ai-workspace-modes.md)
@@ -32,6 +31,8 @@
   - [message-ordering-bug](notes/message-ordering-bug.md)
   - [openai-realtime-duplicate-messages](notes/openai-realtime-duplicate-messages.md)
   - [opencode-question-tool](notes/opencode-question-tool.md)
+  - [agent-board](notes/agent-board.md)
+  - [refactoring](notes/refactoring.md)
 
 
 ### *META*
