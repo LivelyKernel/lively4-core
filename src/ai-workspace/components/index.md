@@ -1,6 +1,7 @@
 # Components
 
 
+<link rel="stylesheet" type="text/css" href="../../components/index-style.css"  />
 <lively-import src="../_navigation.html"></lively-import>
 
 

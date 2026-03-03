@@ -1,5 +1,7 @@
 # Lively OpenCode Architecture
 
+[AI Workspace](ai-workspace.md)
+
 ## Overview
 
 `lively-opencode` is a text-based AI coding agent interface that connects to OpenCode.ai server (port 9100). It's one of three components in the unified AI workspace architecture.
