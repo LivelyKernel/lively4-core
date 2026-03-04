@@ -266,9 +266,54 @@ export default class LivelyClassDiagram extends Morph {
     
     let mermaid = `  class ${classInfo.name} {\n`;
     
-    // Add methods (only if not collapsed)
+    // Add properties and methods (only if not collapsed)
     if (!isCollapsed && classInfo.methods && classInfo.methods.length > 0) {
+      // Separate properties (from getters/setters) and methods
+      const properties = new Map(); // propertyName -> {static: boolean, method: methodObj}
+      const regularMethods = [];
+      
       for (const method of classInfo.methods) {
+        if (method.kind === 'get' || method.kind === 'set') {
+          // This is a getter or setter - treat as property
+          const propertyName = method.name;
+          if (!properties.has(propertyName)) {
+            // Prefer getter if available (has more useful code usually)
+            properties.set(propertyName, {
+              static: method.static,
+              method: method
+            });
+          } else if (method.kind === 'get') {
+            // If we already have a setter, replace with getter
+            properties.get(propertyName).method = method;
+          }
+        } else {
+          // Regular method (including constructors)
+          regularMethods.push(method);
+        }
+      }
+      
+      // Output properties section (UML standard: properties before methods)
+      if (properties.size > 0) {
+        for (const [propertyName, info] of properties) {
+          const prefix = info.static ? '$' : '+';
+          mermaid += `    ${prefix}${propertyName}\n`;
+          
+          // Store property data for click handlers (use getter/setter location)
+          const propertyKey = `${classInfo.name}.${propertyName}`;
+          this._methodData.set(propertyKey, {
+            url: classInfo.url,
+            class: classInfo.name,
+            name: propertyName,
+            start: info.method.start,
+            end: info.method.end,
+            static: info.static,
+            kind: 'property'
+          });
+        }
+      }
+      
+      // Output methods section
+      for (const method of regularMethods) {
         // Add comment sections before this method (if any)
         if (method.leadingComments && method.leadingComments.length > 0) {
           for (const comment of method.leadingComments) {
@@ -291,8 +336,7 @@ export default class LivelyClassDiagram extends Morph {
         // No prefix for normal methods (everything is public in JavaScript)
         // Use $ for static methods
         const prefix = method.static ? '$' : '';
-        const kind = method.kind !== 'method' ? ` [${method.kind}]` : '';
-        mermaid += `    ${prefix}${method.name}()${kind}\n`;
+        mermaid += `    ${prefix}${method.name}()\n`;
         
         // Store method data for click handlers
         const methodKey = `${classInfo.name}.${method.name}`;
@@ -536,22 +580,23 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
           });
         }
       } else if (!paragraph.classList.contains('comment-section')) {
-        // This is a regular method (skip if it's a comment section)
-        const methodMatch = text.match(/^\$?([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)/);
-        if (methodMatch && currentClass) {
-          const methodName = methodMatch[1];
-          const methodKey = `${currentClass}.${methodName}`;
-          const methodData = this._methodData.get(methodKey);
+        // This is a method or property (skip if it's a comment section)
+        // Match: [prefix]name or [prefix]name() where prefix can be $, +, or both
+        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)?$/);
+        if (memberMatch && currentClass) {
+          const memberName = memberMatch[1];
+          const memberKey = `${currentClass}.${memberName}`;
+          const memberData = this._methodData.get(memberKey);
           
-          if (methodData) {
+          if (memberData) {
             this.makeClickable(paragraph, async evt => {
-              // Open file and navigate to method position
+              // Open file and navigate to method/property position
               if (evt.shiftKey) {
-                lively.openInspector(methodData)
+                lively.openInspector(memberData)
               } else {                
-                await lively.openBrowser(methodData.url, true, {
-                  start: methodData.start,
-                  end: methodData.end
+                await lively.openBrowser(memberData.url, true, {
+                  start: memberData.start,
+                  end: memberData.end
                 });
               }
             });
