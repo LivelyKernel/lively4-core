@@ -644,20 +644,37 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
           
           if (memberData) {
             this.makeClickable(paragraph, async evt => {
-              // Open file and navigate to method/property position
-              if (evt.shiftKey) {
-                lively.openInspector(memberData)
-              } else {                
-                await lively.openBrowser(memberData.url, true, {
-                  start: memberData.start,
-                  end: memberData.end
-                });
-              }
+              await this.onMethodSelected(memberData, evt);
             });
           }
         }
       }
     });
+  }
+  
+  /**
+   * Handle method/property selection - can be overridden to customize behavior
+   * @param {Object} methodInfo - Method information from FileIndex
+   *   - class: "ClassName"
+   *   - name: "methodName"
+   *   - start: 4028
+   *   - end: 4738
+   *   - static: false
+   *   - kind: "method" | "property" | "get" | "set"
+   *   - url: "http://localhost:9005/lively4-core/src/..."
+   * @param {Event} evt - The click event
+   */
+  async onMethodSelected(methodInfo, evt) {
+    // Default behavior: open browser at method location
+    // Shift+click: inspect the method data
+    if (evt.shiftKey) {
+      lively.openInspector(methodInfo);
+    } else {
+      await lively.openBrowser(methodInfo.url, true, {
+        start: methodInfo.start,
+        end: methodInfo.end
+      });
+    }
   }
   
   /**
