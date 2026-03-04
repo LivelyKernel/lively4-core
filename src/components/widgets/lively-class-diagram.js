@@ -68,6 +68,9 @@ export default class LivelyClassDiagram extends Morph {
         case 'addModule':
           await this.addModule(op.url);
           break;
+        case 'addURL':
+          await this.addURL(op.url);
+          break;
         case 'addPath':
           await this.addPath(op.path);
           break;
@@ -179,40 +182,32 @@ export default class LivelyClassDiagram extends Morph {
   }
   
   /**
-   * Recursively add all classes in a given path by querying FileIndex
-   * @param {string} path - The path to search (e.g., 'src/components/literature/')
+   * Recursively add all classes in a given URL prefix by querying FileIndex
+   * @param {string} url - The full URL prefix to search (e.g., 'http://localhost:9005/lively4-core/src/components/literature/')
+   * @param {boolean} trackOperation - Whether to track this operation for save/restore (default: true)
    */
-  async addPath(path) {
-    // Normalize path
-    const originalPath = path; // Store for operation tracking
-    path = path.replace(/^\//, '');
-    if (!path.endsWith('/')) {
-      path += '/';
-    }
-    
-    const fullPath = lively4url + '/' + path;
-    
-    // Track operation for save/restore (unless we're replaying)
-    if (!this._replaying) {
-      this._operations.push({type: 'addPath', path: originalPath});
+  async addURL(url, trackOperation = true) {
+    // Track operation for save/restore (unless we're replaying or caller requested no tracking)
+    if (trackOperation && !this._replaying) {
+      this._operations.push({type: 'addURL', url});
     }
     
     try {
       const fileIndex = FileIndex.current();
       const classInfos = [];
       
-      // Query FileIndex for all classes whose URL starts with this path
+      // Query FileIndex for all classes whose URL starts with this prefix
       await fileIndex.db.classes
         .where('url')
-        .startsWith(fullPath)
+        .startsWith(url)
         .each(classInfo => {
           classInfos.push(classInfo);
         });
       
-      console.log(`[lively-class-diagram] Found ${classInfos.length} classes in ${path}`);
+      console.log(`[lively-class-diagram] Found ${classInfos.length} classes in ${url}`);
       
       if (classInfos.length === 0) {
-        console.warn(`[lively-class-diagram] No classes found in path ${path}`);
+        console.warn(`[lively-class-diagram] No classes found in URL ${url}`);
         return;
       }
       
@@ -233,9 +228,32 @@ export default class LivelyClassDiagram extends Morph {
       await this.render();
       
     } catch (error) {
-      console.error(`[lively-class-diagram] Error adding path ${path}:`, error);
+      console.error(`[lively-class-diagram] Error adding URL ${url}:`, error);
       throw error;
     }
+  }
+  
+  /**
+   * Recursively add all classes in a given path by querying FileIndex
+   * @param {string} path - The path to search (e.g., 'src/components/literature/')
+   */
+  async addPath(path) {
+    // Normalize path
+    const originalPath = path; // Store for operation tracking
+    path = path.replace(/^\//, '');
+    if (!path.endsWith('/')) {
+      path += '/';
+    }
+    
+    const fullPath = lively4url + '/' + path;
+    
+    // Track operation for save/restore (unless we're replaying)
+    if (!this._replaying) {
+      this._operations.push({type: 'addPath', path: originalPath});
+    }
+    
+    // Don't track in addURL since we already tracked at addPath level
+    await this.addURL(fullPath, false);
   }
   
   /**

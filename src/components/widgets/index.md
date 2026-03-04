@@ -44,6 +44,45 @@
 - lively-svg  {.component}
 - lively-table  {.component}
 - lively-window  {.component}
+- academic-paper  {.component}
+- academic-query  {.component}
+- academic-subquery  {.component}
+- css-reloading-test-widget  {.component}
+- github-issue  {.component}
+- input-combobox  {.component}
+- jspdf-example  {.component}
+- keyevent-display  {.component}
+- lively-background  {.component}
+- lively-bibliography  {.component}
+- lively-bibtex-editor  {.component}
+- lively-change-indicator  {.component}
+- lively-change-watcher  {.component}
+- lively-class-diagram  {.component}
+- lively-code-occurence-selection  {.component}
+- lively-code-tip  {.component}
+- lively-color  {.component}
+- lively-folder  {.component}
+- lively-handwriting  {.component}
+- lively-mle-code-editor  {.component}
+- lively-mle-function-executor  {.component}
+- lively-mle-ide  {.component}
+- lively-mle-sql-editor  {.component}
+- lively-mle-table-viewer  {.component}
+- lively-mle-test-case  {.component}
+- lively-probe  {.component}
+- lively-tabs-wrapper  {.component}
+- lively-window-docking  {.component}
+- object-graph  {.component}
+- persistent-code-widget  {.component}
+- ubg-card-slot  {.component}
+- ubg-card  {.component}
+- ubg-cards-editor  {.component}
+- ubg-cards-entry  {.component}
+- ubg-cards-scanner  {.component}
+- ubg-cards  {.component}
+- ubg-rules-text  {.component}
+- ubg-set-viewer  {.component}
+
 
 ## Draft
 
