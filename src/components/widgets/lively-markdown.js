@@ -27,7 +27,8 @@ import Upndown from 'src/external/upndown.js';
 import {pt} from 'src/client/graphics.js';
 
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.js';
-
+// ELK renderer was moved to external package in Mermaid v11
+import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs';
 
 import FileIndex from 'src/client/fileindex.js'
 
@@ -344,11 +345,22 @@ export default class LivelyMarkdown extends Morph {
     console.log(`[lively-markdown] Processing ${mermaidBlocks.length} mermaid diagrams`);
     console.log(`[lively-markdown] Mermaid version:`, mermaid.version || 'unknown');
 
-    // Initialize mermaid
+    // Register ELK layout engine (required for flowchart-elk in Mermaid v11+)
+    try {
+      console.log('[lively-markdown] ELK layouts to register:', elkLayouts);
+      await mermaid.registerLayoutLoaders(elkLayouts);
+      console.log('[lively-markdown] ELK layout registered successfully');
+    } catch (err) {
+      console.warn('[lively-markdown] Failed to register ELK layout:', err);
+    }
+
+    // Initialize mermaid with ELK renderer for orthogonal edges
     mermaid.initialize({
       startOnLoad: false,
-      theme: 'default',
-      securityLevel: 'loose'
+      securityLevel: 'loose',
+      flowchart: {
+        defaultRenderer: 'elk'
+      }
     });
 
     // Process each mermaid block
@@ -377,7 +389,7 @@ export default class LivelyMarkdown extends Morph {
         container.style.cssText = 'margin: 1em 0; text-align: center;';
         container.style.border = `1px solid green`;
 
-        // Render the mermaid diagram
+        // Render the mermaid diagram - passes content with %%{init}%% directive intact
         const {svg} = await mermaid.render(id + '-svg', content);
         container.innerHTML = svg;
         
