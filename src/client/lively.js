@@ -446,24 +446,36 @@ export default class Lively {
   }
 
   static loadJavaScriptModuleThroughDOM(name, src, force = false) {
-    return new Promise((resolve, reject) => {
-      var scriptNode = document.querySelector("#" + name);
-      if (!force && scriptNode) {
-        // Module already loaded, try to get it from cache
-        const cachedModule = window.__lively_modules__?.[name];
-        if (cachedModule) {
-          resolve(cachedModule);
-          return;
-        }
+    // Create global cache for modules
+    if (!window.__lively_modules__) {
+      window.__lively_modules__ = {};
+    }
+    
+    // Create global cache for in-flight loading promises
+    if (!window.__lively_module_promises__) {
+      window.__lively_module_promises__ = {};
+    }
+    
+    // Check if module is already fully loaded (and not forced reload)
+    if (!force) {
+      const cachedModule = window.__lively_modules__[name];
+      if (cachedModule) {
+        return Promise.resolve(cachedModule);
       }
+      
+      // Check if module is currently being loaded - return same promise
+      const inFlightPromise = window.__lively_module_promises__[name];
+      if (inFlightPromise) {
+        return inFlightPromise;
+      }
+    }
+    
+    // Create new loading promise
+    const loadPromise = new Promise((resolve, reject) => {
+      var scriptNode = document.querySelector("#" + name);
 
       if (scriptNode) {
         scriptNode.remove();
-      }
-
-      // Create global cache for modules
-      if (!window.__lively_modules__) {
-        window.__lively_modules__ = {};
       }
 
       // Create unique callback name
@@ -494,15 +506,26 @@ export default class Lively {
       
       // Set up callbacks
       window[callbackName] = (module) => {
+        // Clean up in-flight promise cache
+        delete window.__lively_module_promises__[name];
         resolve(module);
       };
       
       window[callbackName + '_error'] = (error) => {
+        // Clean up in-flight promise cache on error
+        delete window.__lively_module_promises__[name];
         reject(error);
       };
       
       document.head.appendChild(script);
     });
+    
+    // Cache the in-flight promise (unless force reload)
+    if (!force) {
+      window.__lively_module_promises__[name] = loadPromise;
+    }
+    
+    return loadPromise;
   }
 
   static loadCSSThroughDOM(name, href, force) {
