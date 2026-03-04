@@ -21,7 +21,7 @@ For Human/Agent team:
 - [X] in lively-opencode: start server, should check if server is actually running.... 
 - [ ] auto-commit current agent changes and provides points to jump back
 - [X] implement auto session naming again.... 
-- [ ] the diff view in file edit tool calls don't show the whitespace at the moment
+- [X] the diff view in file edit tool calls don't show the whitespace at the moment
 
 ## Refactoring & Bug Fixes
 
