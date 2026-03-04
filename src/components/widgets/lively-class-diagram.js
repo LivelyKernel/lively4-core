@@ -35,7 +35,6 @@ export default class LivelyClassDiagram extends Morph {
         );
         
         this._mermaid = mermaidModule.default;
-        
         // Register ELK layout
         if (!this._mermaid._elkRegistered) {
           await this._mermaid.registerLayoutLoaders(elkModule.default);
@@ -49,6 +48,7 @@ export default class LivelyClassDiagram extends Morph {
           logLevel: 'error',
           securityLevel: 'loose',
           flowchart: {
+            defaultRenderer: 'elk',
             useMaxWidth: true,
             htmlLabels: true
           }
@@ -225,13 +225,16 @@ export default class LivelyClassDiagram extends Morph {
    */
   getMermaidSource() {
     if (this._mermaidSource.length === 0) {
-      return `classDiagram
-  class Empty {
-    +info() String
-  }`;
+      return ``;
     }
     
-    return `classDiagram\n${this._mermaidSource.join('\n')}`;
+    return `---
+config:
+  layout: elk
+  look: handDrawn
+  theme: neutral
+---
+classDiagram\n${this._mermaidSource.join('\n')}`;
   }
   
   /**
@@ -241,7 +244,7 @@ export default class LivelyClassDiagram extends Morph {
     const diagram = this.get('#diagram');
     if (!diagram) return;
     
-    const source = this.getMermaidSource();
+    const source = this.getMermaidSource() ;
     
     try {
       // Show loading message
@@ -334,8 +337,7 @@ export default class LivelyClassDiagram extends Morph {
    */
   makeClickable(element, onClick) {
     element.style.cursor = 'pointer';
-    element.style.textDecoration = 'underline';
-    element.style.color = '#0066cc';
+  
     
     element.addEventListener('click', async (evt) => {
       evt.preventDefault();
@@ -343,12 +345,6 @@ export default class LivelyClassDiagram extends Morph {
       await onClick(evt);
     });
     
-    element.addEventListener('mouseenter', () => {
-      element.style.color = '#0052a3';
-    });
-    element.addEventListener('mouseleave', () => {
-      element.style.color = '#0066cc';
-    });
   }
   
   livelyMigrate(other) {
