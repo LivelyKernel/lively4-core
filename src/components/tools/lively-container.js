@@ -719,7 +719,6 @@ export default class Container extends Morph {
   /*MD ## Testing MD*/
   
   async isTemplate(url) {
-    debugger
     var filename = url.replace(/[#?].*/,"").toString().replace(/.*\//,"") // #Idea #Refactor Extract getFilename, add "filename" to URL class 
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
     return lively.files.resolve(url) == lively.files.resolve(foundTemplate)

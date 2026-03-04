@@ -269,6 +269,25 @@ export default class LivelyClassDiagram extends Morph {
     // Add methods (only if not collapsed)
     if (!isCollapsed && classInfo.methods && classInfo.methods.length > 0) {
       for (const method of classInfo.methods) {
+        // Add comment sections before this method (if any)
+        if (method.leadingComments && method.leadingComments.length > 0) {
+          for (const comment of method.leadingComments) {
+            // Check for MD markdown section tags
+            const mdMatch = comment.value.match(/^MD((.|\n)*)MD$/m);
+            if (mdMatch) {
+              // Extract the section name (remove markdown syntax)
+              const sectionName = mdMatch[1]
+                .replace(/^#+\s*/, '') // Remove leading # symbols
+                .trim();
+              
+              // Add as a COMMENT: prefixed method
+              if (sectionName) {
+                mermaid += `    COMMENT: ${sectionName}()\n`;
+              }
+            }
+          }
+        }
+        
         // No prefix for normal methods (everything is public in JavaScript)
         // Use $ for static methods
         const prefix = method.static ? '$' : '';
@@ -289,7 +308,7 @@ export default class LivelyClassDiagram extends Morph {
       }
     }
     
-    mermaid += '  }\n';
+    mermaid += `  }\n`;
     
     // Add inheritance relationship
     if (classInfo.superClassName && classInfo.superClassName !== 'Object') {
@@ -415,6 +434,9 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
       diagram.innerHTML = svg;
       diagram.classList.add('mermaid');
       
+      // Style comment sections
+      this.styleSections(diagram);
+      
       // Add click handlers to class names
       this.addClickHandlers(diagram);
       
@@ -422,6 +444,57 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
       console.error('Mermaid rendering error:', error);
       diagram.innerHTML = `<pre style="color: red;">Error rendering diagram:\n${error.message}\n\nSource:\n${source}</pre>`;
     }
+  }
+  
+  /**
+   * Style comment sections based on markdown hierarchy
+   * @param {HTMLElement} diagram - The diagram container element
+   */
+  styleSections(diagram) {
+    const svgElement = diagram.querySelector('svg');
+    if (!svgElement) return;
+    
+    const labelElements = svgElement.querySelectorAll('g.label');
+    
+    labelElements.forEach(labelGroup => {
+      const paragraph = labelGroup.querySelector('.nodeLabel p');
+      if (!paragraph) return;
+      
+      const text = paragraph.textContent.trim();
+      
+      // Check if this is a comment section
+      const commentMatch = text.match(/^COMMENT:\s*(.+?)\(\)$/);
+      if (commentMatch) {
+        const sectionText = commentMatch[1];
+        
+        // Detect markdown hierarchy level
+        const levelMatch = sectionText.match(/^(#+)\s*(.*)$/);
+        const level = levelMatch ? levelMatch[1].length : 1;
+        const sectionName = levelMatch ? levelMatch[2] : sectionText;
+        
+        // Remove "COMMENT: " prefix and "()"
+        paragraph.textContent = sectionName;
+        
+        // Style based on hierarchy level
+        const fontSize = level === 1 ? '14px' : '12px';
+        const fontWeight = level === 1 ? 'bold' : 'normal';
+        const marginTop = level === 1 ? '8px' : '4px';
+        
+        paragraph.style.cssText = `
+          font-weight: ${fontWeight};
+          color: #1e90ff;
+          font-style: italic;
+          text-align: left;
+          margin-top: ${marginTop};
+          font-size: ${fontSize};
+        `;
+        
+        // Add CSS classes for hierarchy
+        paragraph.classList.add('comment-section');
+        paragraph.classList.add(`comment-level-${level}`);
+        labelGroup.classList.add('comment-section-group');
+      }
+    });
   }
   
   /**
@@ -462,8 +535,8 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
             await lively.openBrowser(classUrl, true);
           });
         }
-      } else {
-        // This is a method
+      } else if (!paragraph.classList.contains('comment-section')) {
+        // This is a regular method (skip if it's a comment section)
         const methodMatch = text.match(/^\$?([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)/);
         if (methodMatch && currentClass) {
           const methodName = methodMatch[1];
