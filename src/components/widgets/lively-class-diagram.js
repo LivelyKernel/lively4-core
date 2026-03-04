@@ -13,6 +13,9 @@ export default class LivelyClassDiagram extends Morph {
     this._operations = this._operations || [];
     this._collapsedClasses = this._collapsedClasses || new Set();
     
+    // Read look attribute (default to handDrawn)
+    this._look = this.getAttribute('look') || 'handDrawn';
+    
     // Always restore from config if available (takes precedence)
     await this.restoreFromConfig();
     
@@ -378,6 +381,24 @@ export default class LivelyClassDiagram extends Morph {
   }
   
   /**
+   * Get the current look style
+   * @returns {string} Current look (e.g., 'handDrawn', 'classic')
+   */
+  get look() {
+    return this._look || 'handDrawn';
+  }
+  
+  /**
+   * Set the look style
+   * @param {string} value - Look style ('handDrawn', 'classic', etc.)
+   */
+  set look(value) {
+    this._look = value;
+    this.setAttribute('look', value);
+    this.render();
+  }
+  
+  /**
    * Toggle collapsed state for a class
    * @param {string} className - The name of the class to toggle
    */
@@ -444,10 +465,13 @@ export default class LivelyClassDiagram extends Morph {
       return ``;
     }
     
+    // Use look attribute or default to handDrawn
+    const look = this._look || 'handDrawn';
+    
     return `---
 config:
   layout: elk
-  look: handDrawn
+  look: ${look}
   theme: neutral
 ---
 classDiagram\n${this._mermaidSource.join('\n')}`;
@@ -478,6 +502,16 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
       diagram.innerHTML = svg;
       diagram.classList.add('mermaid');
       
+      // Apply hand-drawn font if look is handDrawn
+      const look = this._look || 'handDrawn';
+      if (look === 'handDrawn') {
+        diagram.classList.add('hand-drawn');
+        // Expand foreignObject widths to accommodate wider Virgil font
+        this.expandForeignObjects(diagram);
+      } else {
+        diagram.classList.remove('hand-drawn');
+      }
+      
       // Style comment sections
       this.styleSections(diagram);
       
@@ -488,6 +522,26 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
       console.error('Mermaid rendering error:', error);
       diagram.innerHTML = `<pre style="color: red;">Error rendering diagram:\n${error.message}\n\nSource:\n${source}</pre>`;
     }
+  }
+  
+  /**
+   * Expand foreignObject elements to accommodate wider Virgil font
+   * @param {HTMLElement} diagram - The diagram container element
+   */
+  expandForeignObjects(diagram) {
+    const svgElement = diagram.querySelector('svg');
+    if (!svgElement) return;
+    
+    // Find all foreignObject elements and expand their width by 20%
+    const foreignObjects = svgElement.querySelectorAll('foreignObject');
+    foreignObjects.forEach(obj => {
+      const currentWidth = parseFloat(obj.getAttribute('width'));
+      if (currentWidth) {
+        // Increase width by 20% to accommodate wider Virgil font
+        const newWidth = currentWidth * 1.2;
+        obj.setAttribute('width', newWidth + 'px');
+      }
+    });
   }
   
   /**
@@ -681,6 +735,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     this._methodData = other._methodData || new Map();
     this._operations = other._operations || [];
     this._collapsedClasses = other._collapsedClasses || new Set();
+    this._look = other._look || 'handDrawn';
     this._mermaid = other._mermaid;
   }
   
