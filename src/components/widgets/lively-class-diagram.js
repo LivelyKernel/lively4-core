@@ -8,9 +8,74 @@ export default class LivelyClassDiagram extends Morph {
     // Initialize state (preserve during live updates)
     this._mermaidSource = this._mermaidSource || [];
     this._modules = this._modules || new Set();
-    this._classUrls = this._classUrls || new Map(); // Map class names to URLs
-    this._methodData = this._methodData || new Map(); // Map "ClassName.methodName" to method data
+    this._classUrls = this._classUrls || new Map();
+    this._methodData = this._methodData || new Map();
+    this._operations = this._operations || [];
+    
+    // Always restore from config if available (takes precedence)
+    await this.restoreFromConfig();
+    
     this.render()
+  }
+  
+  /**
+   * Restore diagram from saved configuration
+   */
+  async restoreFromConfig() {
+    const configAttr = this.getAttribute("diagram-config");
+    if (!configAttr) return;
+    
+    try {
+      const config = JSON.parse(configAttr);
+      
+      if (config.version !== "1.0") {
+        console.warn('[lively-class-diagram] Unknown config version:', config.version);
+        return;
+      }
+      
+      const operations = config.operations || [];
+      
+      // Only replay if we don't already have state (e.g., from livelyMigrate)
+      if (this._modules.size === 0 && this._mermaidSource.length === 0) {
+        // Replay operations to rebuild diagram
+        for (const op of operations) {
+          await this.replayOperation(op);
+        }
+      }
+      
+      // Always restore operations array after replay (source of truth)
+      this._operations = operations;
+    } catch (error) {
+      console.error('[lively-class-diagram] Failed to restore config:', error);
+    }
+  }
+  
+  /**
+   * Replay a saved operation
+   * @param {Object} op - Operation to replay
+   */
+  async replayOperation(op) {
+    // Don't track operations during replay (avoid duplicates)
+    const wasReplaying = this._replaying;
+    this._replaying = true;
+    
+    try {
+      switch (op.type) {
+        case 'addModule':
+          await this.addModule(op.url);
+          break;
+        case 'addPath':
+          await this.addPath(op.path);
+          break;
+        case 'appendMermaid':
+          this.appendMermaid(op.source);
+          break;
+        default:
+          console.warn('[lively-class-diagram] Unknown operation type:', op.type);
+      }
+    } finally {
+      this._replaying = wasReplaying;
+    }
   }
   
   async loadMermaid() {
@@ -81,6 +146,11 @@ export default class LivelyClassDiagram extends Morph {
     
     this._modules.add(url);
     
+    // Track operation for save/restore (unless we're replaying)
+    if (!this._replaying) {
+      this._operations.push({type: 'addModule', url});
+    }
+    
     const fileIndex = FileIndex.current();
     const classInfos = [];
     
@@ -110,12 +180,18 @@ export default class LivelyClassDiagram extends Morph {
    */
   async addPath(path) {
     // Normalize path
+    const originalPath = path; // Store for operation tracking
     path = path.replace(/^\//, '');
     if (!path.endsWith('/')) {
       path += '/';
     }
     
     const fullPath = lively4url + '/' + path;
+    
+    // Track operation for save/restore (unless we're replaying)
+    if (!this._replaying) {
+      this._operations.push({type: 'addPath', path: originalPath});
+    }
     
     try {
       const fileIndex = FileIndex.current();
@@ -205,6 +281,12 @@ export default class LivelyClassDiagram extends Morph {
    */
   appendMermaid(source) {
     this._mermaidSource.push(source);
+    
+    // Track operation for save/restore (unless we're replaying)
+    if (!this._replaying) {
+      this._operations.push({type: 'appendMermaid', source});
+    }
+    
     this.render();
   }
   
@@ -216,6 +298,7 @@ export default class LivelyClassDiagram extends Morph {
     this._modules = new Set();
     this._classUrls = new Map();
     this._methodData = new Map();
+    this._operations = []; // Clear operation history
     this.render();
   }
   
@@ -347,11 +430,24 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     
   }
   
+  /**
+   * Prepare component for saving by storing minimal configuration
+   */
+  livelyPrepareSave() {
+    const config = {
+      version: "1.0",
+      operations: this._operations || []
+    };
+    
+    this.setAttribute("diagram-config", JSON.stringify(config));
+  }
+  
   livelyMigrate(other) {
     this._mermaidSource = other._mermaidSource || [];
     this._modules = other._modules || new Set();
     this._classUrls = other._classUrls || new Map();
     this._methodData = other._methodData || new Map();
+    this._operations = other._operations || [];
     this._mermaid = other._mermaid;
   }
   
