@@ -11,6 +11,7 @@ export default class LivelyClassDiagram extends Morph {
     this._classUrls = this._classUrls || new Map();
     this._methodData = this._methodData || new Map();
     this._operations = this._operations || [];
+    this._collapsedClasses = this._collapsedClasses || new Set();
     
     // Always restore from config if available (takes precedence)
     await this.restoreFromConfig();
@@ -34,6 +35,12 @@ export default class LivelyClassDiagram extends Morph {
       }
       
       const operations = config.operations || [];
+      const collapsedClasses = config.collapsedClasses || [];
+      
+      // IMPORTANT: Restore collapsed state BEFORE replaying operations
+      // so that classInfoToMermaid() can check it during replay
+      this._collapsedClasses = new Set(collapsedClasses);
+      this._operations = operations;
       
       // Only replay if we don't already have state (e.g., from livelyMigrate)
       if (this._modules.size === 0 && this._mermaidSource.length === 0) {
@@ -42,9 +49,6 @@ export default class LivelyClassDiagram extends Morph {
           await this.replayOperation(op);
         }
       }
-      
-      // Always restore operations array after replay (source of truth)
-      this._operations = operations;
     } catch (error) {
       console.error('[lively-class-diagram] Failed to restore config:', error);
     }
@@ -240,10 +244,12 @@ export default class LivelyClassDiagram extends Morph {
    * @returns {string} Mermaid class definition
    */
   async classInfoToMermaid(classInfo) {
+    const isCollapsed = this._collapsedClasses.has(classInfo.name);
+    
     let mermaid = `  class ${classInfo.name} {\n`;
     
-    // Add methods
-    if (classInfo.methods && classInfo.methods.length > 0) {
+    // Add methods (only if not collapsed)
+    if (!isCollapsed && classInfo.methods && classInfo.methods.length > 0) {
       for (const method of classInfo.methods) {
         // No prefix for normal methods (everything is public in JavaScript)
         // Use $ for static methods
@@ -291,6 +297,51 @@ export default class LivelyClassDiagram extends Morph {
   }
   
   /**
+   * Toggle collapsed state for a class
+   * @param {string} className - The name of the class to toggle
+   */
+  async toggleCollapsed(className) {
+    if (this._collapsedClasses.has(className)) {
+      this._collapsedClasses.delete(className);
+    } else {
+      this._collapsedClasses.add(className);
+    }
+    
+    // Rebuild diagram from scratch
+    await this.rebuildDiagram();
+    
+    // Persist the new collapsed state
+    this.livelyPrepareSave();
+  }
+  
+  /**
+   * Rebuild the entire diagram from operations
+   */
+  async rebuildDiagram() {
+    // Clear current state (but keep operations and collapsed state)
+    const savedOperations = this._operations;
+    const savedCollapsed = this._collapsedClasses;
+    
+    this._mermaidSource = [];
+    this._modules = new Set();
+    this._classUrls = new Map();
+    this._methodData = new Map();
+    
+    // Replay operations
+    this._replaying = true;
+    for (const op of savedOperations) {
+      await this.replayOperation(op);
+    }
+    this._replaying = false;
+    
+    // Restore state
+    this._operations = savedOperations;
+    this._collapsedClasses = savedCollapsed;
+    
+    await this.render();
+  }
+  
+  /**
    * Clear all diagram content
    */
   clear() {
@@ -299,6 +350,7 @@ export default class LivelyClassDiagram extends Morph {
     this._classUrls = new Map();
     this._methodData = new Map();
     this._operations = []; // Clear operation history
+    this._collapsedClasses = new Set(); // Clear collapsed state
     this.render();
   }
   
@@ -356,6 +408,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
   
   /**
    * Add click handlers to class names and methods in the rendered diagram
+   * Also adds toggle buttons to class headers
    * @param {HTMLElement} diagram - The diagram container element
    */
   addClickHandlers(diagram) {
@@ -383,6 +436,10 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
         const classUrl = this._classUrls.get(text);
         if (classUrl) {
           currentClass = text;
+          
+          // Add toggle button to the class header
+          this.addToggleButton(paragraph, text);
+          
           this.makeClickable(paragraph, async () => {
             await lively.openBrowser(classUrl, true);
           });
@@ -414,6 +471,44 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
   }
   
   /**
+   * Add a toggle button to a class header
+   * @param {HTMLElement} paragraph - The paragraph element containing the class name
+   * @param {string} className - The name of the class
+   */
+  addToggleButton(paragraph, className) {
+    const isCollapsed = this._collapsedClasses.has(className);
+    const indicator = isCollapsed ? '[+]' : '[-]';
+    
+    // Find the foreignObject ancestor and expand its width
+    let foreignObj = paragraph.closest('foreignObject');
+    if (foreignObj) {
+      const currentWidth = parseFloat(foreignObj.getAttribute('width'));
+      // Add 40px for the toggle button
+      foreignObj.setAttribute('width', (currentWidth + 40) + 'px');
+    }
+    
+    // Create a span for the toggle button
+    const toggleBtn = document.createElement('span');
+    toggleBtn.textContent = ' ' + indicator;
+    toggleBtn.style.cssText = `
+      cursor: pointer;
+      margin-left: 4px;
+      color: #666;
+      user-select: none;
+    `;
+    
+    // Add click handler that stops propagation (so class name click doesn't fire)
+    toggleBtn.addEventListener('click', async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      await this.toggleCollapsed(className);
+    });
+    
+    // Append the button to the paragraph
+    paragraph.appendChild(toggleBtn);
+  }
+  
+  /**
    * Make an element clickable with visual feedback
    * @param {HTMLElement} element - The element to make clickable
    * @param {Function} onClick - Click handler function
@@ -436,7 +531,8 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
   livelyPrepareSave() {
     const config = {
       version: "1.0",
-      operations: this._operations || []
+      operations: this._operations || [],
+      collapsedClasses: Array.from(this._collapsedClasses || [])
     };
     
     this.setAttribute("diagram-config", JSON.stringify(config));
@@ -448,6 +544,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     this._classUrls = other._classUrls || new Map();
     this._methodData = other._methodData || new Map();
     this._operations = other._operations || [];
+    this._collapsedClasses = other._collapsedClasses || new Set();
     this._mermaid = other._mermaid;
   }
   
