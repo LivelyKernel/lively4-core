@@ -2095,7 +2095,10 @@ export default class Lively {
             // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
             );
           } else if (locationObject) {
-            codeMirror.setSelection(locationObject.start, locationObject.end);
+            let start = _.isNumber(locationObject.start) ? codeMirror.posFromIndex(locationObject.start) : locationObject
+            let end = _.isNumber(locationObject.end) ? codeMirror.posFromIndex(locationObject.end) : locationObject
+            
+            codeMirror.setSelection(start, end);
           }
           codeMirror.focus();
           codeMirror.scrollIntoView(codeMirror.getCursor(), 200);

@@ -10,6 +10,7 @@ export default class LivelyClassDiagram extends Morph {
     this._modules = this._modules || new Set();
     this._classUrls = this._classUrls || new Map(); // Map class names to URLs
     this._methodData = this._methodData || new Map(); // Map "ClassName.methodName" to method data
+    this.render()
   }
   
   async loadMermaid() {
@@ -309,12 +310,16 @@ export default class LivelyClassDiagram extends Morph {
           const methodData = this._methodData.get(methodKey);
           
           if (methodData) {
-            this.makeClickable(paragraph, async () => {
+            this.makeClickable(paragraph, async evt => {
               // Open file and navigate to method position
-              await lively.openBrowser(methodData.url, true, {
-                start: methodData.start,
-                end: methodData.end
-              });
+              if (evt.shiftKey) {
+                lively.openInspector(methodData)
+              } else {                
+                await lively.openBrowser(methodData.url, true, {
+                  start: methodData.start,
+                  end: methodData.end
+                });
+              }
             });
           }
         }
@@ -335,7 +340,7 @@ export default class LivelyClassDiagram extends Morph {
     element.addEventListener('click', async (evt) => {
       evt.preventDefault();
       evt.stopPropagation();
-      await onClick();
+      await onClick(evt);
     });
     
     element.addEventListener('mouseenter', () => {
