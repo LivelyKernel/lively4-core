@@ -445,6 +445,66 @@ export default class Lively {
     });
   }
 
+  static loadJavaScriptModuleThroughDOM(name, src, force = false) {
+    return new Promise((resolve, reject) => {
+      var scriptNode = document.querySelector("#" + name);
+      if (!force && scriptNode) {
+        // Module already loaded, try to get it from cache
+        const cachedModule = window.__lively_modules__?.[name];
+        if (cachedModule) {
+          resolve(cachedModule);
+          return;
+        }
+      }
+
+      if (scriptNode) {
+        scriptNode.remove();
+      }
+
+      // Create global cache for modules
+      if (!window.__lively_modules__) {
+        window.__lively_modules__ = {};
+      }
+
+      // Create unique callback name
+      const callbackName = `__lively_module_callback_${name}_${Date.now()}`;
+      
+      // Create inline module script that imports and exposes the module
+      var script = document.createElement("script");
+      script.id = name;
+      script.type = "module";
+      
+      const moduleSrc = force ? src + ("?" + Date.now()) : src;
+      
+      script.textContent = `
+        try {
+          const module = await import('${moduleSrc}');
+          window.__lively_modules__['${name}'] = module;
+          if (window['${callbackName}']) {
+            window['${callbackName}'](module);
+            delete window['${callbackName}'];
+          }
+        } catch (error) {
+          if (window['${callbackName}_error']) {
+            window['${callbackName}_error'](error);
+            delete window['${callbackName}_error'];
+          }
+        }
+      `;
+      
+      // Set up callbacks
+      window[callbackName] = (module) => {
+        resolve(module);
+      };
+      
+      window[callbackName + '_error'] = (error) => {
+        reject(error);
+      };
+      
+      document.head.appendChild(script);
+    });
+  }
+
   static loadCSSThroughDOM(name, href, force) {
     return new Promise(resolve => {
       var linkNode = document.querySelector("#" + name);

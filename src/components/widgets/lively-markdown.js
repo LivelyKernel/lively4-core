@@ -26,10 +26,6 @@ import Upndown from 'src/external/upndown.js';
 
 import {pt} from 'src/client/graphics.js';
 
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.js';
-// ELK renderer was moved to external package in Mermaid v11
-import elkLayouts from 'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs';
-
 import FileIndex from 'src/client/fileindex.js'
 
 export default class LivelyMarkdown extends Morph {
@@ -336,31 +332,62 @@ export default class LivelyMarkdown extends Morph {
   }
   
   async processMermaidDiagrams(root) {
-  
     // Find mermaid code blocks by language class (now properly preserved by highlighter)
     const mermaidBlocks = root.querySelectorAll('code.language-mermaid');
     
     if (mermaidBlocks.length === 0) return;
 
     console.log(`[lively-markdown] Processing ${mermaidBlocks.length} mermaid diagrams`);
-    console.log(`[lively-markdown] Mermaid version:`, mermaid.version || 'unknown');
 
-    // Register ELK layout engine (required for flowchart-elk in Mermaid v11+)
+    // Load mermaid and ELK modules through DOM (bypasses Babel transpilation issues)
+    let mermaidModule, elkModule;
     try {
-      console.log('[lively-markdown] ELK layouts to register:', elkLayouts);
-      await mermaid.registerLayoutLoaders(elkLayouts);
-      console.log('[lively-markdown] ELK layout registered successfully');
+      mermaidModule = await lively.loadJavaScriptModuleThroughDOM(
+        'mermaid',
+        'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs'
+      );
+      
+      elkModule = await lively.loadJavaScriptModuleThroughDOM(
+        'mermaid-elk',
+        'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs'
+      );
+      
+      console.log(`[lively-markdown] Mermaid version:`, mermaidModule.default.version || 'unknown');
     } catch (err) {
-      console.warn('[lively-markdown] Failed to register ELK layout:', err);
+      console.error('[lively-markdown] Failed to load mermaid modules:', err);
+      return;
     }
 
-    // Initialize mermaid with ELK renderer for orthogonal edges
+    // Get the mermaid default export
+    const mermaid = mermaidModule.default;
+
+    // Register ELK layout engine (required for flowchart-elk in Mermaid v11+)
+    // Only register once - check if already registered
+    if (!mermaid._elkRegistered) {
+      try {
+        console.log('[lively-markdown] Registering ELK layout...');
+        await mermaid.registerLayoutLoaders(elkModule.default);
+        mermaid._elkRegistered = true;
+        console.log('[lively-markdown] ELK layout registered successfully');
+      } catch (err) {
+        console.warn('[lively-markdown] Failed to register ELK layout:', err);
+      }
+    }
+
+    // IMPORTANT: Reset and initialize mermaid with explicit dagre default
+    // After registering ELK, we must explicitly set dagre as the default
+    // Otherwise, ELK might become the default renderer
+    // Each diagram can override this using %%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
+    if (typeof mermaid.reset === 'function') {
+      await mermaid.reset();
+    }
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'loose',
       flowchart: {
-        defaultRenderer: 'elk'
+        defaultRenderer: 'dagre'  // Explicitly set dagre as default
       }
+      // Individual diagrams can override with %%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
     });
 
     // Process each mermaid block
