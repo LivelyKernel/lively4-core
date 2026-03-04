@@ -8,6 +8,8 @@ export default class LivelyClassDiagram extends Morph {
     // Initialize state (preserve during live updates)
     this._mermaidSource = this._mermaidSource || [];
     this._modules = this._modules || new Set();
+    this._classUrls = this._classUrls || new Map(); // Map class names to URLs
+    this._methodData = this._methodData || new Map(); // Map "ClassName.methodName" to method data
   }
   
   async loadMermaid() {
@@ -93,11 +95,66 @@ export default class LivelyClassDiagram extends Morph {
     
     // Convert class info to Mermaid syntax
     for (const classInfo of classInfos) {
+      this._classUrls.set(classInfo.name, url); // Store class -> URL mapping
       const mermaidClass = await this.classInfoToMermaid(classInfo);
       this._mermaidSource.push(mermaidClass);
     }
     
     await this.render();
+  }
+  
+  /**
+   * Recursively add all classes in a given path by querying FileIndex
+   * @param {string} path - The path to search (e.g., 'src/components/literature/')
+   */
+  async addPath(path) {
+    // Normalize path
+    path = path.replace(/^\//, '');
+    if (!path.endsWith('/')) {
+      path += '/';
+    }
+    
+    const fullPath = lively4url + '/' + path;
+    
+    try {
+      const fileIndex = FileIndex.current();
+      const classInfos = [];
+      
+      // Query FileIndex for all classes whose URL starts with this path
+      await fileIndex.db.classes
+        .where('url')
+        .startsWith(fullPath)
+        .each(classInfo => {
+          classInfos.push(classInfo);
+        });
+      
+      console.log(`[lively-class-diagram] Found ${classInfos.length} classes in ${path}`);
+      
+      if (classInfos.length === 0) {
+        console.warn(`[lively-class-diagram] No classes found in path ${path}`);
+        return;
+      }
+      
+      // Convert each class to Mermaid syntax
+      for (const classInfo of classInfos) {
+        // Skip if already added
+        if (this._modules.has(classInfo.url)) {
+          continue;
+        }
+        
+        this._modules.add(classInfo.url);
+        this._classUrls.set(classInfo.name, classInfo.url); // Store class -> URL mapping
+        
+        const mermaidClass = await this.classInfoToMermaid(classInfo);
+        this._mermaidSource.push(mermaidClass);
+      }
+      
+      await this.render();
+      
+    } catch (error) {
+      console.error(`[lively-class-diagram] Error adding path ${path}:`, error);
+      throw error;
+    }
   }
   
   /**
@@ -111,9 +168,23 @@ export default class LivelyClassDiagram extends Morph {
     // Add methods
     if (classInfo.methods && classInfo.methods.length > 0) {
       for (const method of classInfo.methods) {
-        const prefix = method.static ? '+' : (method.kind === 'get' || method.kind === 'set' ? '~' : '+');
+        // No prefix for normal methods (everything is public in JavaScript)
+        // Use $ for static methods
+        const prefix = method.static ? '$' : '';
         const kind = method.kind !== 'method' ? ` [${method.kind}]` : '';
         mermaid += `    ${prefix}${method.name}()${kind}\n`;
+        
+        // Store method data for click handlers
+        const methodKey = `${classInfo.name}.${method.name}`;
+        this._methodData.set(methodKey, {
+          url: classInfo.url,
+          class: classInfo.name,
+          name: method.name,
+          start: method.start,
+          end: method.end,
+          static: method.static,
+          kind: method.kind
+        });
       }
     }
     
@@ -142,6 +213,8 @@ export default class LivelyClassDiagram extends Morph {
   clear() {
     this._mermaidSource = [];
     this._modules = new Set();
+    this._classUrls = new Map();
+    this._methodData = new Map();
     this.render();
   }
   
@@ -185,28 +258,104 @@ export default class LivelyClassDiagram extends Morph {
       diagram.innerHTML = svg;
       diagram.classList.add('mermaid');
       
+      // Add click handlers to class names
+      this.addClickHandlers(diagram);
+      
     } catch (error) {
       console.error('Mermaid rendering error:', error);
       diagram.innerHTML = `<pre style="color: red;">Error rendering diagram:\n${error.message}\n\nSource:\n${source}</pre>`;
     }
   }
   
+  /**
+   * Add click handlers to class names and methods in the rendered diagram
+   * @param {HTMLElement} diagram - The diagram container element
+   */
+  addClickHandlers(diagram) {
+    // Find all text elements in the SVG
+    // Mermaid uses foreignObject with <p> tags for class names and methods
+    const svgElement = diagram.querySelector('svg');
+    if (!svgElement) return;
+    
+    // Find all label elements
+    const labelElements = svgElement.querySelectorAll('g.label');
+    
+    let currentClass = null;
+    
+    labelElements.forEach(labelGroup => {
+      const paragraph = labelGroup.querySelector('.nodeLabel p');
+      if (!paragraph) return;
+      
+      const text = paragraph.textContent.trim();
+      
+      // Check if this is a class name (has font-weight: bolder in style)
+      const isBold = labelGroup.getAttribute('style')?.includes('font-weight: bolder');
+      
+      if (isBold) {
+        // This is a class name
+        const classUrl = this._classUrls.get(text);
+        if (classUrl) {
+          currentClass = text;
+          this.makeClickable(paragraph, async () => {
+            await lively.openBrowser(classUrl, true);
+          });
+        }
+      } else {
+        // This is a method
+        const methodMatch = text.match(/^\$?([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)/);
+        if (methodMatch && currentClass) {
+          const methodName = methodMatch[1];
+          const methodKey = `${currentClass}.${methodName}`;
+          const methodData = this._methodData.get(methodKey);
+          
+          if (methodData) {
+            this.makeClickable(paragraph, async () => {
+              // Open file and navigate to method position
+              await lively.openBrowser(methodData.url, true, {
+                start: methodData.start,
+                end: methodData.end
+              });
+            });
+          }
+        }
+      }
+    });
+  }
+  
+  /**
+   * Make an element clickable with visual feedback
+   * @param {HTMLElement} element - The element to make clickable
+   * @param {Function} onClick - Click handler function
+   */
+  makeClickable(element, onClick) {
+    element.style.cursor = 'pointer';
+    element.style.textDecoration = 'underline';
+    element.style.color = '#0066cc';
+    
+    element.addEventListener('click', async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      await onClick();
+    });
+    
+    element.addEventListener('mouseenter', () => {
+      element.style.color = '#0052a3';
+    });
+    element.addEventListener('mouseleave', () => {
+      element.style.color = '#0066cc';
+    });
+  }
+  
   livelyMigrate(other) {
     this._mermaidSource = other._mermaidSource || [];
     this._modules = other._modules || new Set();
+    this._classUrls = other._classUrls || new Map();
+    this._methodData = other._methodData || new Map();
     this._mermaid = other._mermaid;
   }
   
   async livelyExample() {
-    // Add an example module
-    const exampleUrl = lively4url + "/src/components/widgets/lively-morph.js";
-    await this.addModule(exampleUrl);
-    
-    // Add a custom class relationship
-    this.appendMermaid(`  class CustomExample {
-    +doSomething()
-    +getValue() String
-  }
-  CustomExample <|-- Morph`);
+    // Add all classes from a path recursively
+    await this.addPath('src/components/literature/');
   }
 }
