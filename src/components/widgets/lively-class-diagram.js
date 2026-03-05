@@ -261,11 +261,25 @@ export default class LivelyClassDiagram extends Morph {
   
   formatParams(params) {
     if (!params || params.length === 0) return '';
-    return params.map(p => {
-      if (p.type === 'rest') return `...${p.name}`;
-      if (p.type === 'destructure') return p.name; // '{...}' or '[...]'
-      return p.name;
-    }).join(', ');
+    
+    // Filter and format parameters - only show simple identifiers
+    const formattedParams = params
+      .map(p => {
+        if (p.type === 'rest') return `...${p.name}`;
+        if (p.type === 'destructure') return null; // Skip destructured params
+        return p.name;
+      })
+      .filter(name => {
+        if (name === null) return false;
+        
+        // Only include normally-formed identifiers (no special syntax)
+        // Valid JS identifier: starts with letter/underscore/dollar, 
+        // followed by letters/digits/underscores/dollars
+        const simpleIdentifierPattern = /^\.{0,3}[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+        return simpleIdentifierPattern.test(name);
+      });
+    
+    return formattedParams.join(', ');
   }
 
   /**

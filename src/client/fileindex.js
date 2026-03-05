@@ -294,10 +294,14 @@ export default class FileIndex {
 MD*/  
   
   async updateAllModuleSemantics() {
-    const files = await this.db.files.where("type").equals("file").toArray();
-    for (const file of files) {
-      await this.addModuleSemantics(file);
-    }
+    return this.showProgress("update module semantics", async () => {
+      this.db.files.where("name").notEqual("").modify((file) => {
+        if (file.name.match(/\.js$/)) {
+          console.log("update module semantics: " + file.name) 
+          this.addModuleSemantics(file);
+        }
+      });
+    })
   }
   
   async addModuleSemantics(file) {

@@ -5,7 +5,12 @@
 Integrated AI coding assistance for Lively4, providing multiple AI agents that work together through a coordinator component.
 
 
-
+<script>
+  let container = lively.query(this, "lively-container")
+  let diagram = await (<lively-class-diagram></lively-class-diagram>)
+  diagram.addURL(container.getDir() + "components/")
+  diagram
+</script>
 
 ## Components
 
