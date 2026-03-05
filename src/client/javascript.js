@@ -32,6 +32,41 @@ import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 const t = babel.types;
 
+function extractParameters(paramsArray) {
+  if (!paramsArray) return [];
+  
+  return paramsArray.map(param => {
+    // Handle different parameter types
+    if (t.isIdentifier(param)) {
+      return { name: param.name, type: 'simple' };
+    }
+    if (t.isRestElement(param)) {
+      return { name: param.argument.name, type: 'rest' };
+    }
+    if (t.isAssignmentPattern(param)) {
+      // Default parameters: foo = 'default'
+      return { 
+        name: param.left.name, 
+        type: 'default',
+        defaultValue: '...' // Could extract actual default if needed
+      };
+    }
+    if (t.isObjectPattern(param)) {
+      // Destructuring: {x, y}
+      return { 
+        name: '{...}', 
+        type: 'destructure',
+        properties: param.properties.map(p => p.key?.name).filter(Boolean)
+      };
+    }
+    if (t.isArrayPattern(param)) {
+      // Array destructuring: [a, b]
+      return { name: '[...]', type: 'destructure' };
+    }
+    return { name: '?', type: 'unknown' };
+  });
+}
+
 export function parseSource(filename, source) {
   try {
     return  parseForAST(source).ast
@@ -63,8 +98,9 @@ export function parseModuleSemantics(ast) {
   
 /*MD ## Comments 
 
+---
 ```javascript
-  import * as javascript from "https://lively-kernel.org/lively4/lively4-jens/src/client/javascript.js"
+  import * as javascript from "src/client/javascript.js"
 var url = "https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js";
 (async () => {
   var source = await fetch(url).then(r => r.text())
@@ -72,7 +108,7 @@ var url = "https://lively-kernel.org/lively4/lively4-jens/src/components/tools/l
 
 })()
 ```
-
+---
 MD*/
   
   babel.traverse(ast,{
@@ -139,7 +175,8 @@ MD*/
             loc: funcNode.loc.end.line - funcNode.loc.start.line + 1,
             kind: funcNode.kind,
             static: funcNode.static,
-            leadingComments: funcNode.leadingComments
+            leadingComments: funcNode.leadingComments,
+            params: extractParameters(funcNode.params)
          }
          functions.push(func)
       }
@@ -168,7 +205,8 @@ MD*/
                 kind: item.kind,
                 static: item.static,
                 end: item.end,
-                leadingComments: item.leadingComments
+                leadingComments: item.leadingComments,
+                params: extractParameters(item.params)
               }
               methods.push(method)
             }              

@@ -259,6 +259,15 @@ export default class LivelyClassDiagram extends Morph {
     await this.addURL(fullPath, false);
   }
   
+  formatParams(params) {
+    if (!params || params.length === 0) return '';
+    return params.map(p => {
+      if (p.type === 'rest') return `...${p.name}`;
+      if (p.type === 'destructure') return p.name; // '{...}' or '[...]'
+      return p.name;
+    }).join(', ');
+  }
+
   /**
    * Convert FileIndex class info to Mermaid class diagram syntax
    * @param {Object} classInfo - Class information from FileIndex
@@ -330,7 +339,7 @@ export default class LivelyClassDiagram extends Morph {
               
               // Add as a COMMENT: prefixed method
               if (sectionName) {
-                mermaid += `    COMMENT: ${sectionName}()\n`;
+                mermaid += `    COMMENT: ${sectionName}(${this.formatParams(method.params)})\n`;
               }
             }
           }
@@ -339,7 +348,7 @@ export default class LivelyClassDiagram extends Morph {
         // No prefix for normal methods (everything is public in JavaScript)
         // Use $ for static methods
         const prefix = method.static ? '$' : '';
-        mermaid += `    ${prefix}${method.name}()\n`;
+        mermaid += `    ${prefix}${method.name}(${this.formatParams(method.params)})\n`;
         
         // Store method data for click handlers
         const methodKey = `${classInfo.name}.${method.name}`;
