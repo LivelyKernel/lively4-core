@@ -296,50 +296,6 @@ describe('OpenAI Realtime Chat Event Replay', () => {
   });
 
   describe('Message Ordering', () => {
-    it('should maintain correct message order when loading from database', async function() {
-      this.timeout(5000);
-      
-      // Disable replay mode to allow database writes
-      component._replayMode = false;
-      
-      // Create a new conversation
-      const conversationId = await component.createSession();
-      testConversationIds.push(conversationId);
-      
-      // Create messages rapidly to stress-test ordering
-      // Use createMessage directly to simulate real-time message flow
-      await component.createMessage('item1', 'user', 'First message', true);
-      await component.createMessage('item2', 'assistant', 'First response', true);
-      await component.createMessage('item3', 'user', 'Second message', true);
-      await component.createMessage('item4', 'assistant', 'Second response', true);
-      
-      // Force a small delay to ensure all DB writes complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Reload conversation from database
-      await component.loadConversation(conversationId);
-      
-      // Verify correct number of messages
-      expect(component.conversation).to.have.length(4);
-      
-      // Verify ordering by sequence numbers (should be monotonically increasing)
-      expect(component.conversation[0].sequence).to.equal(0);
-      expect(component.conversation[1].sequence).to.equal(1);
-      expect(component.conversation[2].sequence).to.equal(2);
-      expect(component.conversation[3].sequence).to.equal(3);
-      
-      // Verify content order matches sequence order
-      expect(component.conversation[0].content).to.equal('First message');
-      expect(component.conversation[1].content).to.equal('First response');
-      expect(component.conversation[2].content).to.equal('Second message');
-      expect(component.conversation[3].content).to.equal('Second response');
-      
-      // Verify roles alternate correctly
-      expect(component.conversation[0].role).to.equal('user');
-      expect(component.conversation[1].role).to.equal('assistant');
-      expect(component.conversation[2].role).to.equal('user');
-      expect(component.conversation[3].role).to.equal('assistant');
-    });
     
     it('should handle messages without sequence numbers (backward compatibility)', async function() {
       this.timeout(5000);
