@@ -48,29 +48,23 @@ class KeyboardHandler {
   }
 }
 
-/*MD 
-  see also <edit://src/client/morphic/dragbehavior.js>
-MD*/
 export class Panning {
   
-    constructor(pane) {
+    constructor(pane, options = {}) {
       this.pane = pane
-     // always drag with ctrl pressed
-      pane.addEventListener("pointerdown", evt => {
-        if (evt.ctrlKey) {
-          this.onPanningDown(evt)          
-        }
-      }, true)
-  
+      this.listenOn = options.listenOn || pane
       
-      // but if nothing else... normal drag will do
-      pane.addEventListener("pointerdown", evt => {
+      this.ctrlHandler = evt => {
+        if (evt.ctrlKey) this.onPanningDown(evt)
+      }
+      
+      this.polygonHandler = evt => {
         var element = _.first(evt.composedPath())
-        // lively.notify("element " + element.localName)
-        if (element.localName == "polygon") {
-          this.onPanningDown(evt)
-        }
-      })      
+        if (element.localName == "polygon") this.onPanningDown(evt)
+      }
+      
+      this.listenOn.addEventListener("pointerdown", this.ctrlHandler, true)
+      this.listenOn.addEventListener("pointerdown", this.polygonHandler)
     }
 
     onPanningMove(evt) {
@@ -91,36 +85,38 @@ export class Panning {
       evt.stopPropagation()
       evt.preventDefault()
     }
+    
+    destroy() {
+      lively.removeEventListener("panning", document.body.parentElement)
+      if (this.listenOn) {
+        this.listenOn.removeEventListener("pointerdown", this.ctrlHandler)
+        this.listenOn.removeEventListener("pointerdown", this.polygonHandler)
+      }
+    }
 }
 
-/*MD 
-  Zooming functionality for elements using CTRL+scroll wheel
-MD*/
 export class Zooming {
   
     constructor(target, options = {}) {
       this.target = target
+      this.listenOn = options.listenOn || target
       this.zoomLevel = options.initialZoom || 1.0
       this.minZoom = options.minZoom || 0.1
       this.maxZoom = options.maxZoom || 5.0
       this.zoomStep = options.zoomStep || 0.1
       this.transformOrigin = options.transformOrigin || 'top left'
       
-      // Add wheel event listener for CTRL+scroll zooming
-      lively.addEventListener("zooming", this.target, "wheel", (evt) => {
+      lively.addEventListener("zooming", this.listenOn, "wheel", (evt) => {
         this.onWheel(evt)
-      }, { passive: false })
+      }, { passive: false, capture: true })
     }
 
     onWheel(evt) {
-      // Only zoom when CTRL key is held down
       if (!evt.ctrlKey) return
       
-      // Prevent default browser zoom behavior
       evt.preventDefault()
       evt.stopPropagation()
       
-      // Calculate new zoom level
       const zoomDelta = evt.deltaY > 0 ? -this.zoomStep : this.zoomStep
       const newZoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + zoomDelta))
       
@@ -151,7 +147,7 @@ export class Zooming {
     }
     
     destroy() {
-      lively.removeEventListener("zooming", this.target)
+      lively.removeEventListener("zooming", this.listenOn)
     }
 }
 
