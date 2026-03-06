@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { Panning, Zooming } from 'src/client/html.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
+
 export default class LivelyArchitectureViewer extends Morph {
   async initialize() {
     this.windowTitle = "Architecture Viewer";
@@ -135,6 +136,9 @@ export default class LivelyArchitectureViewer extends Morph {
     // Fetch source code
     const sourceCode = await this.fetchMethodSource(methodInfo);
     
+    // Format comments section
+    const commentSection = this.formatComments(methodInfo.leadingComments || []);
+    
     // Update details pane content
     details.innerHTML = `
       <div class="details-header">
@@ -143,6 +147,7 @@ export default class LivelyArchitectureViewer extends Morph {
           <i class="fa fa-external-link" aria-hidden="true"></i>
         </button>
       </div>
+      ${commentSection}
       <div class="details-source">${this.formatSourceCode(sourceCode)}</div>
     `;
     
@@ -230,6 +235,40 @@ export default class LivelyArchitectureViewer extends Morph {
       .replace(/>/g, '&gt;');
     
     return `<pre>${escaped}</pre>`;
+  }
+  
+  /**
+   * Format leading comments for display
+   * @param {Array} comments - Array of comment objects from AST
+   * @returns {string} HTML with formatted comments
+   */
+  formatComments(comments) {
+    if (!comments || comments.length === 0) {
+      return '';
+    }
+    
+    // Extract and format comment text
+    const commentTexts = comments.map(comment => {
+      if (!comment.value) return '';
+      
+      // Remove leading * and whitespace from block comments
+      const lines = comment.value.split('\n')
+        .map(line => line.replace(/^\s*\*\s?/, '').trim())
+        .filter(line => line.length > 0);
+      
+      return lines.join('\n');
+    }).filter(text => text.length > 0);
+    
+    if (commentTexts.length === 0) {
+      return '';
+    }
+    
+    const escaped = commentTexts.join('\n\n')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    return `<div class="details-comments"><pre>${escaped}</pre></div>`;
   }
   
   onContextMenu(evt) {

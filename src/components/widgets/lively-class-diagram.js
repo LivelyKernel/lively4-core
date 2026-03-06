@@ -336,7 +336,8 @@ export default class LivelyClassDiagram extends Morph {
             start: info.method.start,
             end: info.method.end,
             static: info.static,
-            kind: 'property'
+            kind: 'property',
+            leadingComments: info.method.leadingComments || []
           });
         }
       }
@@ -376,7 +377,8 @@ export default class LivelyClassDiagram extends Morph {
           start: method.start,
           end: method.end,
           static: method.static,
-          kind: method.kind
+          kind: method.kind,
+          leadingComments: method.leadingComments || []
         });
       }
     }
