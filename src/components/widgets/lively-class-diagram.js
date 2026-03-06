@@ -658,8 +658,8 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
         }
       } else if (!paragraph.classList.contains('comment-section')) {
         // This is a method or property (skip if it's a comment section)
-        // Match: [prefix]name or [prefix]name() where prefix can be $, +, or both
-        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)\(\)?$/);
+        // Match: [prefix]name or [prefix]name(...) with optional parameters
+        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\(.*\))?$/);
         if (memberMatch && currentClass) {
           const memberName = memberMatch[1];
           const memberKey = `${currentClass}.${memberName}`;
@@ -667,7 +667,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
           
           if (memberData) {
             this.makeClickable(paragraph, async evt => {
-              await this.onMethodSelected(memberData, evt);
+              await this.onMethodSelected(memberData, evt, paragraph);
             });
           }
         }
@@ -686,8 +686,9 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
    *   - kind: "method" | "property" | "get" | "set"
    *   - url: "http://localhost:9005/lively4-core/src/..."
    * @param {Event} evt - The click event
+   * @param {HTMLElement} element - The clicked element (method label)
    */
-  async onMethodSelected(methodInfo, evt) {
+  async onMethodSelected(methodInfo, evt, element) {
     // Default behavior: open browser at method location
     // Shift+click: inspect the method data
     if (evt.shiftKey) {

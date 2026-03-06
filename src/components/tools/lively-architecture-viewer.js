@@ -7,6 +7,11 @@ export default class LivelyArchitectureViewer extends Morph {
     this.windowTitle = "Architecture Viewer";
     this._pane = this.get('#pane');
     this._diagram = this._diagram || await this.ensureDiagram();
+    
+    // Override diagram's method selection behavior to show details pane
+    this._diagram.onMethodSelected = (methodInfo, evt, element) => 
+      this.onMethodSelected(methodInfo, evt, element);
+    
     this.enablePanAndZoom();
     
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
@@ -84,6 +89,101 @@ export default class LivelyArchitectureViewer extends Morph {
     return this._diagram;
   }
   
+  /**
+   * Handle method/property selection - show source code in details pane
+   * @param {Object} methodInfo - Method information from FileIndex
+   * @param {Event} evt - The click event
+   * @param {HTMLElement} clickedElement - The clicked element (method label)
+   */
+  async onMethodSelected(methodInfo, evt, clickedElement) {
+    const details = this.get('#details');
+    
+    // Shift+click: keep inspector behavior
+    if (evt.shiftKey) {
+      lively.openInspector(methodInfo);
+      return;
+    }
+    
+    // Clear previous selection highlight
+    if (this._selectedMethod?.element) {
+      this._selectedMethod.element.style.backgroundColor = '';
+    }
+    
+    // Toggle: if clicking same method, hide details
+    if (this._selectedMethod?.info === methodInfo) {
+      this._selectedMethod = null;
+      details.classList.remove('visible');
+      lively.setClientPosition(details, lively.pt(0, 0)); // Move out of the way
+      return;
+    }
+    
+    // Fetch source code
+    const sourceCode = await this.fetchMethodSource(methodInfo);
+    
+    // Update details pane content
+    details.innerHTML = `
+      <div class="details-header">
+        ${methodInfo.class}.${methodInfo.name}${methodInfo.static ? ' (static)' : ''}
+      </div>
+      <div class="details-source">${this.formatSourceCode(sourceCode)}</div>
+    `;
+    
+    // IMPORTANT: Show details FIRST (must be in DOM before setClientPosition)
+    details.classList.add('visible');
+    
+    // Force layout/reflow so element is actually rendered
+    details.offsetHeight; // Force reflow
+    
+    // Position it next to clicked element
+    if (clickedElement) {
+      const methodPos = lively.getClientPosition(clickedElement);
+      const methodExtent = lively.getExtent(clickedElement);
+      lively.setClientPosition(details, methodPos.addPt(lively.pt(methodExtent.x + 10, 0)));
+    }
+    
+    // Track selection
+    this._selectedMethod = { info: methodInfo, element: clickedElement };
+    
+    // Highlight selected method
+    if (clickedElement) {
+      clickedElement.style.backgroundColor = 'lightblue';
+    }
+  }
+  
+  /**
+   * Fetch the source code for a method
+   * @param {Object} methodInfo - Method information from FileIndex
+   * @returns {string} Source code of the method
+   */
+  async fetchMethodSource(methodInfo) {
+    try {
+      // Read the entire file
+      const response = await fetch(methodInfo.url);
+      const fullSource = await response.text();
+      
+      // Extract method substring using start/end positions
+      return fullSource.substring(methodInfo.start, methodInfo.end);
+    } catch (error) {
+      console.error('Failed to fetch method source:', error);
+      return `// Error loading source: ${error.message}`;
+    }
+  }
+  
+  /**
+   * Format source code for display (escape HTML)
+   * @param {string} code - Raw source code
+   * @returns {string} HTML-safe formatted code
+   */
+  formatSourceCode(code) {
+    // Escape HTML
+    const escaped = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    return `<pre>${escaped}</pre>`;
+  }
+  
   onContextMenu(evt) {
     let menuItems = [
       ["Do nothing", () => lively.notify("nothing")]
@@ -104,6 +204,7 @@ export default class LivelyArchitectureViewer extends Morph {
     this._diagram = this.querySelector('lively-class-diagram');
     this._panning = other._panning;
     this._zooming = other._zooming;
+    this._selectedMethod = other._selectedMethod;
   }
   
   async livelyExample() {

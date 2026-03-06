@@ -21,10 +21,52 @@
       /* Ensure panning works everywhere */
       touch-action: none;
     }
+    
+    #details {
+      position: absolute;
+      font-family: monospace;
+      white-space: pre;
+      font-size: 10pt;
+      background-color: white;
+      border: 2px solid #666;
+      border-radius: 4px;
+      padding: 10px;
+      max-width: 600px;
+      max-height: 400px;
+      overflow: auto;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: none;
+    }
+    
+    #details.visible {
+      display: block;
+    }
+    
+    #details .details-header {
+      font-weight: bold;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    #details .details-source {
+      font-size: 9pt;
+      line-height: 1.4;
+    }
+    
+    #details .details-source pre {
+      margin: 0;
+      padding: 0;
+    }
   </style>
   
   <!-- Pane for panning - Panning class will listen to this -->
   <div id="pane">
     <slot></slot>
   </div>
+  
+  <!-- Details pane outside pane so setClientPosition works with global coordinates -->
+  <div id="details"></div>
 </template>
