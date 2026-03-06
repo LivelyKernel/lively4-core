@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from 'src/client/fileindex.js';
+import ContextMenu from 'src/client/contextmenu.js';
 
 export default class LivelyClassDiagram extends Morph {
   async initialize() {
@@ -18,6 +19,8 @@ export default class LivelyClassDiagram extends Morph {
     
     // Always restore from config if available (takes precedence)
     await this.restoreFromConfig();
+    
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
     
     this.render()
   }
@@ -422,6 +425,33 @@ export default class LivelyClassDiagram extends Morph {
   }
   
   /**
+   * Check if currently using hand-drawn style
+   * @returns {boolean} True if hand-drawn, false otherwise
+   */
+  get isHandDrawn() {
+    return this.look === 'handDrawn';
+  }
+  
+  /**
+   * Toggle between hand-drawn and classic rendering styles
+   * @param {Event} evt - Optional event for icon updates
+   * @param {HTMLElement} item - Optional menu item for icon updates
+   */
+  toggleHandDrawn(evt, item) {
+    this.look = this.isHandDrawn ? 'classic' : 'handDrawn';
+    
+    // Update icon if menu item provided
+    if (item) {
+      const icon = this.isHandDrawn 
+        ? '<i class="fa fa-check-circle-o" aria-hidden="true"></i>'
+        : '<i class="fa fa-circle-o" aria-hidden="true"></i>';
+      item.querySelector(".icon").innerHTML = icon;
+    }
+    
+    lively.notify(`Diagram style: ${this.look}`);
+  }
+  
+  /**
    * Toggle collapsed state for a class
    * @param {string} className - The name of the class to toggle
    */
@@ -437,6 +467,25 @@ export default class LivelyClassDiagram extends Morph {
     
     // Persist the new collapsed state
     this.livelyPrepareSave();
+  }
+  
+  /**
+   * Handle context menu on diagram
+   */
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    
+    const chosenIcon = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>';
+    const unchosenIcon = '<i class="fa fa-circle-o" aria-hidden="true"></i>';
+    const icon = this.isHandDrawn ? chosenIcon : unchosenIcon;
+    
+    let menuItems = [
+      ['Hand-Drawn Style', (evt, item) => this.toggleHandDrawn(evt, item), '', icon]
+    ];
+
+    const menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
   }
   
   /**

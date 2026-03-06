@@ -129,7 +129,6 @@ export default class LivelyArchitectureViewer extends Morph {
     if (this._selectedMethod?.info === methodInfo) {
       this._selectedMethod = null;
       details.classList.remove('visible');
-      lively.setClientPosition(details, lively.pt(0, 0)); // Move out of the way
       return;
     }
     
@@ -139,22 +138,45 @@ export default class LivelyArchitectureViewer extends Morph {
     // Update details pane content
     details.innerHTML = `
       <div class="details-header">
-        ${methodInfo.class}.${methodInfo.name}${methodInfo.static ? ' (static)' : ''}
+        <span class="details-title">${methodInfo.class}.${methodInfo.name}${methodInfo.static ? ' (static)' : ''}</span>
+        <button class="browse edit" id="browse" title="open new browser for url">
+          <i class="fa fa-external-link" aria-hidden="true"></i>
+        </button>
       </div>
       <div class="details-source">${this.formatSourceCode(sourceCode)}</div>
     `;
     
-    // IMPORTANT: Show details FIRST (must be in DOM before setClientPosition)
+    // IMPORTANT: Show details FIRST (must be in DOM before positioning)
     details.classList.add('visible');
     
     // Force layout/reflow so element is actually rendered
     details.offsetHeight; // Force reflow
     
-    // Position it next to clicked element
+    // Add click handler to browse button
+    const browseBtn = details.querySelector('#browse');
+    if (browseBtn) {
+      browseBtn.addEventListener('click', async (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        await lively.openBrowser(methodInfo.url, true, {
+          start: methodInfo.start,
+          end: methodInfo.end
+        });
+      });
+    }
+    
+    // Position it next to clicked element (now relative to pane, not global)
     if (clickedElement) {
-      const methodPos = lively.getClientPosition(clickedElement);
-      const methodExtent = lively.getExtent(clickedElement);
-      lively.setClientPosition(details, methodPos.addPt(lively.pt(methodExtent.x + 10, 0)));
+      const clickedRect = clickedElement.getBoundingClientRect();
+      const paneRect = this._pane.getBoundingClientRect();
+      
+      // Calculate position relative to pane
+      const relativeX = clickedRect.left - paneRect.left + this._pane.scrollLeft;
+      const relativeY = clickedRect.top - paneRect.top + this._pane.scrollTop;
+      
+      // Position details to the right of the clicked element
+      details.style.left = (relativeX + clickedRect.width + 10) + 'px';
+      details.style.top = relativeY + 'px';
     }
     
     // Track selection
@@ -211,8 +233,15 @@ export default class LivelyArchitectureViewer extends Morph {
   }
   
   onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    
+    const chosenIcon = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>';
+    const unchosenIcon = '<i class="fa fa-circle-o" aria-hidden="true"></i>';
+    const icon = this._diagram?.isHandDrawn ? chosenIcon : unchosenIcon;
+    
     let menuItems = [
-      ["Do nothing", () => lively.notify("nothing")]
+      ['Hand-Drawn Style', (evt, item) => this._diagram?.toggleHandDrawn(evt, item), '', icon]
     ];
 
     const menu = new ContextMenu(this, menuItems);
