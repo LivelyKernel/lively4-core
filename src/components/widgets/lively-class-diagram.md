@@ -1,8 +1,14 @@
 # Lively Class Diagram
 
+-  lively-architecture-view
+  - lively-class-diagram
+    - urls to classes, custom mermaid code
+    - generates mermaid source
+    - renders as svg
+  - panning, zooming
+  - details of selected method
+ 
 
 ## Ideas
 
-- [ ] make method names collapsable
-- [ ] we need method argument names
 - [ ] we need maybe method argument types and return types of methods... LSP or a type harvester could help here?

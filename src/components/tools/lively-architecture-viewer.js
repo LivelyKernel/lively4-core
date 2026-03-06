@@ -8,6 +8,9 @@ export default class LivelyArchitectureViewer extends Morph {
     this._pane = this.get('#pane');
     this._diagram = this._diagram || await this.ensureDiagram();
     
+    // Load highlight.js for syntax highlighting (preserve during live updates)
+    this._hljs = this._hljs || await this.loadHighlightJS();
+    
     // Override diagram's method selection behavior to show details pane
     this._diagram.onMethodSelected = (methodInfo, evt, element) => 
       this.onMethodSelected(methodInfo, evt, element);
@@ -24,6 +27,19 @@ export default class LivelyArchitectureViewer extends Morph {
       this.appendChild(diagram);
     }
     return diagram;
+  }
+  
+  async loadHighlightJS() {
+    if (this._hljs) return this._hljs;
+    
+    try {
+      // Load highlight.js using System.import
+      const hljsModule = await System.import(lively4url + '/src/external/highlight.js');
+      return hljsModule.default || hljsModule;
+    } catch (error) {
+      console.error('[lively-architecture-viewer] Failed to load highlight.js:', error);
+      return null;
+    }
   }
   
   enablePanAndZoom() {
@@ -170,12 +186,22 @@ export default class LivelyArchitectureViewer extends Morph {
   }
   
   /**
-   * Format source code for display (escape HTML)
+   * Format source code for display with syntax highlighting
    * @param {string} code - Raw source code
-   * @returns {string} HTML-safe formatted code
+   * @returns {string} HTML with syntax highlighting
    */
   formatSourceCode(code) {
-    // Escape HTML
+    // Use highlight.js if available, otherwise fall back to plain HTML escaping
+    if (this._hljs) {
+      try {
+        const result = this._hljs.highlight('javascript', code);
+        return `<pre><code class="hljs javascript">${result.value}</code></pre>`;
+      } catch (error) {
+        console.warn('[lively-architecture-viewer] Syntax highlighting failed:', error);
+      }
+    }
+    
+    // Fallback: escape HTML
     const escaped = code
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -205,6 +231,7 @@ export default class LivelyArchitectureViewer extends Morph {
     this._panning = other._panning;
     this._zooming = other._zooming;
     this._selectedMethod = other._selectedMethod;
+    this._hljs = other._hljs;
   }
   
   async livelyExample() {
