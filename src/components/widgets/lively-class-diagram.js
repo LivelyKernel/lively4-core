@@ -13,6 +13,7 @@ export default class LivelyClassDiagram extends Morph {
     this._methodData = this._methodData || new Map();
     this._operations = this._operations || [];
     this._collapsedClasses = this._collapsedClasses || new Set();
+    this._compositionRelationships = this._compositionRelationships || new Map();
     
     // Read look attribute (default to handDrawn)
     this._look = this.getAttribute('look') || 'handDrawn';
@@ -42,11 +43,17 @@ export default class LivelyClassDiagram extends Morph {
       
       const operations = config.operations || [];
       const collapsedClasses = config.collapsedClasses || [];
+      const compositionRelationships = config.compositionRelationships || [];
       
       // IMPORTANT: Restore collapsed state BEFORE replaying operations
       // so that classInfoToMermaid() can check it during replay
       this._collapsedClasses = new Set(collapsedClasses);
       this._operations = operations;
+      
+      // Restore composition relationships
+      this._compositionRelationships = new Map(
+        compositionRelationships.map(({parent, children}) => [parent, new Set(children)])
+      );
       
       // Only replay if we don't already have state (e.g., from livelyMigrate)
       if (this._modules.size === 0 && this._mermaidSource.length === 0) {
@@ -182,6 +189,9 @@ export default class LivelyClassDiagram extends Morph {
       this._classUrls.set(classInfo.name, url); // Store class -> URL mapping
       const mermaidClass = await this.classInfoToMermaid(classInfo);
       this._mermaidSource.push(mermaidClass);
+      
+      // Load corresponding HTML template and extract component references
+      await this.loadComponentReferences(url, classInfo.name);
     }
     
     await this.render();
@@ -260,6 +270,168 @@ export default class LivelyClassDiagram extends Morph {
     
     // Don't track in addURL since we already tracked at addPath level
     await this.addURL(fullPath, false);
+  }
+  
+  /**
+   * Extract custom component references from HTML template
+   * @param {string} htmlContent - HTML template content
+   * @returns {Set<string>} Set of component tag names (e.g., 'lively-container-navbar')
+   */
+  extractComponentReferences(htmlContent) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const components = new Set();
+    
+    // Check if content is wrapped in a <template> tag
+    const templateElement = doc.querySelector('template');
+    const searchRoot = templateElement ? templateElement.content : doc;
+    
+    // Find all custom elements (tags with hyphens = web components)
+    const allElements = searchRoot.querySelectorAll('*');
+    allElements.forEach(el => {
+      const tagName = el.tagName.toLowerCase();
+      // Web components must have a hyphen in the tag name
+      // Exclude the template tag itself
+      if (tagName.includes('-') && tagName !== 'template') {
+        components.add(tagName);
+      }
+    });
+    
+    return components;
+  }
+  
+  /**
+   * Convert tag name to class name
+   * lively-container-navbar → LivelyContainerNavbar
+   */
+  tagToClassName(tagName) {
+    return tagName
+      .split('-')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('');
+  }
+  
+  /**
+   * Convert class name to likely file path
+   * LivelyContainerNavbar → src/components/tools/lively-container-navbar.js
+   */
+  classNameToPath(className) {
+    // Convert PascalCase to kebab-case
+    const kebab = className
+      .replace(/([a-z])([A-Z])/g, '$1-$2')
+      .toLowerCase();
+    
+    // Try common component locations in order of likelihood
+    const possiblePaths = [
+      `src/components/tools/${kebab}.js`,
+      `src/components/widgets/${kebab}.js`,
+      `src/components/demo/${kebab}.js`,
+      `templates/${kebab}.js`
+    ];
+    
+    return possiblePaths;
+  }
+  
+  /**
+   * Load HTML template and extract component references
+   * @param {string} jsUrl - URL of the JS module
+   * @param {string} className - Name of the class
+   */
+  async loadComponentReferences(jsUrl, className) {
+    // Derive HTML path from JS path
+    const htmlUrl = jsUrl.replace(/\.js$/, '.html');
+    
+    try {
+      const response = await fetch(htmlUrl);
+      if (response.ok) {
+        const htmlContent = await response.text();
+        const referencedComponents = this.extractComponentReferences(htmlContent);
+        
+        // Log only if components found
+        if (referencedComponents.size > 0) {
+          console.log(`[lively-class-diagram] Found ${referencedComponents.size} component references in ${htmlUrl}`);
+        }
+        
+        // For each referenced component, add it collapsed
+        for (const componentTag of referencedComponents) {
+          await this.addReferencedComponent(componentTag, className);
+        }
+      }
+    } catch (error) {
+      // HTML file might not exist - this is okay, don't log unless it's an actual error
+      if (error.message && !error.message.includes('404')) {
+        console.warn(`[lively-class-diagram] Error loading HTML for ${jsUrl}:`, error.message);
+      }
+    }
+  }
+  
+  /**
+   * Add a referenced component to the diagram in collapsed state
+   * @param {string} componentTag - Tag name (e.g., 'lively-container-navbar')
+   * @param {string} parentClass - Class that references this component
+   */
+  async addReferencedComponent(componentTag, parentClass) {
+    // Convert tag to class name (lively-container-navbar → LivelyContainerNavbar)
+    const componentClassName = this.tagToClassName(componentTag);
+    
+    // Try to find the component in FileIndex
+    const possiblePaths = this.classNameToPath(componentClassName);
+    const fileIndex = FileIndex.current();
+    
+    // Try each possible path
+    for (const relativePath of possiblePaths) {
+      const componentUrl = lively4url + '/' + relativePath;
+      
+      // Check if component exists in FileIndex
+      const classInfos = [];
+      await fileIndex.db.classes.where("url").equals(componentUrl).each(classInfo => {
+        classInfos.push(classInfo);
+      });
+      
+      if (classInfos.length > 0) {
+        // Found it! Use the ACTUAL class name from FileIndex
+        const actualClassName = classInfos[0].name;
+        
+        // Track composition relationship with actual class name
+        if (!this._compositionRelationships.has(parentClass)) {
+          this._compositionRelationships.set(parentClass, new Set());
+        }
+        this._compositionRelationships.get(parentClass).add(actualClassName);
+        
+        // Check if this is a new component or already in diagram
+        const isNewComponent = !this._modules.has(componentUrl);
+        
+        if (isNewComponent) {
+          console.log(`[lively-class-diagram] Adding referenced component ${actualClassName} from ${componentUrl}`);
+          
+          // Add to modules set to prevent infinite recursion
+          this._modules.add(componentUrl);
+          
+          // New component - add it collapsed by default
+          // But ONLY if not during replay (replay preserves saved collapsed state)
+          if (!this._replaying) {
+            this._collapsedClasses.add(actualClassName);
+          }
+          
+          // Convert class info to Mermaid syntax
+          for (const classInfo of classInfos) {
+            this._classUrls.set(classInfo.name, componentUrl);
+            const mermaidClass = await this.classInfoToMermaid(classInfo);
+            this._mermaidSource.push(mermaidClass);
+          }
+        }
+        return; // Found and added, stop searching
+      }
+    }
+    
+    // Component not found - track with converted name as fallback
+    console.log(`[lively-class-diagram] Component ${componentClassName} not found in FileIndex`);
+    
+    // Still track the composition relationship even if not found
+    if (!this._compositionRelationships.has(parentClass)) {
+      this._compositionRelationships.set(parentClass, new Set());
+    }
+    this._compositionRelationships.get(parentClass).add(componentClassName);
   }
   
   formatParams(params) {
@@ -519,14 +691,20 @@ export default class LivelyClassDiagram extends Morph {
    * Rebuild the entire diagram from operations
    */
   async rebuildDiagram() {
-    // Clear current state (but keep operations and collapsed state)
+    // IMPORTANT: Save the current collapsed state (which may have been modified by toggle)
+    // We'll preserve this through the rebuild
     const savedOperations = this._operations;
-    const savedCollapsed = this._collapsedClasses;
+    const savedCollapsed = new Set(this._collapsedClasses); // Copy the current state
     
     this._mermaidSource = [];
     this._modules = new Set();
     this._classUrls = new Map();
     this._methodData = new Map();
+    this._compositionRelationships = new Map();
+    
+    // Keep the collapsed state - don't clear it!
+    // During replay, addReferencedComponent will check _replaying flag
+    // and NOT modify collapsed state
     
     // Replay operations
     this._replaying = true;
@@ -552,6 +730,7 @@ export default class LivelyClassDiagram extends Morph {
     this._methodData = new Map();
     this._operations = []; // Clear operation history
     this._collapsedClasses = new Set(); // Clear collapsed state
+    this._compositionRelationships = new Map(); // Clear composition relationships
     this.render();
   }
   
@@ -567,13 +746,25 @@ export default class LivelyClassDiagram extends Morph {
     // Use look attribute or default to handDrawn
     const look = this._look || 'handDrawn';
     
-    return `---
+    let source = `---
 config:
   layout: elk
   look: ${look}
   theme: neutral
 ---
 classDiagram\n${this._mermaidSource.join('\n')}`;
+    
+    // Add composition relationships
+    if (this._compositionRelationships && this._compositionRelationships.size > 0) {
+      for (const [parent, children] of this._compositionRelationships) {
+        for (const child of children) {
+          // Mermaid composition: Parent *-- Child (filled diamond)
+          source += `\n  ${parent} *-- ${child} : uses`;
+        }
+      }
+    }
+    
+    return source;
   }
   
   /**
@@ -948,7 +1139,11 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     const config = {
       version: "1.0",
       operations: this._operations || [],
-      collapsedClasses: Array.from(this._collapsedClasses || [])
+      collapsedClasses: Array.from(this._collapsedClasses || []),
+      compositionRelationships: Array.from(this._compositionRelationships || []).map(([parent, children]) => ({
+        parent,
+        children: Array.from(children)
+      }))
     };
     
     this.setAttribute("diagram-config", JSON.stringify(config));
@@ -961,6 +1156,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     this._methodData = other._methodData || new Map();
     this._operations = other._operations || [];
     this._collapsedClasses = other._collapsedClasses || new Set();
+    this._compositionRelationships = other._compositionRelationships || new Map();
     this._look = other._look || 'handDrawn';
     this._mermaid = other._mermaid;
   }

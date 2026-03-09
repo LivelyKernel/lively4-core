@@ -1331,7 +1331,7 @@ export default class Container extends Morph {
   async onArchitecture(evt) {
     const viewer = await lively.openComponentInWindow('lively-architecture-viewer');
     await lively.sleep(0)
-    viewer.addURL(this.getURL().toString());
+    viewer.addModule(this.getURL().toString());
   }
 
   async onCancel() {
