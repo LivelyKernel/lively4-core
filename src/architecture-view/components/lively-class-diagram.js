@@ -662,12 +662,12 @@ export default class LivelyClassDiagram extends Morph {
     let menuItems = [
       ['Hand-Drawn Style', (evt, item) => this.toggleHandDrawn(evt, item), '', handDrawnIcon],
       ['', null], // Separator
-      ['Renderer', null, '', '', [
+      ['Renderer', [
         ['Mermaid UML', () => this.setRenderer('mermaid').then(() => this.render()), '', 
          this._rendererType === 'mermaid' ? chosenIcon : unchosenIcon],
+        ['Polymetric View', () => this.setRenderer('polymetric').then(() => this.render()), '', 
+         this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
         // Future renderers will go here:
-        // ['Polymetric View', () => this.setRenderer('polymetric').then(() => this.render()), '', 
-        //  this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
         // ['Tree View', () => this.setRenderer('tree').then(() => this.render()), '', 
         //  this._rendererType === 'tree' ? chosenIcon : unchosenIcon],
       ]]
