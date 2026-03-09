@@ -95,17 +95,31 @@ export default class PolymetricRenderer {
   }
   
   /**
-   * Calculate node width based on code size
+   * Calculate node size
+   * For classes: sum of all method sizes
+   * For directories: use default size
    */
   calcSize(node) {
     if (!node.data) return this.minSize;
     
     const data = node.data;
-    if (data.start !== undefined && data.end !== undefined) {
-      const size = data.end - data.start;
-      if (size > 0) return size;
+    
+    // For class nodes, calculate size from methods
+    if (data.classInfo) {
+      const className = data.classInfo.name;
+      let totalMethodSize = 0;
+      
+      for (const [key, methodData] of this.diagram._methodData) {
+        if (methodData.class === className) {
+          const methodSize = methodData.end - methodData.start;
+          totalMethodSize += methodSize > 0 ? methodSize : 10;
+        }
+      }
+      
+      return totalMethodSize > 0 ? totalMethodSize : this.minSize;
     }
     
+    // For directory nodes, use default size
     return this.minSize;
   }
   
@@ -303,6 +317,9 @@ export default class PolymetricRenderer {
     // Add click handler for class nodes
     if (node.data.classInfo) {
       rect.on('click', () => this.onNodeClick(node));
+      
+      // Draw methods inside the class rectangle
+      this.drawMethods(node, drawing, rectX, rectY, rectWidth, rectHeight);
     }
     
     // Draw links to parent
@@ -321,6 +338,117 @@ export default class PolymetricRenderer {
     // Recursively draw children
     for (const child of (node.children || [])) {
       this.drawSubtree(child, drawing, minWidth, minHeight, hackSizeX);
+    }
+  }
+  
+  /**
+   * Draw methods as small rectangles inside a class box
+   * Methods are drawn at their natural size (sqrt of code length)
+   * The class box is already sized to contain all methods
+   */
+  drawMethods(node, drawing, classX, classY, classWidth, classHeight) {
+    const className = node.data.classInfo.name;
+    
+    // Collect all methods for this class
+    const methods = [];
+    for (const [key, methodData] of this.diagram._methodData) {
+      if (methodData.class === className) {
+        const size = methodData.end - methodData.start;
+        methods.push({
+          ...methodData,
+          size: size > 0 ? size : 10 // Minimum size for methods without data
+        });
+      }
+    }
+    
+    if (methods.length === 0) return;
+    
+    // Sort methods by size (largest first) for better packing
+    methods.sort((a, b) => b.size - a.size);
+    
+    // Pack methods in rows at their natural size
+    const padding = 2;
+    const innerPadding = 5; // Fixed padding in pixels
+    let currentX = classX + innerPadding;
+    let currentY = classY + innerPadding;
+    let rowHeight = 0;
+    
+    for (const method of methods) {
+      // Calculate method rectangle dimensions at natural size
+      const methodWidth = Math.sqrt(method.size);
+      const methodHeight = Math.sqrt(method.size);
+      
+      // Check if we need to wrap to next row
+      if (currentX + methodWidth > classX + classWidth - innerPadding && currentX > classX + innerPadding) {
+        currentX = classX + innerPadding;
+        currentY += rowHeight + padding;
+        rowHeight = 0;
+      }
+      
+      // Choose color based on method properties
+      const methodColor = this.getMethodColor(method);
+      
+      // Draw method rectangle
+      const methodRect = drawing.append('rect')
+        .attr('x', currentX)
+        .attr('y', currentY)
+        .attr('width', methodWidth)
+        .attr('height', methodHeight)
+        .attr('stroke', '#333')
+        .attr('stroke-width', '0.5px')
+        .attr('fill', methodColor)
+        .style('cursor', 'pointer');
+      
+      // Add tooltip
+      methodRect.append('title')
+        .text(`${method.name} (${method.size} chars)`);
+      
+      // Add click handler - use diagram's hook for proper integration
+      methodRect.on('click', async () => {
+        const evt = d3.event;
+        evt.stopPropagation(); // Prevent class click
+        await this.diagram.onMethodSelected(method, evt, methodRect.node());
+      });
+      
+      // Update position for next method
+      currentX += methodWidth + padding;
+      rowHeight = Math.max(rowHeight, methodHeight);
+    }
+  }
+  
+  /**
+   * Get color for a method based on its properties
+   */
+  getMethodColor(method) {
+    // Color by hashtags if available
+    if (method.hashtags && method.hashtags.length > 0) {
+      const tag = method.hashtags[0];
+      switch (tag) {
+        case 'important':
+        case 'api':
+        case 'public-api':
+          return '#4fc3f7'; // Light blue
+        case 'deprecated':
+          return '#bdbdbd'; // Gray
+        case 'TODO':
+          return '#fff176'; // Yellow
+        case 'private':
+          return '#e0e0e0'; // Light gray
+        default:
+          return '#80deea'; // Cyan
+      }
+    }
+    
+    // Color by method kind
+    switch (method.kind) {
+      case 'constructor':
+        return '#a5d6a7'; // Green
+      case 'get':
+      case 'set':
+      case 'property':
+        return '#ce93d8'; // Purple
+      default:
+        return '#90caf9'; // Blue
     }
   }
   
