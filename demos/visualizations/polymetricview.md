@@ -9,7 +9,7 @@ import moment from "src/external/moment.js";
  
    var now = Date.now()
   
-  var url = lively4url + "/demos/"
+  var url = lively4url + "/src/components/literature/"
   var tree = await files.fileTree(url)
 
 
