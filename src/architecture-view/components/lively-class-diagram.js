@@ -18,6 +18,10 @@ export default class LivelyClassDiagram extends Morph {
     // Read look attribute (default to handDrawn)
     this._look = this.getAttribute('look') || 'handDrawn';
     
+    // Initialize renderer (default to Mermaid)
+    this._rendererType = this.getAttribute('renderer') || 'mermaid';
+    await this.setRenderer(this._rendererType);
+    
     // Always restore from config if available (takes precedence)
     await this.restoreFromConfig();
     
@@ -98,58 +102,34 @@ export default class LivelyClassDiagram extends Morph {
     }
   }
   
-  async loadMermaid() {
-    if (this._mermaid) return this._mermaid;
-    if (this._mermaidLoadError) {
-      throw new Error('Mermaid failed to load previously');
-    }
-    if (this._mermaidLoading) {
-      return this._mermaidLoading;
+  /**
+   * Set the rendering strategy
+   */
+  async setRenderer(type) {
+    if (this._renderer) {
+      this._renderer.dispose();
     }
     
-    this._mermaidLoading = (async () => {
-      try {
-        // Load mermaid and ELK modules through DOM (bypasses Babel transpilation issues)
-        const mermaidModule = await lively.loadJavaScriptModuleThroughDOM(
-          'mermaid',
-          'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs'
-        );
-        const elkModule = await lively.loadJavaScriptModuleThroughDOM(
-          'mermaid-elk',
-          'https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs'
-        );
-        
-        this._mermaid = mermaidModule.default;
-        // Register ELK layout
-        if (!this._mermaid._elkRegistered) {
-          await this._mermaid.registerLayoutLoaders(elkModule.default);
-          this._mermaid._elkRegistered = true;
-        }
-        
-        // Initialize Mermaid
-        this._mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          logLevel: 'error',
-          securityLevel: 'loose',
-          flowchart: {
-            defaultRenderer: 'elk',
-            useMaxWidth: true,
-            htmlLabels: true
-          }
-        });
-        
-        return this._mermaid;
-      } catch (error) {
-        console.error('[lively-class-diagram] Failed to load mermaid:', error);
-        this._mermaidLoadError = error;
-        throw error;
-      } finally {
-        this._mermaidLoading = null;
-      }
-    })();
+    const baseUrl = lively4url + '/src/architecture-view/components/renderers/';
     
-    return this._mermaidLoading;
+    switch (type) {
+      case 'mermaid':
+        const MermaidRenderer = await System.import(baseUrl + 'mermaid-renderer.js');
+        this._renderer = new MermaidRenderer.default(this);
+        break;
+      case 'polymetric':
+        const PolymetricRenderer = await System.import(baseUrl + 'polymetric-renderer.js');
+        this._renderer = new PolymetricRenderer.default(this);
+        break;
+      case 'tree':
+        const TreeRenderer = await System.import(baseUrl + 'tree-renderer.js');
+        this._renderer = new TreeRenderer.default(this);
+        break;
+      default:
+        throw new Error(`Unknown renderer type: ${type}`);
+    }
+    
+    this._rendererType = type;
   }
   
   /**
@@ -677,10 +657,20 @@ export default class LivelyClassDiagram extends Morph {
     
     const chosenIcon = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>';
     const unchosenIcon = '<i class="fa fa-circle-o" aria-hidden="true"></i>';
-    const icon = this.isHandDrawn ? chosenIcon : unchosenIcon;
+    const handDrawnIcon = this.isHandDrawn ? chosenIcon : unchosenIcon;
     
     let menuItems = [
-      ['Hand-Drawn Style', (evt, item) => this.toggleHandDrawn(evt, item), '', icon]
+      ['Hand-Drawn Style', (evt, item) => this.toggleHandDrawn(evt, item), '', handDrawnIcon],
+      ['', null], // Separator
+      ['Renderer', null, '', '', [
+        ['Mermaid UML', () => this.setRenderer('mermaid').then(() => this.render()), '', 
+         this._rendererType === 'mermaid' ? chosenIcon : unchosenIcon],
+        // Future renderers will go here:
+        // ['Polymetric View', () => this.setRenderer('polymetric').then(() => this.render()), '', 
+        //  this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
+        // ['Tree View', () => this.setRenderer('tree').then(() => this.render()), '', 
+        //  this._rendererType === 'tree' ? chosenIcon : unchosenIcon],
+      ]]
     ];
 
     const menu = new ContextMenu(this, menuItems);
@@ -735,320 +725,13 @@ export default class LivelyClassDiagram extends Morph {
   }
   
   /**
-   * Get the current Mermaid source code
-   * @returns {string} Complete Mermaid diagram source
-   */
-  getMermaidSource() {
-    if (this._mermaidSource.length === 0) {
-      return ``;
-    }
-    
-    // Use look attribute or default to handDrawn
-    const look = this._look || 'handDrawn';
-    
-    let source = `---
-config:
-  layout: elk
-  look: ${look}
-  theme: neutral
----
-classDiagram\n${this._mermaidSource.join('\n')}`;
-    
-    // Add composition relationships
-    if (this._compositionRelationships && this._compositionRelationships.size > 0) {
-      for (const [parent, children] of this._compositionRelationships) {
-        for (const child of children) {
-          // Mermaid composition: Parent *-- Child (filled diamond)
-          source += `\n  ${parent} *-- ${child} : uses`;
-        }
-      }
-    }
-    
-    return source;
-  }
-  
-  /**
-   * Render the diagram using Mermaid
+   * Render the diagram using the current renderer
    */
   async render() {
     const diagram = this.get('#diagram');
-    if (!diagram) return;
+    if (!diagram || !this._renderer) return;
     
-    const source = this.getMermaidSource() ;
-    
-    try {
-      // Show loading message
-      diagram.innerHTML = '<div style="padding: 20px;">Loading Mermaid...</div>';
-      
-      const mermaid = await this.loadMermaid();
-      
-      // Generate unique ID for this diagram
-      const id = 'class-diagram-' + Date.now();
-      
-      // Render with Mermaid
-      const {svg} = await mermaid.render(id, source);
-      
-      // Clear and insert SVG
-      diagram.innerHTML = svg;
-      diagram.classList.add('mermaid');
-      
-      // Apply hand-drawn font if look is handDrawn
-      const look = this._look || 'handDrawn';
-      if (look === 'handDrawn') {
-        diagram.classList.add('hand-drawn');
-        // Expand foreignObject widths to accommodate wider Virgil font
-        this.expandForeignObjects(diagram);
-      } else {
-        diagram.classList.remove('hand-drawn');
-      }
-      
-      // Style comment sections
-      this.styleSections(diagram);
-      
-      // Style methods based on hashtags
-      this.styleMethodsByHashtags(diagram);
-      
-      // Add click handlers to class names
-      this.addClickHandlers(diagram);
-      
-    } catch (error) {
-      console.error('Mermaid rendering error:', error);
-      diagram.innerHTML = `<pre style="color: red;">Error rendering diagram:\n${error.message}\n\nSource:\n${source}</pre>`;
-    }
-  }
-  
-  /**
-   * Expand foreignObject elements to accommodate wider Virgil font
-   * @param {HTMLElement} diagram - The diagram container element
-   */
-  expandForeignObjects(diagram) {
-    const svgElement = diagram.querySelector('svg');
-    if (!svgElement) return;
-    
-    // Find all foreignObject elements and expand their width by 20%
-    const foreignObjects = svgElement.querySelectorAll('foreignObject');
-    foreignObjects.forEach(obj => {
-      const currentWidth = parseFloat(obj.getAttribute('width'));
-      if (currentWidth) {
-        // Increase width by 20% to accommodate wider Virgil font
-        const newWidth = currentWidth * 1.2;
-        obj.setAttribute('width', newWidth + 'px');
-      }
-    });
-  }
-  
-  /**
-   * Style comment sections based on markdown hierarchy
-   * @param {HTMLElement} diagram - The diagram container element
-   */
-  styleSections(diagram) {
-    const svgElement = diagram.querySelector('svg');
-    if (!svgElement) return;
-    
-    const labelElements = svgElement.querySelectorAll('g.label');
-    
-    labelElements.forEach(labelGroup => {
-      const paragraph = labelGroup.querySelector('.nodeLabel p');
-      if (!paragraph) return;
-      
-      const text = paragraph.textContent.trim();
-      
-      // Check if this is a comment section
-      const commentMatch = text.match(/^COMMENT:\s*(.+?)\(\)$/);
-      if (commentMatch) {
-        const sectionText = commentMatch[1];
-        
-        // Detect markdown hierarchy level
-        const levelMatch = sectionText.match(/^(#+)\s*(.*)$/);
-        const level = levelMatch ? levelMatch[1].length : 1;
-        const sectionName = levelMatch ? levelMatch[2] : sectionText;
-        
-        // Remove "COMMENT: " prefix and "()"
-        paragraph.textContent = sectionName;
-        
-        // Style based on hierarchy level
-        const fontSize = level === 1 ? '14px' : '12px';
-        const fontWeight = level === 1 ? 'bold' : 'normal';
-        const marginTop = level === 1 ? '8px' : '4px';
-        
-        paragraph.style.cssText = `
-          font-weight: ${fontWeight};
-          color: #1e90ff;
-          font-style: italic;
-          text-align: left;
-          margin-top: ${marginTop};
-          font-size: ${fontSize};
-        `;
-        
-        // Add CSS classes for hierarchy
-        paragraph.classList.add('comment-section');
-        paragraph.classList.add(`comment-level-${level}`);
-        labelGroup.classList.add('comment-section-group');
-      }
-    });
-  }
-  
-  /**
-   * Style methods based on hashtags in their comments
-   * @param {HTMLElement} diagram - The diagram container element
-   */
-  styleMethodsByHashtags(diagram) {
-    const svgElement = diagram.querySelector('svg');
-    if (!svgElement) return;
-    
-    const labelElements = svgElement.querySelectorAll('g.label');
-    let currentClass = null;
-    
-    labelElements.forEach(labelGroup => {
-      const paragraph = labelGroup.querySelector('.nodeLabel p');
-      if (!paragraph) return;
-      
-      const text = paragraph.textContent.trim();
-      
-      // Check if this is a class name (has font-weight: bolder in style)
-      const isBold = labelGroup.getAttribute('style')?.includes('font-weight: bolder');
-      
-      if (isBold) {
-        // Track current class context
-        currentClass = text;
-      } else if (!paragraph.classList.contains('comment-section')) {
-        // This is a method or property
-        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\(.*\))?$/);
-        if (memberMatch && currentClass) {
-          const memberName = memberMatch[1];
-          const memberKey = `${currentClass}.${memberName}`;
-          const memberData = this._methodData.get(memberKey);
-          
-          if (memberData && memberData.hashtags && memberData.hashtags.length > 0) {
-            // Apply styles based on hashtags
-            this.applyHashtagStyles(paragraph, memberData.hashtags);
-          }
-        }
-      }
-    });
-  }
-  
-  /**
-   * Apply semantic CSS classes and display hashtag labels
-   */
-  applyHashtagStyles(element, hashtags) {
-    hashtags.forEach(tag => element.classList.add(`hashtag-${tag}`));
-    if (hashtags.length > 0) this.addHashtagLabel(element, hashtags);
-  }
-  
-  /**
-   * Display hashtags as separate SVG text element positioned to the right of method
-   * Inserted outside label group to avoid interfering with click detection
-   * #important #public-api
-   */
-  addHashtagLabel(paragraph, hashtags) {
-    if (!hashtags || hashtags.length === 0) return;
-    
-    const foreignObject = paragraph.closest('foreignObject');
-    const labelGroup = foreignObject?.parentElement;
-    if (!labelGroup || !foreignObject) return;
-    
-    const labelParent = labelGroup.parentElement;
-    if (!labelParent) return;
-    
-    const x = parseFloat(foreignObject.getAttribute('x') || '0');
-    const y = parseFloat(foreignObject.getAttribute('y') || '0');
-    const width = parseFloat(foreignObject.getAttribute('width') || '100');
-    const height = parseFloat(foreignObject.getAttribute('height') || '20');
-    
-    const transform = labelGroup.getAttribute('transform');
-    let offsetX = 0, offsetY = 0;
-    if (transform) {
-      const match = transform.match(/translate\(([^,]+),([^)]+)\)/);
-      if (match) {
-        offsetX = parseFloat(match[1]) || 0;
-        offsetY = parseFloat(match[2]) || 0;
-      }
-    }
-    
-    const tagX = offsetX + x + width + 5;
-    const tagY = offsetY + y + height / 2 + 4;
-    
-    const hashtagText = (<text 
-      x={tagX} 
-      y={tagY} 
-      text-anchor="start"
-      dominant-baseline="middle"
-      class="method-hashtags"
-    ></text>);
-    
-    hashtags.forEach((tag, idx) => {
-      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-      tspan.classList.add(`hashtag-label-${tag}`);
-      tspan.textContent = `#${tag}`;
-      
-      if (idx > 0) {
-        const space = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
-        space.textContent = ' ';
-        hashtagText.appendChild(space);
-      }
-      
-      hashtagText.appendChild(tspan);
-    });
-    
-    labelParent.insertBefore(hashtagText, labelGroup.nextSibling);
-  }
-  
-  /**
-   * Add click handlers to class names and methods in the rendered diagram
-   * Also adds toggle buttons to class headers
-   * @param {HTMLElement} diagram - The diagram container element
-   */
-  addClickHandlers(diagram) {
-    // Find all text elements in the SVG
-    // Mermaid uses foreignObject with <p> tags for class names and methods
-    const svgElement = diagram.querySelector('svg');
-    if (!svgElement) return;
-    
-    // Find all label elements
-    const labelElements = svgElement.querySelectorAll('g.label');
-    
-    let currentClass = null;
-    
-    labelElements.forEach(labelGroup => {
-      const paragraph = labelGroup.querySelector('.nodeLabel p');
-      if (!paragraph) return;
-      
-      const text = paragraph.textContent.trim();
-      
-      // Check if this is a class name (has font-weight: bolder in style)
-      const isBold = labelGroup.getAttribute('style')?.includes('font-weight: bolder');
-      
-      if (isBold) {
-        // This is a class name
-        const classUrl = this._classUrls.get(text);
-        if (classUrl) {
-          currentClass = text;
-          
-          // Add toggle button to the class header
-          this.addToggleButton(paragraph, text);
-          
-          this.makeClickable(paragraph, async () => {
-            await lively.openBrowser(classUrl, true);
-          });
-        }
-      } else if (!paragraph.classList.contains('comment-section')) {
-        // This is a method or property (skip if it's a comment section)
-        // Match: [prefix]name or [prefix]name(...) with optional parameters
-        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\(.*\))?$/);
-        if (memberMatch && currentClass) {
-          const memberName = memberMatch[1];
-          const memberKey = `${currentClass}.${memberName}`;
-          const memberData = this._methodData.get(memberKey);
-          
-          if (memberData) {
-            this.makeClickable(paragraph, async evt => {
-              await this.onMethodSelected(memberData, evt, paragraph);
-            });
-          }
-        }
-      }
-    });
+    await this._renderer.render(diagram);
   }
   
   /**
@@ -1077,60 +760,7 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     }
   }
   
-  /**
-   * Add a toggle button to a class header
-   * @param {HTMLElement} paragraph - The paragraph element containing the class name
-   * @param {string} className - The name of the class
-   */
-  addToggleButton(paragraph, className) {
-    const isCollapsed = this._collapsedClasses.has(className);
-    const indicator = isCollapsed ? '[+]' : '[-]';
-    
-    // Find the foreignObject ancestor and expand its width
-    let foreignObj = paragraph.closest('foreignObject');
-    if (foreignObj) {
-      const currentWidth = parseFloat(foreignObj.getAttribute('width'));
-      // Add 40px for the toggle button
-      foreignObj.setAttribute('width', (currentWidth + 40) + 'px');
-    }
-    
-    // Create a span for the toggle button
-    const toggleBtn = document.createElement('span');
-    toggleBtn.textContent = ' ' + indicator;
-    toggleBtn.style.cssText = `
-      cursor: pointer;
-      margin-left: 4px;
-      color: #666;
-      user-select: none;
-    `;
-    
-    // Add click handler that stops propagation (so class name click doesn't fire)
-    toggleBtn.addEventListener('click', async (evt) => {
-      evt.preventDefault();
-      evt.stopPropagation();
-      await this.toggleCollapsed(className);
-    });
-    
-    // Append the button to the paragraph
-    paragraph.appendChild(toggleBtn);
-  }
-  
-  /**
-   * Make an element clickable with visual feedback
-   * @param {HTMLElement} element - The element to make clickable
-   * @param {Function} onClick - Click handler function
-   */
-  makeClickable(element, onClick) {
-    element.style.cursor = 'pointer';
-  
-    
-    element.addEventListener('click', async (evt) => {
-      evt.preventDefault();
-      evt.stopPropagation();
-      await onClick(evt);
-    });
-    
-  }
+
   
   /**
    * Prepare component for saving by storing minimal configuration
@@ -1158,7 +788,8 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
     this._collapsedClasses = other._collapsedClasses || new Set();
     this._compositionRelationships = other._compositionRelationships || new Map();
     this._look = other._look || 'handDrawn';
-    this._mermaid = other._mermaid;
+    this._renderer = other._renderer;
+    this._rendererType = other._rendererType;
   }
   
   async livelyExample() {
