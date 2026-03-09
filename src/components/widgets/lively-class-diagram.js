@@ -286,6 +286,27 @@ export default class LivelyClassDiagram extends Morph {
   }
 
   /**
+   * Extract hashtags from method comments
+   * #public-api
+   */
+  extractHashtags(leadingComments) {
+    if (!leadingComments || leadingComments.length === 0) return [];
+    
+    const hashtags = new Set();
+    const hashtagPattern = /#([a-zA-Z][a-zA-Z0-9_-]*)/g;
+    
+    for (const comment of leadingComments) {
+      const commentText = comment.value || '';
+      let match;
+      while ((match = hashtagPattern.exec(commentText)) !== null) {
+        hashtags.add(match[1]);
+      }
+    }
+    
+    return Array.from(hashtags);
+  }
+
+  /**
    * Convert FileIndex class info to Mermaid class diagram syntax
    * @param {Object} classInfo - Class information from FileIndex
    * @returns {string} Mermaid class definition
@@ -329,6 +350,7 @@ export default class LivelyClassDiagram extends Morph {
           
           // Store property data for click handlers (use getter/setter location)
           const propertyKey = `${classInfo.name}.${propertyName}`;
+          const propertyHashtags = this.extractHashtags(info.method.leadingComments);
           this._methodData.set(propertyKey, {
             url: classInfo.url,
             class: classInfo.name,
@@ -337,7 +359,8 @@ export default class LivelyClassDiagram extends Morph {
             end: info.method.end,
             static: info.static,
             kind: 'property',
-            leadingComments: info.method.leadingComments || []
+            leadingComments: info.method.leadingComments || [],
+            hashtags: propertyHashtags
           });
         }
       }
@@ -357,7 +380,7 @@ export default class LivelyClassDiagram extends Morph {
               
               // Add as a COMMENT: prefixed method
               if (sectionName) {
-                mermaid += `    COMMENT: ${sectionName}(${this.formatParams(method.params)})\n`;
+                mermaid += `    COMMENT: ${sectionName}()\n`;
               }
             }
           }
@@ -370,6 +393,7 @@ export default class LivelyClassDiagram extends Morph {
         
         // Store method data for click handlers
         const methodKey = `${classInfo.name}.${method.name}`;
+        const methodHashtags = this.extractHashtags(method.leadingComments);
         this._methodData.set(methodKey, {
           url: classInfo.url,
           class: classInfo.name,
@@ -378,7 +402,8 @@ export default class LivelyClassDiagram extends Morph {
           end: method.end,
           static: method.static,
           kind: method.kind,
-          leadingComments: method.leadingComments || []
+          leadingComments: method.leadingComments || [],
+          hashtags: methodHashtags
         });
       }
     }
@@ -589,6 +614,9 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
       // Style comment sections
       this.styleSections(diagram);
       
+      // Style methods based on hashtags
+      this.styleMethodsByHashtags(diagram);
+      
       // Add click handlers to class names
       this.addClickHandlers(diagram);
       
@@ -667,6 +695,112 @@ classDiagram\n${this._mermaidSource.join('\n')}`;
         labelGroup.classList.add('comment-section-group');
       }
     });
+  }
+  
+  /**
+   * Style methods based on hashtags in their comments
+   * @param {HTMLElement} diagram - The diagram container element
+   */
+  styleMethodsByHashtags(diagram) {
+    const svgElement = diagram.querySelector('svg');
+    if (!svgElement) return;
+    
+    const labelElements = svgElement.querySelectorAll('g.label');
+    let currentClass = null;
+    
+    labelElements.forEach(labelGroup => {
+      const paragraph = labelGroup.querySelector('.nodeLabel p');
+      if (!paragraph) return;
+      
+      const text = paragraph.textContent.trim();
+      
+      // Check if this is a class name (has font-weight: bolder in style)
+      const isBold = labelGroup.getAttribute('style')?.includes('font-weight: bolder');
+      
+      if (isBold) {
+        // Track current class context
+        currentClass = text;
+      } else if (!paragraph.classList.contains('comment-section')) {
+        // This is a method or property
+        const memberMatch = text.match(/^[\$\+]?([a-zA-Z_$][a-zA-Z0-9_$]*)(?:\(.*\))?$/);
+        if (memberMatch && currentClass) {
+          const memberName = memberMatch[1];
+          const memberKey = `${currentClass}.${memberName}`;
+          const memberData = this._methodData.get(memberKey);
+          
+          if (memberData && memberData.hashtags && memberData.hashtags.length > 0) {
+            // Apply styles based on hashtags
+            this.applyHashtagStyles(paragraph, memberData.hashtags);
+          }
+        }
+      }
+    });
+  }
+  
+  /**
+   * Apply semantic CSS classes and display hashtag labels
+   */
+  applyHashtagStyles(element, hashtags) {
+    hashtags.forEach(tag => element.classList.add(`hashtag-${tag}`));
+    if (hashtags.length > 0) this.addHashtagLabel(element, hashtags);
+  }
+  
+  /**
+   * Display hashtags as separate SVG text element positioned to the right of method
+   * Inserted outside label group to avoid interfering with click detection
+   * #important #public-api
+   */
+  addHashtagLabel(paragraph, hashtags) {
+    if (!hashtags || hashtags.length === 0) return;
+    
+    const foreignObject = paragraph.closest('foreignObject');
+    const labelGroup = foreignObject?.parentElement;
+    if (!labelGroup || !foreignObject) return;
+    
+    const labelParent = labelGroup.parentElement;
+    if (!labelParent) return;
+    
+    const x = parseFloat(foreignObject.getAttribute('x') || '0');
+    const y = parseFloat(foreignObject.getAttribute('y') || '0');
+    const width = parseFloat(foreignObject.getAttribute('width') || '100');
+    const height = parseFloat(foreignObject.getAttribute('height') || '20');
+    
+    const transform = labelGroup.getAttribute('transform');
+    let offsetX = 0, offsetY = 0;
+    if (transform) {
+      const match = transform.match(/translate\(([^,]+),([^)]+)\)/);
+      if (match) {
+        offsetX = parseFloat(match[1]) || 0;
+        offsetY = parseFloat(match[2]) || 0;
+      }
+    }
+    
+    const tagX = offsetX + x + width + 5;
+    const tagY = offsetY + y + height / 2 + 4;
+    
+    const hashtagText = (<text 
+      x={tagX} 
+      y={tagY} 
+      text-anchor="start"
+      dominant-baseline="middle"
+      class="method-hashtags"
+    ></text>);
+    
+    hashtags.forEach((tag, idx) => {
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.classList.add(`hashtag-label-${tag}`);
+      tspan.textContent = `#${tag}`;
+      
+      if (idx > 0) {
+        const space = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+        space.textContent = ' ';
+        hashtagText.appendChild(space);
+      }
+      
+      hashtagText.appendChild(tspan);
+    });
+    
+    labelParent.insertBefore(hashtagText, labelGroup.nextSibling);
   }
   
   /**

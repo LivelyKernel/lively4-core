@@ -22,9 +22,54 @@
       background: white;
     }
     
-    /* Use Virgil font for hand-drawn style diagrams */
     #diagram.hand-drawn svg {
       font-family: Virgil, sans-serif;
+    }
+    
+    /* Hashtag method name styling */
+    .hashtag-important {
+      font-weight: bold !important;
+    }
+    
+    .hashtag-deprecated {
+      text-decoration: line-through !important;
+      opacity: 0.6;
+    }
+    
+    .hashtag-private {
+      font-style: italic !important;
+    }
+    
+    /* Hashtag label colors */
+    .method-hashtags {
+      fill: #888;
+      font-size: 10px;
+      font-family: monospace;
+    }
+    
+    .hashtag-label-important {
+      fill: #d32f2f !important;
+    }
+    
+    .hashtag-label-deprecated {
+      fill: #9e9e9e !important;
+    }
+    
+    .hashtag-label-private {
+      fill: #757575 !important;
+    }
+    
+    .hashtag-label-TODO {
+      fill: #f9a825 !important;
+    }
+    
+    .hashtag-label-public-api,
+    .hashtag-label-api {
+      fill: #1976d2 !important;
+    }
+    
+    .hashtag-label-experimental {
+      fill: #f57c00 !important;
     }
   </style>
   
