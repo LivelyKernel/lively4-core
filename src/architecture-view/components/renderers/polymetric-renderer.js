@@ -95,8 +95,72 @@ export default class PolymetricRenderer {
   }
   
   /**
+   * Calculate packed dimensions for methods in a class
+   * Simulates the row-packing algorithm to get actual required space
+   * Optimizes for a reasonable aspect ratio (roughly square)
+   */
+  calculatePackedMethodDimensions(className) {
+    const methods = [];
+    let totalArea = 0;
+    
+    for (const [key, methodData] of this.diagram._methodData) {
+      if (methodData.class === className) {
+        const size = methodData.end - methodData.start;
+        const methodSize = size > 0 ? size : 10;
+        methods.push({
+          size: methodSize,
+          width: Math.sqrt(methodSize),
+          height: Math.sqrt(methodSize)
+        });
+        totalArea += methodSize;
+      }
+    }
+    
+    if (methods.length === 0) {
+      return { width: this.minSize, height: this.minSize };
+    }
+    
+    // Sort by size for better packing
+    methods.sort((a, b) => b.size - a.size);
+    
+    // Target width: aim for roughly square aspect ratio
+    // Use sqrt of total area as initial guess, then simulate packing
+    const targetWidth = Math.sqrt(totalArea) * 1.5; // 1.5x for padding and wrapping
+    
+    // Simulate row packing with target width
+    const padding = 2;
+    const innerPadding = 5;
+    let currentX = innerPadding;
+    let currentY = innerPadding;
+    let rowHeight = 0;
+    let maxRowWidth = 0;
+    
+    for (const method of methods) {
+      // Check if we need to wrap
+      if (currentX + method.width > targetWidth - innerPadding && currentX > innerPadding) {
+        maxRowWidth = Math.max(maxRowWidth, currentX - padding);
+        currentX = innerPadding;
+        currentY += rowHeight + padding;
+        rowHeight = 0;
+      }
+      
+      currentX += method.width + padding;
+      rowHeight = Math.max(rowHeight, method.height);
+    }
+    
+    // Final row
+    maxRowWidth = Math.max(maxRowWidth, currentX - padding + innerPadding);
+    const totalHeight = currentY + rowHeight + innerPadding;
+    
+    return { 
+      width: Math.max(maxRowWidth, this.minSize), 
+      height: Math.max(totalHeight, this.minSize) 
+    };
+  }
+  
+  /**
    * Calculate node size
-   * For classes: sum of all method sizes
+   * For classes: calculate actual packed method dimensions
    * For directories: use default size
    */
   calcSize(node) {
@@ -104,19 +168,12 @@ export default class PolymetricRenderer {
     
     const data = node.data;
     
-    // For class nodes, calculate size from methods
+    // For class nodes, calculate size from packed methods
     if (data.classInfo) {
       const className = data.classInfo.name;
-      let totalMethodSize = 0;
-      
-      for (const [key, methodData] of this.diagram._methodData) {
-        if (methodData.class === className) {
-          const methodSize = methodData.end - methodData.start;
-          totalMethodSize += methodSize > 0 ? methodSize : 10;
-        }
-      }
-      
-      return totalMethodSize > 0 ? totalMethodSize : this.minSize;
+      const dims = this.calculatePackedMethodDimensions(className);
+      // Return area for consistency with minSize
+      return dims.width * dims.height;
     }
     
     // For directory nodes, use default size
@@ -124,17 +181,37 @@ export default class PolymetricRenderer {
   }
   
   /**
-   * Calculate node width (square root of size for better visualization)
+   * Calculate node width based on packed method dimensions
    */
   dataWidth(node) {
-    return Math.sqrt(this.calcSize(node));
+    if (!node.data) return Math.sqrt(this.minSize);
+    
+    const data = node.data;
+    
+    if (data.classInfo) {
+      const className = data.classInfo.name;
+      const dims = this.calculatePackedMethodDimensions(className);
+      return dims.width;
+    }
+    
+    return Math.sqrt(this.minSize);
   }
   
   /**
-   * Calculate node height (square root of size for better visualization)
+   * Calculate node height based on packed method dimensions
    */
   dataHeight(node) {
-    return Math.sqrt(this.calcSize(node));
+    if (!node.data) return Math.sqrt(this.minSize);
+    
+    const data = node.data;
+    
+    if (data.classInfo) {
+      const className = data.classInfo.name;
+      const dims = this.calculatePackedMethodDimensions(className);
+      return dims.height;
+    }
+    
+    return Math.sqrt(this.minSize);
   }
   
   /**

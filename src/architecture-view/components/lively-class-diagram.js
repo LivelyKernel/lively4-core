@@ -49,6 +49,11 @@ export default class LivelyClassDiagram extends Morph {
       const collapsedClasses = config.collapsedClasses || [];
       const compositionRelationships = config.compositionRelationships || [];
       
+      // Restore renderer type if saved
+      if (config.rendererType && config.rendererType !== this._rendererType) {
+        await this.setRenderer(config.rendererType);
+      }
+      
       // IMPORTANT: Restore collapsed state BEFORE replaying operations
       // so that classInfoToMermaid() can check it during replay
       this._collapsedClasses = new Set(collapsedClasses);
@@ -130,6 +135,7 @@ export default class LivelyClassDiagram extends Morph {
     }
     
     this._rendererType = type;
+    this.setAttribute('renderer', type);
   }
   
   /**
@@ -663,12 +669,12 @@ export default class LivelyClassDiagram extends Morph {
       ['Hand-Drawn Style', (evt, item) => this.toggleHandDrawn(evt, item), '', handDrawnIcon],
       ['', null], // Separator
       ['Renderer', [
-        ['Mermaid UML', () => this.setRenderer('mermaid').then(() => this.render()), '', 
+        ['Mermaid UML', () => this.setRenderer('mermaid').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'mermaid' ? chosenIcon : unchosenIcon],
-        ['Polymetric View', () => this.setRenderer('polymetric').then(() => this.render()), '', 
+        ['Polymetric View', () => this.setRenderer('polymetric').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
         // Future renderers will go here:
-        // ['Tree View', () => this.setRenderer('tree').then(() => this.render()), '', 
+        // ['Tree View', () => this.setRenderer('tree').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
         //  this._rendererType === 'tree' ? chosenIcon : unchosenIcon],
       ]]
     ];
@@ -768,6 +774,7 @@ export default class LivelyClassDiagram extends Morph {
   livelyPrepareSave() {
     const config = {
       version: "1.0",
+      rendererType: this._rendererType || 'mermaid',
       operations: this._operations || [],
       collapsedClasses: Array.from(this._collapsedClasses || []),
       compositionRelationships: Array.from(this._compositionRelationships || []).map(([parent, children]) => ({
