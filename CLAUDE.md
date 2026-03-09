@@ -239,6 +239,11 @@ Before claiming a fix works, ALWAYS verify the test fails WITHOUT your fix and p
 **Directory Structure:**
 - `src/components/` - Web components (tools/, widgets/, demo/, halo/)
   - Modern components are created in `src/components/tools/` with both `.html` and `.js` files
+- `src/ai-workspace/` - AI coding assistance subproject (see [AI Workspace docs](browse://src/ai-workspace/))
+- `src/architecture-view/` - Software architecture visualization subproject
+  - `components/` - Viewer and diagram components
+  - `components/renderers/` - Strategy-based rendering implementations
+  - See [Architecture View docs](browse://src/architecture-view/)
 - `templates/` - **DEPRECATED** - Old component templates (do not create new components here)
 - `src/client/` - Core runtime and utilities (lively.js, boot.js, etc.)
 - `src/external/` - Third-party libraries

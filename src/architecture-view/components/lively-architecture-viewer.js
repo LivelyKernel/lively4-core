@@ -3,6 +3,8 @@ import { Panning, Zooming } from 'src/client/html.js';
 import ContextMenu from 'src/client/contextmenu.js'
 
 
+
+
 export default class LivelyArchitectureViewer extends Morph {
   async initialize() {
     this.windowTitle = "Architecture Viewer";
