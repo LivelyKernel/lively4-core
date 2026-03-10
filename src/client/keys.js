@@ -14,7 +14,8 @@ import keyInfo from "src/client/keyinfo.js";
 class LivelyWindowSwitcher {
   
   static maybeInit(evt) {
-    if (evt.key === 'Alt' && !evt.repeat) {
+
+    if ((evt.key === 'Control'  || evt.key === 'Alt') && !evt.repeat) {     
       new LivelyWindowSwitcher();
     }
   }
@@ -30,6 +31,9 @@ class LivelyWindowSwitcher {
     }
     
     lively.addEventListener('window-switcher', document.body, 'keydown', evt => {
+      if (evt.ctrlKey && evt.key === 'q') {
+        this.switchToNextWindow(evt.shiftKey ? -1 : 1, evt)
+      }
       if (evt.altKey && evt.key === 'q') {
         // #TODO: Alt-Shift-Q gets captured elsewhere
         this.switchToNextWindow(evt.shiftKey ? -1 : 1, evt)
@@ -108,6 +112,7 @@ export default class Keys {
   }
   
   static handle(evt) {
+
     function handledInCodeMirror(evt) {
       return evt.composedPath().find(node => node.tagName == "LIVELY-CODE-MIRROR");
     }
