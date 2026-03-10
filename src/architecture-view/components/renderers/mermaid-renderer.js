@@ -49,8 +49,11 @@ export default class MermaidRenderer {
           securityLevel: 'loose',
           flowchart: {
             defaultRenderer: 'elk',
-            useMaxWidth: true,
+            useMaxWidth: false,
             htmlLabels: true
+          },
+          classDiagram: {
+            useMaxWidth: false
           }
         });
         
@@ -119,6 +122,9 @@ classDiagram\n${this.diagram._mermaidSource.join('\n')}`;
       target.innerHTML = svg;
       target.classList.add('mermaid');
       
+      // Fix sizing: use content-driven dimensions instead of scaling to container
+      this.fixSvgSizing(target);
+      
       // Apply hand-drawn font if look is handDrawn
       const look = this.diagram._look || 'handDrawn';
       if (look === 'handDrawn') {
@@ -141,6 +147,30 @@ classDiagram\n${this.diagram._mermaidSource.join('\n')}`;
     } catch (error) {
       console.error('[MermaidRenderer] Rendering error:', error);
       target.innerHTML = `<pre style="color: red;">Error rendering diagram:\n${error.message}\n\nSource:\n${source}</pre>`;
+    }
+  }
+  
+  /**
+   * Fix SVG sizing so the SVG is sized by its content, not the container.
+   * Mermaid renders with width="100%" and max-width which causes the content
+   * to be scaled down to fit the canvas. Instead we read the viewBox and
+   * set explicit pixel dimensions so the container expands to fit the diagram.
+   */
+  fixSvgSizing(target) {
+    const svgEl = target.querySelector('svg');
+    if (!svgEl) return;
+    
+    const viewBox = svgEl.getAttribute('viewBox');
+    if (viewBox) {
+      const parts = viewBox.split(/[\s,]+/).map(Number);
+      if (parts.length === 4) {
+        const [, , vbWidth, vbHeight] = parts;
+        if (vbWidth > 0 && vbHeight > 0) {
+          svgEl.setAttribute('width', vbWidth + 'px');
+          svgEl.setAttribute('height', vbHeight + 'px');
+          svgEl.style.maxWidth = 'none';
+        }
+      }
     }
   }
   
