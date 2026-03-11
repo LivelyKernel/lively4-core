@@ -130,6 +130,10 @@ export default class LivelyClassDiagram extends Morph {
         const TreeRenderer = await System.import(baseUrl + 'tree-renderer.js');
         this._renderer = new TreeRenderer.default(this);
         break;
+      case 'treemap':
+        const TreemapRenderer = await System.import(baseUrl + 'treemap-renderer.js');
+        this._renderer = new TreemapRenderer.default(this);
+        break;
       default:
         throw new Error(`Unknown renderer type: ${type}`);
     }
@@ -673,6 +677,8 @@ export default class LivelyClassDiagram extends Morph {
          this._rendererType === 'mermaid' ? chosenIcon : unchosenIcon],
         ['Polymetric View', () => this.setRenderer('polymetric').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
+        ['Treemap', () => this.setRenderer('treemap').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
+         this._rendererType === 'treemap' ? chosenIcon : unchosenIcon],
         // Future renderers will go here:
         // ['Tree View', () => this.setRenderer('tree').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
         //  this._rendererType === 'tree' ? chosenIcon : unchosenIcon],
@@ -754,8 +760,6 @@ export default class LivelyClassDiagram extends Morph {
    * @param {HTMLElement} element - The clicked element (method label)
    */
   async onMethodSelected(methodInfo, evt, element) {
-    // Default behavior: open browser at method location
-    // Shift+click: inspect the method data
     if (evt.shiftKey) {
       lively.openInspector(methodInfo);
     } else {
@@ -765,8 +769,8 @@ export default class LivelyClassDiagram extends Morph {
       });
     }
   }
-  
 
+  
   
   /**
    * Prepare component for saving by storing minimal configuration

@@ -14,8 +14,8 @@ export default class LivelyArchitectureViewer extends Morph {
     // Load highlight.js for syntax highlighting (preserve during live updates)
     this._hljs = this._hljs || await this.loadHighlightJS();
     
-    // Override diagram's method selection behavior to show details pane
-    this._diagram.onMethodSelected = (methodInfo, evt, element) => 
+    // Override diagram's method selection to show details pane instead of default browser navigation.
+    this._diagram.onMethodSelected = (methodInfo, evt, element) =>
       this.onMethodSelected(methodInfo, evt, element);
     
     this.enablePanAndZoom();
