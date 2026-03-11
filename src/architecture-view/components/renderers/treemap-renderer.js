@@ -22,7 +22,7 @@ export default class TreemapRenderer extends BaseRenderer {
     if (node.classInfo && node.classInfo.methods && node.classInfo.methods.length > 0) {
       node.children = node.classInfo.methods.map(m => ({
         name: m.name,
-        methodInfo: m,
+        methodInfo: { ...m, url: node.url },   // enrich with url for onMethodSelected
         start: m.start,
         end: m.end,
         url: node.url
@@ -83,17 +83,8 @@ export default class TreemapRenderer extends BaseRenderer {
         .sum(d => !d.children ? Math.max((d.end || 0) - (d.start || 0), 10) : 0)
         .sort((a, b) => b.value - a.value);
 
-      // Size the SVG proportionally to total code area.
-      // Each source character ≈ 0.5 px², clamped to reasonable bounds.
-      const totalChars = root.value;
-      const pixelsPerChar = 0.5;
-      const aspect = 4 / 3;
-      const minArea = 400 * 300;
-      const maxArea = 1800 * 1400;
-      const rawArea = Math.min(Math.max(totalChars * pixelsPerChar, minArea), maxArea);
-
-      const width  = Math.round(Math.sqrt(rawArea * aspect));
-      const height = Math.round(Math.sqrt(rawArea / aspect));
+      const width  = 1200;
+      const height = 800;
 
       // Apply treemap layout — nodes get x0, y0, x1, y1.
       // paddingTop reserves room for the label of every internal node
@@ -158,8 +149,16 @@ export default class TreemapRenderer extends BaseRenderer {
         .attr('pointer-events', 'none')
         .text(d => d.data.name);
 
-      // Click: open class or method source in browser
-      cell.on('click', d => lively.openBrowser(d.data.url, true));
+      // Click: methods use the diagram hook; class/file nodes fall back to openBrowser
+      cell.on('click', async d => {
+        const evt = d3.event;
+        if (d.data.methodInfo) {
+          evt.stopPropagation();
+          await this.diagram.onMethodSelected(d.data.methodInfo, evt, d3.event.target);
+        } else if (d.data.url) {
+          lively.openBrowser(d.data.url, true);
+        }
+      });
 
     } catch (error) {
       console.error('[TreemapRenderer] Rendering error:', error);
