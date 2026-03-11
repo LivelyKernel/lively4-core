@@ -91,7 +91,14 @@ export default class PolymetricRenderer {
       }
     });
     
-    return tree;
+    // Collapse single-child chain at the top to find the common root.
+    // e.g. root → src → components → [tools, widgets] becomes components → [tools, widgets]
+    let commonRoot = tree;
+    while (commonRoot.children && commonRoot.children.length === 1 && !commonRoot.classInfo) {
+      commonRoot = commonRoot.children[0];
+    }
+    
+    return commonRoot;
   }
   
   /**
@@ -235,6 +242,7 @@ export default class PolymetricRenderer {
   
   /**
    * Render the polymetric view
+   * SVG is sized to fit the content (not scaled to fit the container)
    */
   async render(target) {
     try {
@@ -250,40 +258,7 @@ export default class PolymetricRenderer {
       // Clear target and create SVG
       target.innerHTML = '';
       
-      // Get dimensions from parent container (lively-class-diagram or window)
-      let bounds = target.getBoundingClientRect();
-      
-      // If target is too small, try to get parent window or container size
-      if (bounds.width < 100 || bounds.height < 100) {
-        const parentWindow = lively.findWindow(this.diagram);
-        if (parentWindow) {
-          const windowBounds = parentWindow.getBoundingClientRect();
-          bounds = {
-            width: windowBounds.width - 40, // Account for window chrome
-            height: windowBounds.height - 80
-          };
-        } else {
-          // Fallback to reasonable defaults
-          bounds = { width: 800, height: 600 };
-        }
-      }
-      
       const margin = { top: 10, right: 10, bottom: 10, left: 10 };
-      const width = bounds.width;
-      const height = bounds.height;
-      
-      console.log('[PolymetricRenderer] Using dimensions:', { width, height });
-      
-      const svg = d3.select(target)
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .style('background-color', '#f5f5f5');
-      
-      const g = svg.append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
-      
-      // Create tree layout
       const hackSizeX = 10;
       const hackSizeY = 10;
       
@@ -306,28 +281,38 @@ export default class PolymetricRenderer {
       
       treeLayout(tree);
       
-      // Calculate scaling
+      // Calculate content bounds and size SVG to fit content exactly
       const extents = tree.extents;
-      const tw = extents.right - extents.left;
-      const availableWidth = width - margin.left - margin.right;
-      const availableHeight = height - margin.top - margin.bottom;
-      const scale = Math.min(availableWidth / tw, availableHeight / extents.bottom);
+      const contentWidth = extents.right - extents.left;
+      const contentHeight = extents.bottom - extents.top;
       
-      console.log('[PolymetricRenderer] Layout:', {
+      const svgWidth = contentWidth + margin.left + margin.right;
+      const svgHeight = contentHeight + margin.top + margin.bottom;
+      
+      console.log('[PolymetricRenderer] Content bounds:', {
         extents,
-        tw,
-        availableWidth,
-        availableHeight,
-        scale,
+        contentWidth,
+        contentHeight,
+        svgWidth,
+        svgHeight,
         nodeCount: tree.descendants().length
       });
       
-      const transX = (tw * scale >= availableWidth) 
-        ? -extents.left * scale 
-        : (availableWidth + scale * (extents.right + extents.left)) / 2;
+      const svg = d3.select(target)
+        .append('svg')
+        .attr('width', svgWidth)
+        .attr('height', svgHeight)
+        .style('background-color', '#f5f5f5');
+      
+      const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+      
+      // Translate so left edge of content aligns with the margin
+      const transX = -extents.left;
+      const transY = extents.top < 0 ? -extents.top : 0;
       
       const drawing = g.append('g')
-        .attr('transform', `translate(${transX}, 0) scale(${scale}, ${scale})`);
+        .attr('transform', `translate(${transX}, ${transY})`);
       
       // Calculate min height for padding (minWidth already calculated above)
       const minHeight = tree.descendants().reduce(

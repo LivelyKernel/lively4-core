@@ -4,12 +4,6 @@
 
 Interactive visualization tools for exploring software architecture and code structure in Lively4.
 
-<script>
-  let container = lively.query(this, "lively-container")
-  let diagram = await (<lively-class-diagram></lively-class-diagram>)
-  diagram.addURL(container.getDir() + "components/")
-  diagram
-</script>
 
 ## Components
 
