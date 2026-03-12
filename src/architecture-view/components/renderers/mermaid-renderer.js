@@ -1,7 +1,8 @@
-/**
- * Mermaid UML class diagram renderer
- * Renders class diagrams using Mermaid.js with ELK layout
- */
+/*MD
+# Mermaid UML class diagram renderer
+
+Renders class diagrams using Mermaid.js with ELK layout
+MD*/
 export default class MermaidRenderer {
   constructor(diagram) {
     this.diagram = diagram;

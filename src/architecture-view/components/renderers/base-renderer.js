@@ -1,7 +1,8 @@
-/**
- * Base class for architecture diagram renderers
- * Provides shared tree building from FileIndex and modification-time color coding
- */
+/*MD
+# Base class for architecture diagram renderers
+
+Provides shared tree building from FileIndex and modification-time color coding
+MD*/
 import d3 from "src/external/d3.v5.js";
 import moment from "src/external/moment.js";
 import FileIndex from "src/client/fileindex.js";

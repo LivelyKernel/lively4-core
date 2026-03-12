@@ -1,9 +1,9 @@
-/**
- * Treemap renderer for class diagrams
- * Shows classes as squarified nested rectangles, sized by code length, colored by modification time.
- * Methods within each class are shown as proportional sub-rectangles colored by method kind.
- * Based on d3.treemap() — see also src/components/d3/d3-treemap.js for the general-purpose component
- */
+/*MD
+# 2D Treemap renderer for class diagrams
+
+Shows classes as squarified nested rectangles, sized by code length, colored by modification time.
+Methods within each class are shown as proportional sub-rectangles colored by method kind.
+MD*/
 import d3 from "src/external/d3.v5.js";
 import BaseRenderer from "./base-renderer.js";
 

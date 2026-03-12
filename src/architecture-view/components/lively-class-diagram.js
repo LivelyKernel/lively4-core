@@ -814,6 +814,12 @@ export default class LivelyClassDiagram extends Morph {
     this._look = other._look || 'handDrawn';
     this._renderer = other._renderer;
     this._rendererType = other._rendererType;
+    
+    // Preserve hook overrides (e.g., from lively-architecture-viewer)
+    // Check if onMethodSelected was overridden by comparing to the prototype
+    if (other.onMethodSelected && other.onMethodSelected !== this.constructor.prototype.onMethodSelected) {
+      this.onMethodSelected = other.onMethodSelected;
+    }
   }
   
   async livelyExample() {

@@ -206,6 +206,21 @@ export default class LivelyArchitectureViewer extends Morph {
       // Position details to the right of the clicked element
       details.style.left = (relativeX + clickedRect.width + 10) + 'px';
       details.style.top = relativeY + 'px';
+    } else if (evt && evt.clientX !== undefined && evt.clientY !== undefined && evt.clientX > 0) {
+      // No clicked element, but we have event coordinates (e.g., from WebGL renderer)
+      const paneRect = this._pane.getBoundingClientRect();
+      
+      // Convert viewport coordinates to pane-relative coordinates
+      const relativeX = evt.clientX - paneRect.left + this._pane.scrollLeft;
+      const relativeY = evt.clientY - paneRect.top + this._pane.scrollTop;
+      
+      // Position details to the right of the click position
+      details.style.left = (relativeX + 10) + 'px';
+      details.style.top = relativeY + 'px';
+    } else {
+      // No clicked element or coordinates - show at top-left
+      details.style.left = '10px';
+      details.style.top = '10px';
     }
     
     // Track selection
@@ -324,6 +339,14 @@ export default class LivelyArchitectureViewer extends Morph {
     this._zooming = other._zooming;
     this._selectedMethod = other._selectedMethod;
     this._hljs = other._hljs;
+    
+    // CRITICAL: Re-establish the hook override after diagram reload
+    // When lively-class-diagram is reloaded during development, its onMethodSelected
+    // gets reset to the default implementation. We need to override it again.
+    if (this._diagram) {
+      this._diagram.onMethodSelected = (methodInfo, evt, element) =>
+        this.onMethodSelected(methodInfo, evt, element);
+    }
   }
   
   async livelyExample() {

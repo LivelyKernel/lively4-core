@@ -1,8 +1,9 @@
-/**
- * Polymetric View renderer for class diagrams
- * Shows classes as rectangles sized by code length, colored by modification time
- * Organized in directory hierarchy
- */
+/*MD
+# Polymetric View renderer for class diagrams
+
+Shows classes as rectangles sized by code length, colored by modification time.
+Organized in directory hierarchy.
+MD*/
 import d3 from "src/external/d3.v5.js";
 import flextree from "src/external/d3-flextree.js";
 import BaseRenderer from "./base-renderer.js";
