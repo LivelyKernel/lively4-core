@@ -1,7 +1,8 @@
 /**
  * 3D Treemap renderer for class diagrams
  * Interactive WebGL visualization using gloperate treemap
- * Shows classes with weight (LOC), height (number of methods), color (LOC), and labels
+ * Shows classes with methods as sub-blocks
+ * Encoding: Volume = LOC (via sqrt encoding), Color = LOC
  */
 import BaseRenderer from "./base-renderer.js";
 
@@ -13,8 +14,9 @@ export default class Treemap3DRenderer extends BaseRenderer {
   }
 
   /**
-   * Convert class data to treemap format
-   * Maps FileIndex class info to treemap data attributes
+   * Convert class data to hierarchical treemap format
+   * Maps FileIndex class info to treemap data attributes with methods as children
+   * Uses square root encoding: Volume = Area × Height = sqrt(LOC) × sqrt(LOC) = LOC
    */
   async prepareTreemapData() {
     const classData = [];
@@ -25,18 +27,41 @@ export default class Treemap3DRenderer extends BaseRenderer {
     
     for (const url of this.diagram._modules) {
       await fileIndex.db.classes.where("url").equals(url).each(classInfo => {
-        // Calculate lines of code (LOC)
-        const loc = classInfo.end - classInfo.start;
+        // Calculate lines of code (LOC) for the whole class
+        const classLoc = classInfo.end - classInfo.start;
+        
+        // Square root encoding for volume = LOC
+        const sqrtLoc = Math.sqrt(Math.max(classLoc, 1));
         
         // Count number of methods (NOM)
         const nom = classInfo.methods ? classInfo.methods.length : 0;
         
+        // Build method children
+        const methodChildren = [];
+        if (classInfo.methods && classInfo.methods.length > 0) {
+          for (const method of classInfo.methods) {
+            const methodLoc = method.end - method.start;
+            const methodSqrtLoc = Math.sqrt(Math.max(methodLoc, 1));
+            
+            methodChildren.push({
+              name: method.name,
+              loc: methodLoc,
+              sqrt_loc: methodSqrtLoc,
+              nom: 0,  // Methods don't have sub-methods (height = 0)
+              url: url,
+              methodInfo: { ...method, url: url }
+            });
+          }
+        }
+        
         classData.push({
           name: classInfo.name,
           url: classInfo.url,
-          loc: loc,
+          loc: classLoc,
+          sqrt_loc: sqrtLoc,
           nom: nom,
-          classInfo: classInfo
+          classInfo: classInfo,
+          children: methodChildren.length > 0 ? methodChildren : undefined
         });
       });
     }
@@ -98,21 +123,29 @@ export default class Treemap3DRenderer extends BaseRenderer {
       await lively.sleep(200);
       
       // Set treemap data with class metrics
+      // Volume = Area × Height = sqrt(LOC) × sqrt(LOC) = LOC
       treemap.setData({
         data: classData,
-        weightAttributeName: "loc",      // Size by lines of code
-        heightAttributeName: "nom",      // Height by number of methods
-        colorAttributeName: "loc",       // Color by lines of code
-        labelAttributeName: "name"       // Label with class name
+        weightAttributeName: "sqrt_loc",  // Area by sqrt(LOC)
+        heightAttributeName: "sqrt_loc",  // Height by sqrt(LOC) → Volume = LOC
+        colorAttributeName: "loc",        // Color by lines of code
+        labelAttributeName: "name"        // Label with class name
       });
       
       // Configure appearance
       treemap.setColorScheme("viridis");
       
       // Set up click handler for navigation
-      treemap.setNodeSelectFunction((node) => {
-        if (node && node.data && node.data.url) {
-          lively.openBrowser(node.data.url, true);
+      treemap.setNodeSelectFunction(async (node) => {
+        if (node && node.data) {
+          // Handle method clicks - use diagram's method selection handler
+          if (node.data.methodInfo) {
+            await this.diagram.onMethodSelected(node.data.methodInfo, new MouseEvent('click'), null);
+          } 
+          // Handle class clicks - open in browser
+          else if (node.data.url) {
+            lively.openBrowser(node.data.url, true);
+          }
         }
       });
       
