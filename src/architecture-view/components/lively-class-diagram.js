@@ -26,6 +26,7 @@ export default class LivelyClassDiagram extends Morph {
     await this.restoreFromConfig();
     
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    this.addEventListener('extent-changed', evt => this.onExtentChanged(evt));
     
     this.render()
   }
@@ -133,6 +134,10 @@ export default class LivelyClassDiagram extends Morph {
       case 'treemap':
         const TreemapRenderer = await System.import(baseUrl + 'treemap-renderer.js');
         this._renderer = new TreemapRenderer.default(this);
+        break;
+      case 'treemap3d':
+        const Treemap3DRenderer = await System.import(baseUrl + 'treemap-3d-renderer.js');
+        this._renderer = new Treemap3DRenderer.default(this);
         break;
       default:
         throw new Error(`Unknown renderer type: ${type}`);
@@ -677,11 +682,10 @@ export default class LivelyClassDiagram extends Morph {
          this._rendererType === 'mermaid' ? chosenIcon : unchosenIcon],
         ['Polymetric View', () => this.setRenderer('polymetric').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'polymetric' ? chosenIcon : unchosenIcon],
-        ['Treemap', () => this.setRenderer('treemap').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
+        ['2D Treemap', () => this.setRenderer('treemap').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'treemap' ? chosenIcon : unchosenIcon],
-        // Future renderers will go here:
-        // ['Tree View', () => this.setRenderer('tree').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
-        //  this._rendererType === 'tree' ? chosenIcon : unchosenIcon],
+        ['3D Treemap', () => this.setRenderer('treemap3d').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
+         this._rendererType === 'treemap3d' ? chosenIcon : unchosenIcon],
       ]]
     ];
 
@@ -744,6 +748,15 @@ export default class LivelyClassDiagram extends Morph {
     if (!diagram || !this._renderer) return;
     
     await this._renderer.render(diagram);
+  }
+  
+  /**
+   * Handle extent changes - notify renderer
+   */
+  onExtentChanged(evt) {
+    if (this._renderer && this._renderer.onResize) {
+      this._renderer.onResize();
+    }
   }
   
   /**

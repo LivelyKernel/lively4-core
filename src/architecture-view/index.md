@@ -16,7 +16,7 @@ Interactive visualization tools for exploring software architecture and code str
   - Based on lively-class-diagram with added UX features
 
 - **[lively-class-diagram](components/lively-class-diagram.js)** - Core diagram rendering component
-  - Multiple rendering strategies (Mermaid UML, polymetric view, tree view)
+  - Multiple rendering strategies (Mermaid UML, polymetric view, 2D treemap, 3D treemap)
   - FileIndex integration for automatic class discovery
   - Persistent configuration with operation replay
   - Clickable methods with source navigation
@@ -39,10 +39,18 @@ The diagram component uses a **strategy pattern** for different visualization ap
   - Directory hierarchy visualization
   - Based on d3-polymetricview component
 
-- **[TreeRenderer](components/renderers/tree-renderer.js)** - Hierarchical tree view
-  - Package/directory structure
-  - Radial or vertical layouts
-  - Class organization overview
+- **[TreemapRenderer](components/renderers/treemap-renderer.js)** - 2D squarified treemap
+  - Nested rectangles showing directory/class hierarchy
+  - Sized by code length
+  - Color coded by modification time
+  - Methods shown as sub-rectangles within classes
+
+- **[Treemap3DRenderer](components/renderers/treemap-3d-renderer.js)** - Interactive 3D treemap
+  - WebGL-based visualization using gloperate
+  - Weight (area) mapped to lines of code
+  - Height mapped to number of methods
+  - Color mapped to code metrics
+  - Interactive navigation and selection
 
 ## Features
 
