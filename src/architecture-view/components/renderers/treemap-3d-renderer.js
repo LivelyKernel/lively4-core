@@ -61,11 +61,17 @@ export default class Treemap3DRenderer extends BaseRenderer {
       // Clear target
       target.innerHTML = '';
       
-      // Create container for treemap - keep flexible for diagram layout
+      // Get diagram's current extent FIRST (before creating container)
+      // This ensures we match the actual diagram size when switching renderers
+      const diagramExtent = lively.getExtent(this.diagram);
+      const width = diagramExtent.x > 0 ? diagramExtent.x : 1000;
+      const height = diagramExtent.y > 0 ? diagramExtent.y : 600;
+      
+      // Create container for treemap with explicit size matching diagram
       const container = document.createElement('div');
       container.style.position = 'relative';
-      container.style.width = '100%';
-      container.style.minHeight = '600px';
+      container.style.width = width + 'px';
+      container.style.height = height + 'px';
       container.style.background = '#1a1a1a';
       target.appendChild(container);
       
@@ -73,12 +79,7 @@ export default class Treemap3DRenderer extends BaseRenderer {
       this.container = container;
       
       // Wait for container to be laid out
-      await lively.sleep(50);
-      
-      // Get actual pixel dimensions from container after it's in DOM
-      const bounds = container.getBoundingClientRect();
-      const width = bounds.width > 0 ? bounds.width : 1000;
-      const height = bounds.height > 0 ? bounds.height : 600;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       
       // Create lively-treemap component using lively.create for proper initialization
       const treemap = await lively.create('lively-treemap');
@@ -132,10 +133,17 @@ export default class Treemap3DRenderer extends BaseRenderer {
         canvas.addEventListener('contextmenu', contextMenuHandler);
       }
       
-      // Force resize after setup
-      await lively.sleep(100);
+      // Force resize after setup to ensure proper scaling
+      // Use requestAnimationFrame to ensure WebGL context is ready
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      
       if (treemap.onExtentChanged) {
         treemap.onExtentChanged();
+      }
+      
+      // Additional resize trigger to ensure the treemap renderer updates
+      if (treemap.treemapRenderer && treemap.treemapRenderer.resize) {
+        treemap.treemapRenderer.resize();
       }
       
     } catch (error) {

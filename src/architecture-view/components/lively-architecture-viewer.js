@@ -20,8 +20,17 @@ export default class LivelyArchitectureViewer extends Morph {
     
     this.enablePanAndZoom();
     
+    // Initial sizing - ensure diagram fills viewer (after layout completes)
+    this.deferredSizing();
+    
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     this.addEventListener('extent-changed', evt => this.onExtentChanged(evt));
+  }
+  
+  async deferredSizing() {
+    // Wait for component to be laid out in DOM
+    await lively.sleep(50);
+    this.sizeDiagramToViewer();
   }
   
   async ensureDiagram() {
@@ -58,12 +67,16 @@ export default class LivelyArchitectureViewer extends Morph {
     });
   }
   
-  onExtentChanged(evt) {
+  sizeDiagramToViewer() {
     if (this._diagram) {
       // Resize diagram to fill viewer's content area
       const extent = lively.getExtent(this);
       lively.setExtent(this._diagram, extent);
     }
+  }
+  
+  onExtentChanged(evt) {
+    this.sizeDiagramToViewer();
   }
   
   async fromDiagram(sourceDiagram) {
