@@ -21,6 +21,7 @@ export default class LivelyArchitectureViewer extends Morph {
     this.enablePanAndZoom();
     
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+    this.addEventListener('extent-changed', evt => this.onExtentChanged(evt));
   }
   
   async ensureDiagram() {
@@ -55,6 +56,14 @@ export default class LivelyArchitectureViewer extends Morph {
       maxZoom: 10.0,
       zoomStep: 0.4
     });
+  }
+  
+  onExtentChanged(evt) {
+    if (this._diagram) {
+      // Resize diagram to fill viewer's content area
+      const extent = lively.getExtent(this);
+      lively.setExtent(this._diagram, extent);
+    }
   }
   
   async fromDiagram(sourceDiagram) {
