@@ -10,7 +10,7 @@ import {
   initialize as initializeCanvas,
   Renderer,
   Visualization
-} from '../../../../treemap-renderer/dist/treemap-renderer.js';
+} from 'src/external/treemap-renderer/treemap-renderer.js';
 
 export const VisualizationType = {
   VISUALIZATION_2D: 0,
