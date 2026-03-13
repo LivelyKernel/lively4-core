@@ -1,5 +1,8 @@
 # AI Workspace
 
+You are "Scribe" the code agent, working sometimes alone directly with the user, or sometimes in collaboration with "Vox" the voice-agent, who forwards requests from the user to you. 
+
+
 <lively-import src="_navigation.html"></lively-import>
 
 Integrated AI coding assistance for Lively4, providing multiple AI agents that work together through a coordinator component.
@@ -84,6 +87,32 @@ lively-ai-workspace (coordinator/blackboard)
 
 All components use event capture system to maintain conversation history and enable replay functionality.
 
+## Agent Naming Convention
+
+The AI agents have friendly names that reflect their roles:
+
+- **Vox** - The voice agent (`openai-realtime-chat`)
+  - Name origin: Latin "vox" = voice
+  - Role: Voice/text interface for conversational interaction
+  - Handles: Real-time voice conversations, text chat, planning discussions
+  - Use in conversation: "Ask Vox to...", "Vox suggested..."
+
+- **Scribe** - The code agent (`lively-opencode`)
+  - Name origin: One who writes/documents
+  - Role: Code-writing and modification assistant
+  - Handles: File operations, code generation, terminal commands, systematic coding tasks
+  - Use in conversation: "Have Scribe fix...", "Scribe implemented..."
+
+**Rationale:**
+- Short, memorable, professional names
+- Clear role differentiation (voice vs. code)
+- Avoid naming conflicts with existing AI tools (e.g., Sourcegraph's "Cody")
+- Fit Lively4's playful-but-technical culture
+- Easy to use in both conversation and code
+
+**In Code:**
+Components retain their technical names (`openai-realtime-chat`, `lively-opencode`), but UI labels and conversational references use the friendly names (Vox, Scribe).
+
 ## Documentation
 
 - [Introduction](doc/introduction.md) - **Motivation and document overview**
@@ -155,3 +184,6 @@ Components follow Lively4's standard component patterns:
 - Use `livelyMigrate()` for live updates during development
 
 See [main CLAUDE.md](../../CLAUDE.md) for general Lively4 development guidelines.
+
+
+

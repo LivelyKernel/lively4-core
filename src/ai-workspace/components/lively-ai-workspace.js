@@ -768,8 +768,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.log = (...args) => this.log(...args)
 
         // Note: Prompt is now user-configurable via dropdown in realtime component
-        // Toolset configured for workspace integration
-        this.realtimeComponent.toolset = new WorkspaceToolset(this);
+        // Set workspace reference for tool integration
+        this.realtimeComponent.workspaceReference = this;
+        
+        // Load tool permissions first, then update toolset
+        this.realtimeComponent.loadToolPermissions();
+        this.realtimeComponent.updateToolset();
 
         // Setup hooks BEFORE adding to DOM to ensure they're active from the start
         this.setupRealtimeEvents();

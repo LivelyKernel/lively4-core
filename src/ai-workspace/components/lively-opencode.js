@@ -2195,7 +2195,6 @@ export default class LivelyOpencode extends LivelyChat {
   async loadMessagesForSession(sessionId) {
     if (this._replayMode) return; // Skip server fetch during replay
 
-    lively.notify("loadMessagesForSession " + sessionId)
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
       if (!response.ok) {

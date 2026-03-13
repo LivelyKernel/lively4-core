@@ -1,6 +1,8 @@
 import OpenAI from "src/client/openai.js";
 import LivelyChat from './lively-chat.js';
 import { BasicToolset } from "./realtime-chat-tools/basic-toolset.js";
+import { WorkspaceToolset } from "./realtime-chat-tools/workspace-toolset.js";
+import { CompositeToolset } from "./realtime-chat-tools/composite-toolset.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -210,7 +212,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // External configuration (can be set by container)
     this.customInstructions = this.customInstructions || null;
     this.availableTools = this.availableTools || null; // null = all tools
+    this.workspaceReference = this.workspaceReference || null; // Reference to lively-ai-workspace if embedded
 
+    // Tool permissions will be loaded in setupToolSettings()
     // Initialize toolset (basic tools for pure audio chat)
     this.toolset = this.toolset || new BasicToolset();
 
@@ -225,7 +229,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.setupVoiceSelection();
     await this.setupVadSelection();
 
-    await this.setupModelSelecton()
+    await this.setupModelSelecton();
+    await this.setupToolSettings();
     this.setupUI();
     await this.renderMessages();
     lively.ensureID(this);
@@ -353,6 +358,161 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       await this.updateVadSettings();
     });
   }
+
+  async setupToolSettings() {
+    // Load saved tool permissions
+    this.loadToolPermissions();
+
+    // Setup modal event handlers
+    const toolSettingsButton = this.get("#toolSettingsButton");
+    const toolSettingsModal = this.get("#toolSettingsModal");
+    const toolSettingsOverlay = this.get("#toolSettingsOverlay");
+    const saveButton = this.get("#saveToolSettings");
+    const cancelButton = this.get("#cancelToolSettings");
+
+    // Open modal
+    toolSettingsButton?.addEventListener("click", () => {
+      this.openToolSettingsModal();
+    });
+
+    // Close modal on overlay click
+    toolSettingsOverlay?.addEventListener("click", () => {
+      this.closeToolSettingsModal();
+    });
+
+    // Cancel button
+    cancelButton?.addEventListener("click", () => {
+      this.closeToolSettingsModal();
+    });
+
+    // Save button
+    saveButton?.addEventListener("click", () => {
+      this.saveToolPermissions();
+      this.closeToolSettingsModal();
+    });
+
+    // Update toolset based on loaded permissions
+    this.updateToolset();
+  }
+
+  openToolSettingsModal() {
+    const modal = this.get("#toolSettingsModal");
+    const overlay = this.get("#toolSettingsOverlay");
+
+    // Load current settings into checkboxes
+    const allowCodeEval = this.get("#allowCodeEvaluation");
+    const allowOpenCode = this.get("#allowOpenCodeTasks");
+
+    if (allowCodeEval) {
+      allowCodeEval.checked = this.toolPermissions.allowCodeEvaluation;
+    }
+    if (allowOpenCode) {
+      allowOpenCode.checked = this.toolPermissions.allowOpenCodeTasks;
+    }
+
+    // Show modal
+    modal?.classList.add("visible");
+    overlay?.classList.add("visible");
+  }
+
+  closeToolSettingsModal() {
+    const modal = this.get("#toolSettingsModal");
+    const overlay = this.get("#toolSettingsOverlay");
+
+    modal?.classList.remove("visible");
+    overlay?.classList.remove("visible");
+  }
+
+  loadToolPermissions() {
+    // Load from preferences, use defaults if not set
+    const savedPermissions = lively.preferences.get("openai-realtime-chat-tool-permissions");
+    
+    // Always set toolPermissions, don't rely on || operator
+    if (savedPermissions && typeof savedPermissions === 'object') {
+      this.toolPermissions = {
+        allowCodeEvaluation: savedPermissions.allowCodeEvaluation !== false,
+        allowOpenCodeTasks: savedPermissions.allowOpenCodeTasks !== false
+      };
+    } else {
+      // Defaults: all enabled
+      this.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: true
+      };
+    }
+
+    this.log("[Tool Permissions] Loaded:", this.toolPermissions);
+  }
+
+  saveToolPermissions() {
+    // Read from checkboxes
+    const allowCodeEval = this.get("#allowCodeEvaluation");
+    const allowOpenCode = this.get("#allowOpenCodeTasks");
+
+    this.toolPermissions = {
+      allowCodeEvaluation: allowCodeEval?.checked !== false,
+      allowOpenCodeTasks: allowOpenCode?.checked !== false
+    };
+
+    // Save to preferences
+    lively.preferences.set("openai-realtime-chat-tool-permissions", this.toolPermissions);
+
+    this.log("[Tool Permissions] Saved:", this.toolPermissions);
+
+    // Update toolset with new permissions
+    this.updateToolset();
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+      lively.success("Tool permissions updated", "Reconnect to apply changes");
+    } else {
+      lively.success("Tool permissions saved");
+    }
+  }
+
+  updateToolset() {
+    const { allowCodeEvaluation, allowOpenCodeTasks } = this.toolPermissions;
+
+    // Get workspace reference if available (for WorkspaceToolset)
+    // Try stored reference first, then query DOM
+    const workspace = this.workspaceReference || lively.query(document.body, "lively-ai-workspace");
+
+    // Build toolset based on permissions
+    const toolsets = [];
+    const allowedToolNames = [];
+
+    // BasicToolset tools
+    const basicToolset = new BasicToolset();
+    toolsets.push(basicToolset);
+
+    // Add BasicToolset tool names if allowed
+    if (allowCodeEvaluation) {
+      allowedToolNames.push('evaluate_code');
+    }
+
+    // Add WorkspaceToolset if OpenCode tasks are allowed AND workspace is available
+    if (allowOpenCodeTasks && workspace) {
+      const workspaceToolset = new WorkspaceToolset(workspace);
+      toolsets.push(workspaceToolset);
+      allowedToolNames.push('send_opencode_task');
+    }
+
+    // Use CompositeToolset if we have multiple toolsets, otherwise just the basic one
+    if (toolsets.length > 1) {
+      this.toolset = new CompositeToolset(...toolsets);
+    } else {
+      this.toolset = toolsets[0];
+    }
+
+    // Use setAvailableTools to filter based on permissions
+    // This leverages the existing filtering in getFunctionDefinitions()
+    // Empty array = no tools allowed, null = all tools allowed
+    this.setAvailableTools(allowedToolNames);
+
+    this.log("[Tool Permissions] Toolset updated with permissions:", this.toolPermissions);
+    this.log("[Tool Permissions] Available tools:", this.getFunctionDefinitions().map(t => t.name));
+  }
   
   /*MD ## WebRTC Lifecycle MD*/
   cleanupStreaming() {
@@ -459,6 +619,16 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   onResetButton(evt) {
     this.createSession();
     this.clearDebugLog()
+  }
+  onToolSettingsButton() {
+    this.openToolSettingsModal();
+  }
+  onSaveToolSettings() {
+    this.saveToolPermissions();
+    this.closeToolSettingsModal();
+  }
+  onCancelToolSettings() {
+    this.closeToolSettingsModal();
   }
   
   async setupUI() {

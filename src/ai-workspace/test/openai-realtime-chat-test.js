@@ -375,4 +375,137 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(component.conversation[1].content).to.equal('Old message');
     });
   });
+
+  describe('Tool Permissions', () => {
+    let component;
+    let originalPreference;
+
+    beforeEach(async () => {
+      // Save and clear preferences to start fresh
+      originalPreference = lively.preferences.get("openai-realtime-chat-tool-permissions");
+      lively.preferences.set("openai-realtime-chat-tool-permissions", undefined);
+      
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;  // Disable UI for faster tests
+      await component.initialize();
+    });
+
+    afterEach(() => {
+      component.remove();
+      // Restore original preference
+      if (originalPreference !== undefined) {
+        lively.preferences.set("openai-realtime-chat-tool-permissions", originalPreference);
+      } else {
+        lively.preferences.set("openai-realtime-chat-tool-permissions", undefined);
+      }
+    });
+
+    it('should have default tool permissions (all enabled)', () => {
+      expect(component.toolPermissions.allowCodeEvaluation).to.be.true;
+      expect(component.toolPermissions.allowOpenCodeTasks).to.be.true;
+    });
+
+    it('should load tool permissions from preferences', async () => {
+      // Set preferences before component creation
+      lively.preferences.set("openai-realtime-chat-tool-permissions", {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      });
+
+      // Create new component to load preferences
+      const newComponent = await lively.create('openai-realtime-chat');
+      newComponent.messagesUI = false;
+      await newComponent.initialize();
+
+      expect(newComponent.toolPermissions).to.deep.equal({
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      });
+
+      newComponent.remove();
+    });
+
+    it('should filter tools based on permissions (code evaluation disabled)', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.not.include('evaluate_code');
+      expect(toolNames).to.not.include('send_opencode_task');
+    });
+
+    it('should include code evaluation tool when allowed', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.include('evaluate_code');
+      expect(toolNames).to.not.include('send_opencode_task');
+    });
+
+    it('should include OpenCode task tool when allowed (with workspace)', () => {
+      // Create mock workspace
+      const mockWorkspace = document.createElement('lively-ai-workspace');
+      component.workspaceReference = mockWorkspace;
+
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.not.include('evaluate_code');
+      expect(toolNames).to.include('send_opencode_task');
+
+      mockWorkspace.remove();
+    });
+
+    it('should save tool permissions to preferences', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      };
+
+      // Simulate saving
+      lively.preferences.set("openai-realtime-chat-tool-permissions", component.toolPermissions);
+
+      const saved = lively.preferences.get("openai-realtime-chat-tool-permissions");
+      expect(saved).to.deep.equal({
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      });
+    });
+
+    it('should update available tools when permissions change', () => {
+      // Initially all tools
+      component.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      let tools = component.getFunctionDefinitions();
+      expect(tools.map(t => t.name)).to.include('evaluate_code');
+
+      // Disable code evaluation
+      component.toolPermissions.allowCodeEvaluation = false;
+      component.updateToolset();
+
+      tools = component.getFunctionDefinitions();
+      expect(tools.map(t => t.name)).to.not.include('evaluate_code');
+    });
+  });
 });
