@@ -238,7 +238,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
   
   setupModelSelecton() {
-    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-mini"]);
+    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-1.5","gpt-realtime-mini"]);
     this.get("#modelBox").value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
     this.get("#modelBox").addEventListener("change", () => {
       lively.preferences.set("openai-realtime-chat-model", this.get("#modelBox").value);
