@@ -512,4 +512,141 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(tools.map(t => t.name)).to.not.include('evaluate_code');
     });
   });
+
+  /*MD ## System Message Parsing Tests MD*/
+  describe('System Message Parsing', () => {
+    let messageComponent;
+
+    beforeEach(async () => {
+      messageComponent = await lively.create('lively-chat-message');
+    });
+
+    it('should detect system messages from audio source with [System: ...] pattern', () => {
+      const msg = {
+        role: 'user',
+        content: '[System: The coding agent finished working on: "Vox tool call rendering path"]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.not.be.null;
+      expect(result.isSystemMessage).to.be.true;
+      expect(result.systemContent).to.equal('The coding agent finished working on: "Vox tool call rendering path"');
+    });
+
+    it('should parse system content with whitespace variations', () => {
+      const msg = {
+        role: 'user',
+        content: '[System:    Extra spaces test   ]',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.not.be.null;
+      expect(result.systemContent).to.equal('Extra spaces test');
+    });
+
+    it('should not parse regular user messages as system messages', () => {
+      const msg = {
+        role: 'user',
+        content: 'Hello, how are you?',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse messages with [System: ] pattern from code source', () => {
+      const msg = {
+        role: 'user',
+        content: '[System: This should not be parsed]',
+        source: 'code',
+        streamType: 'opencode'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse assistant messages with [System: ] pattern', () => {
+      const msg = {
+        role: 'assistant',
+        content: '[System: This is from assistant]',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse partial [System: ] patterns', () => {
+      const testCases = [
+        'System: Missing opening bracket',
+        '[System: Missing closing bracket',
+        '[System] No colon',
+        'Text before [System: content]',
+        '[System: content] text after'
+      ];
+
+      testCases.forEach(content => {
+        const msg = {
+          role: 'user',
+          content,
+          source: 'audio'
+        };
+
+        const result = messageComponent.parseSystemMessage(msg);
+        expect(result).to.be.null;
+      });
+    });
+
+    it('should render system messages with correct role attribute', async () => {
+      const msg = {
+        role: 'user',
+        content: '[System: Test system message]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      expect(messageComponent.getAttribute('role')).to.equal('system');
+      expect(messageComponent.getAttribute('source')).to.equal('audio');
+    });
+
+    it('should render regular user messages with user role', async () => {
+      const msg = {
+        role: 'user',
+        content: 'Regular message',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      expect(messageComponent.getAttribute('role')).to.equal('user');
+    });
+
+    it('should format system message content in italic', async () => {
+      const msg = {
+        role: 'user',
+        content: '[System: Test content]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      // Check that content was rendered (partsContainer should have markdown element)
+      const partsContainer = messageComponent.get('#partsContainer');
+      expect(partsContainer.children.length).to.be.greaterThan(0);
+    });
+  });
 });

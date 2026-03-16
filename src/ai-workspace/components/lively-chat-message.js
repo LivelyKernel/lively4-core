@@ -226,7 +226,7 @@ export default class LivelyChatMessage extends Morph {
   applyPositioning(messageObj) {
     // Remove all existing position classes
     this.classList.remove('position-left', 'position-mid-left', 'position-mid-right', 'position-right');
-    this.classList.remove('audio-user', 'audio-tool', 'audio-assistant');
+    this.classList.remove('audio-user', 'audio-tool', 'audio-assistant', 'audio-system');
     this.classList.remove('code-user', 'code-tool', 'code-assistant');
 
     const role = this.role;
@@ -239,6 +239,8 @@ export default class LivelyChatMessage extends Morph {
         this.classList.add('audio-tool'); 
       } else if (role === 'assistant') {
         this.classList.add('audio-assistant');
+      } else if (role === 'system') {
+        this.classList.add('audio-system');
       }
     } else if (source === 'code') {
       if (role === 'user') {
@@ -559,8 +561,41 @@ export default class LivelyChatMessage extends Morph {
   }
 
 
+  /**
+   * Detect if a message contains a system-like pattern: [System: ...]
+   * These are technically user messages but contain system information
+   * @param {Object} messageObj - Message object to check
+   * @returns {Object|null} - Parsed system info or null if not a system message
+   */
+  parseSystemMessage(messageObj) {
+    // Only check user messages from audio source (voice agent)
+    if (messageObj.role !== 'user' || messageObj.source !== 'audio') {
+      return null;
+    }
+
+    const content = messageObj.content || '';
+    const systemPattern = /^\[System:\s*(.+)\]$/;
+    const match = content.match(systemPattern);
+    
+    if (match) {
+      return {
+        isSystemMessage: true,
+        systemContent: match[1].trim()
+      };
+    }
+    
+    return null;
+  }
+
   async renderContent(messageObj) {
     let content = messageObj.content || '';
+
+    // Check if this is a special system message from voice agent
+    const systemInfo = this.parseSystemMessage(messageObj);
+    if (systemInfo) {
+      await this.renderSystemMessage(systemInfo.systemContent, messageObj);
+      return;
+    }
 
     // Format user messages with quotes (matching current behavior)
     if (messageObj.role === 'user') {
@@ -596,6 +631,32 @@ export default class LivelyChatMessage extends Morph {
     // For tool messages, check if content is long and should be collapsible
     if (messageObj.role === 'tool') {
       this.updateExpandState();
+    }
+  }
+
+  /**
+   * Render a system message with special styling
+   * @param {string} systemContent - The system message content
+   * @param {Object} originalMessage - Original message object for metadata
+   */
+  async renderSystemMessage(systemContent, originalMessage) {
+    // Change role attribute to 'system' for proper styling
+    this.setAttribute('role', 'system');
+    this.setAttribute('source', 'audio');
+    
+    // Apply positioning for system messages
+    this.applyPositioning({ role: 'system', source: 'audio' });
+
+    // Show the message
+    this.style.display = '';
+
+    // Render system content in italic style
+    const formattedContent = `*${systemContent}*`;
+
+    // Set markdown content
+    if (this.partsContainer) {
+      this.partsContainer.innerHTML = '';
+      this.partsContainer.appendChild(await this.createMarkdownElement(formattedContent));
     }
   }
 

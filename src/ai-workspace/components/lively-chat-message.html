@@ -38,6 +38,14 @@
       cursor: pointer;
     }
 
+    /* System messages (special voice-agent system notifications) */
+    :host([role="system"]) {
+      background-color: #f0f4fa;
+      border-left: 3px solid #607d8b;
+      font-style: italic;
+      opacity: 0.9;
+    }
+
     :host([role="tool"]:hover) {
       background-color: #ffe0b2;
     }
