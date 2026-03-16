@@ -34,6 +34,8 @@ import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-cod
 // Internal / fallback
 import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
+// Vox (voice agent) tool renderers
+import { VoxGenericTool } from './tool-renderers/vox-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
   async initialize() {
@@ -43,7 +45,7 @@ export default class LivelyChatMessage extends Morph {
     this._isExpanded = this._isExpanded || false;
     this._showRaw = this._showRaw || false;
 
-    // Register tool renderers - order matters! Generic should be last (fallback)
+    // Register OpenCode tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
       // File / filesystem
       new OpenCodeReadTool(),
@@ -78,6 +80,11 @@ export default class LivelyChatMessage extends Morph {
       // Internal / fallback (always last)
       new OpenCodeInvalidTool(),
       new OpenCodeGenericTool(),
+    ];
+
+    // Register Vox (voice agent) tool renderers - separate code path from OpenCode
+    this.voxToolRenderers = this.voxToolRenderers || [
+      new VoxGenericTool(),
     ];
 
     // Get references to elements
@@ -560,7 +567,13 @@ export default class LivelyChatMessage extends Morph {
       content = `"${content}"`;
     }
 
-    // For tool messages, create structured display
+    // For vox (voice agent) tool messages, use dedicated vox tool renderers
+    if (messageObj.role === 'tool' && messageObj.source === 'audio' && messageObj.metadata) {
+      await this.renderVoxToolMessage(messageObj);
+      return;
+    }
+
+    // For other tool messages, create structured display (legacy path)
     if (messageObj.role === 'tool' && messageObj.metadata) {
       content = this.formatToolMessage(messageObj);
 
@@ -583,6 +596,55 @@ export default class LivelyChatMessage extends Morph {
     // For tool messages, check if content is long and should be collapsible
     if (messageObj.role === 'tool') {
       this.updateExpandState();
+    }
+  }
+
+  /**
+   * Render vox (voice agent) tool messages using dedicated vox tool renderers.
+   * This provides a separate rendering path from OpenCode tools while matching the style.
+   */
+  async renderVoxToolMessage(messageObj) {
+    const metadata = messageObj.metadata || {};
+    
+    // Check if this is a local/internal function that should be hidden
+    const functionName = metadata.functionName || '';
+    if (this.isLocalFunction(functionName)) {
+      this.style.display = 'none';
+      return;
+    }
+
+    // Show the message
+    this.style.display = '';
+
+    // Clear previous content
+    if (this.partsContainer) {
+      this.partsContainer.innerHTML = '';
+    }
+
+    // Find matching renderer
+    const renderer = this.voxToolRenderers.find(r => r.matches(messageObj));
+    
+    if (!renderer) {
+      console.warn('No vox renderer matched for message:', messageObj);
+      // Fallback to old formatToolMessage
+      const content = this.formatToolMessage(messageObj);
+      if (content && this.partsContainer) {
+        this.partsContainer.appendChild(await this.createMarkdownElement(content));
+      }
+      return;
+    }
+
+    // Render using the appropriate method based on message type
+    let element = null;
+    if (metadata.type === 'function_call') {
+      element = await renderer.renderToolCall(messageObj, this.showDebug);
+    } else if (metadata.type === 'function_call_output') {
+      element = await renderer.renderToolResult(messageObj, this.showDebug);
+    }
+
+    // Append rendered element
+    if (element && this.partsContainer) {
+      this.partsContainer.appendChild(element);
     }
   }
 
