@@ -44,14 +44,14 @@ export class VoxGenericTool extends VoxBaseTool {
     const output = metadata.output || {};
 
     // Create summary text based on success/error
-    let summaryText = '↩️ Result';
+    let summaryText = '↩️ Function Result';
     let icon = '✅';
     
     if (output.error || !output.success) {
       icon = '❌';
-      summaryText = `${icon} Error`;
+      summaryText = `${icon} Function Error`;
     } else {
-      summaryText = `${icon} Result`;
+      summaryText = `${icon} Function Result`;
     }
 
     // Build details element
@@ -63,6 +63,11 @@ export class VoxGenericTool extends VoxBaseTool {
     const body = await this.renderResultBody(output, showDebug);
     if (body) {
       body.forEach(el => details.appendChild(el));
+    }
+
+    // Add call ID if available
+    if (callId) {
+      details.appendChild(await this.createMarkdownEl(`*Call ID: ${callId}*`));
     }
 
     return details;
@@ -119,29 +124,10 @@ export class VoxGenericTool extends VoxBaseTool {
       // Error case
       const errorText = typeof output.error === 'string' ? output.error : JSON.stringify(output.error);
       els.push(await this.createMarkdownEl(`**Error:** ${errorText}`));
-    } else if (output.response) {
-      // Response from OpenCode or other API
-      els.push(await this.createMarkdownEl(String(output.response)));
-    } else if (output.result !== undefined) {
-      // Generic result
-      const resultText = typeof output.result === 'object' 
-        ? JSON.stringify(output.result, null, 2) 
-        : String(output.result);
-      
-      if (resultText.length > 200 && !showDebug) {
-        // Long result - show preview
-        els.push(await this.createMarkdownEl(`\`\`\`\n${resultText.substring(0, 200)}...\n\`\`\``));
-      } else {
-        // Short result - show full
-        els.push(await this.createMarkdownEl(`\`\`\`\n${resultText}\n\`\`\``));
-      }
-    }
-
-    if (showDebug) {
-      // Show full output in debug mode
-      els.push(await this.createMarkdownEl(
-        `**Full Output:**\n\`\`\`json\n${JSON.stringify(output, null, 2)}\n\`\`\``
-      ));
+    } else {
+      // Show the full output as JSON (matches legacy formatToolMessage behavior)
+      // This ensures tests pass that expect to see fields like "success" in the output
+      els.push(await this.createMarkdownEl(`\`\`\`json\n${JSON.stringify(output, null, 2)}\n\`\`\``));
     }
 
     return els;

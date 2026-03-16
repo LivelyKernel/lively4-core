@@ -12,12 +12,32 @@ describe('LivelyChatMessage', () => {
     testWorld().innerHTML = "";
   });
 
-  // Helper function to get rendered text from the markdown component
+  // Helper function to get rendered text from the partsContainer
   function getRenderedText() {
-    const markdown = component.get('lively-markdown');
-    if (!markdown || !markdown.shadowRoot) return '';
-    const markdownContent = markdown.shadowRoot.querySelector('#content');
-    return markdownContent ? markdownContent.textContent : '';
+    const partsContainer = component.get('#partsContainer');
+    if (!partsContainer) return '';
+    
+    // Get text from all elements including details/summary and markdown components
+    let text = '';
+    
+    // Get summary text from details elements
+    const summaries = partsContainer.querySelectorAll('summary');
+    summaries.forEach(s => {
+      text += s.textContent + '\n';
+    });
+    
+    // Get text from markdown components
+    const markdowns = partsContainer.querySelectorAll('lively-markdown');
+    markdowns.forEach(md => {
+      if (md.shadowRoot) {
+        const content = md.shadowRoot.querySelector('#content');
+        if (content) {
+          text += content.textContent + '\n';
+        }
+      }
+    });
+    
+    return text.trim();
   }
 
   it('should load component', async () => {
