@@ -205,11 +205,28 @@ export default class LivelyOpencode extends LivelyChat {
 
   connectedCallback() {
     this.shouldReconnect = true;
+    
+    // Create and add global ESC key listener so it works even when component doesn't have focus
+    // Use capture phase (true) to run before other handlers can stop propagation
+    if (!this._globalEscHandler) {
+      this._globalEscHandler = (evt) => {
+        if (evt.key === 'Escape') {
+          this.onKeyDown(evt);
+        }
+      };
+      document.addEventListener('keydown', this._globalEscHandler, true);
+    }
+    
     // Auto-reconnect to running server (AUTOSTART disabled - server must be started manually)
     this.connectToServer();
   }
 
   disconnectedCallback() {
+    // Remove global ESC key listener (must use same capture flag as addEventListener)
+    if (this._globalEscHandler) {
+      document.removeEventListener('keydown', this._globalEscHandler, true);
+    }
+    
     this.disconnectFromServer();
   }
 
@@ -226,12 +243,61 @@ export default class LivelyOpencode extends LivelyChat {
         // Double ESC press detected
         evt.preventDefault();
         evt.stopPropagation();
+        this.showEscIndicator('aborting', '⛔', 'Aborting generation...', '');
         this.abortCurrentSession();
         this.lastEscPress = 0; // Reset after successful double-press
       } else {
-        // First ESC press - just record the timestamp
+        // First ESC press - show visual indicator
         this.lastEscPress = now;
+        this.showEscIndicator('first-press', '⏸️', 'Press ESC again to abort', 
+                              this.isGenerating ? 'AI is generating response' : 'No active generation');
+        
+        // Auto-hide after 500ms if no second press
+        setTimeout(() => {
+          if (Date.now() - this.lastEscPress >= 500) {
+            this.hideEscIndicator();
+          }
+        }, 500);
       }
+    }
+  }
+  
+  /**
+   * Show the ESC key visual indicator
+   * @param {string} state - 'first-press' or 'aborting'
+   * @param {string} icon - Emoji icon to display
+   * @param {string} message - Main message text
+   * @param {string} subtext - Secondary text (optional)
+   */
+  showEscIndicator(state, icon, message, subtext = '') {
+    const indicator = this.get('#escIndicator');
+    const iconEl = indicator?.querySelector('.esc-indicator-icon');
+    const messageEl = this.get('#escIndicatorMessage');
+    const subtextEl = this.get('#escIndicatorSubtext');
+    
+    if (!indicator) return;
+    
+    // Update content
+    if (iconEl) iconEl.textContent = icon;
+    if (messageEl) messageEl.textContent = message;
+    if (subtextEl) subtextEl.textContent = subtext;
+    
+    // Update state classes
+    indicator.classList.remove('first-press', 'aborting');
+    indicator.classList.add(state, 'visible');
+  }
+  
+  /**
+   * Hide the ESC key visual indicator
+   */
+  hideEscIndicator() {
+    const indicator = this.get('#escIndicator');
+    if (indicator) {
+      indicator.classList.remove('visible');
+      // Clean up classes after fade out
+      setTimeout(() => {
+        indicator.classList.remove('first-press', 'aborting');
+      }, 200);
     }
   }
 
@@ -240,19 +306,22 @@ export default class LivelyOpencode extends LivelyChat {
    * Uses OpenCode API: POST /session/:id/abort
    */
   async abortCurrentSession() {
-    lively.notify("abortCurrentSession")
     if (!this.currentSession) {
-      lively.notify('No active session to abort');
+      this.showEscIndicator('first-press', '⚠️', 'No active session', 'Nothing to abort');
+      setTimeout(() => this.hideEscIndicator(), 1500);
       return;
     }
 
     if (!this.isGenerating) {
-      lively.notify('No active generation to abort');
+      this.showEscIndicator('first-press', 'ℹ️', 'No active generation', 'AI is idle');
+      setTimeout(() => this.hideEscIndicator(), 1500);
       return;
     }
 
     try {
       this.log(`Aborting session ${this.currentSession.id}...`);
+      this.showEscIndicator('aborting', '⏹️', 'Sending abort request...', '');
+      
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
         method: 'POST'
       });
@@ -261,12 +330,16 @@ export default class LivelyOpencode extends LivelyChat {
         throw new Error(`Failed to abort session: ${response.status}`);
       }
 
-      lively.notify('Message generation aborted');
+      this.showEscIndicator('aborting', '✅', 'Generation aborted', 'Request sent successfully');
       this.isGenerating = false;
+      
+      // Hide indicator after showing success
+      setTimeout(() => this.hideEscIndicator(), 1500);
 
     } catch (error) {
       console.error('Error aborting session:', error);
-      lively.error(`Failed to abort: ${error.message}`);
+      this.showEscIndicator('aborting', '❌', 'Abort failed', error.message);
+      setTimeout(() => this.hideEscIndicator(), 2000);
     }
   }
 
