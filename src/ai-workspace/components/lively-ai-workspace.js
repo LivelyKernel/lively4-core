@@ -734,6 +734,44 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
+  /**
+   * Get unified conversation history from all agents
+   * Returns merged and sorted messages from OpenCode and Realtime components
+   */
+  async getConversationHistory() {
+    try {
+      let allMessages = [];
+
+      // Get messages from realtime component (Vox)
+      if (this.realtimeComponent && this.realtimeComponent.conversation) {
+        const realtimeMessages = this.realtimeComponent.conversation.map(msg => ({
+          ...msg,
+          eventSource: 'realtime'
+        }));
+        allMessages.push(...realtimeMessages);
+      }
+
+      // Get messages from OpenCode component (Scribe)
+      if (this.opencodeComponent) {
+        const opencodeMessages = this.opencodeComponent.getMessages().map(msg => ({
+          ...msg,
+          eventSource: 'opencode'
+        }));
+        allMessages.push(...opencodeMessages);
+      }
+
+      // Sort by timestamp
+      allMessages = allMessages.sortBy(msg => 
+        msg.timestamp || msg.localTimestamp || msg.info?.time || 0
+      );
+
+      return allMessages;
+    } catch (error) {
+      this.log('[workspace] Failed to get conversation history:', error);
+      return [];
+    }
+  }
+
 
   async initializeComponents() {
     // Create OpenCode component
