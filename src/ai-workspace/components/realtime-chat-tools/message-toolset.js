@@ -70,6 +70,30 @@ export class MessageToolset {
         execute: async (args) => {
           return await this.searchMessages(args);
         }
+      },
+
+      get_message_by_id: {
+        definition: {
+          type: "function",
+          name: "get_message_by_id",
+          description: "Retrieve the complete details of a specific message by its ID. " +
+                       "Returns everything available about the message including internal reasoning steps, " +
+                       "tool call outputs, timestamps, and all meta-information. Useful for detailed inspection " +
+                       "of specific messages.",
+          parameters: {
+            type: "object",
+            properties: {
+              message_id: {
+                type: "string",
+                description: "The unique ID of the message to retrieve"
+              }
+            },
+            required: ["message_id"]
+          }
+        },
+        execute: async (args) => {
+          return await this.getMessageById(args);
+        }
       }
     };
   }
@@ -151,6 +175,98 @@ export class MessageToolset {
       return {
         success: false,
         error: `Failed to search messages: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Get complete details of a specific message by its ID
+   */
+  async getMessageById(args) {
+    try {
+      const messageId = args.message_id;
+      const allMessages = await this.workspace.getConversationHistory();
+
+      // Find message by ID - check different ID fields depending on message type
+      const message = allMessages.find(msg => {
+        // OpenCode messages: info.id
+        if (msg.info && msg.info.id === messageId) return true;
+        
+        // Realtime messages: item_id or id
+        if (msg.item_id === messageId) return true;
+        if (msg.id === messageId) return true;
+        
+        return false;
+      });
+
+      if (!message) {
+        return {
+          success: false,
+          error: `Message with ID '${messageId}' not found in conversation history`
+        };
+      }
+
+      // Return the complete message with all details
+      const result = {
+        success: true,
+        message_id: messageId,
+        source: this.getMessageSource(message),
+        full_message: message
+      };
+
+      // Add parsed sections for easier reading
+      result.parsed = {
+        role: message.role || message.info?.role,
+        timestamp: message.timestamp || message.localTimestamp || message.info?.time?.created,
+        content: this.getMessageContent(message)
+      };
+
+      // Extract internal reasoning (thinking) if available
+      if (message.parts && Array.isArray(message.parts)) {
+        const thinkingParts = message.parts.filter(p => p.type === 'thinking');
+        if (thinkingParts.length > 0) {
+          result.parsed.internal_reasoning = thinkingParts.map(p => p.text);
+        }
+
+        // Extract tool calls with full details
+        const toolParts = message.parts.filter(p => p.type === 'tool' || p.type === 'tool_use');
+        if (toolParts.length > 0) {
+          result.parsed.tool_calls = toolParts.map(tc => ({
+            name: tc.name,
+            input: tc.input,
+            output: tc.state?.output,
+            status: tc.state?.status,
+            full_details: tc
+          }));
+        }
+
+        // Extract all part types for reference
+        result.parsed.part_types = message.parts.map(p => p.type);
+      }
+
+      // Extract tool calls from realtime/anthropic format
+      if (message.tool_calls && Array.isArray(message.tool_calls)) {
+        result.parsed.tool_calls = message.tool_calls.map(tc => ({
+          name: tc.function?.name || tc.name,
+          arguments: tc.function?.arguments || tc.args,
+          full_details: tc
+        }));
+      }
+
+      // Add metadata
+      result.metadata = {
+        event_source: message.eventSource,
+        has_parts: !!message.parts,
+        parts_count: message.parts ? message.parts.length : 0,
+        has_tool_calls: !!(message.tool_calls || (message.parts && message.parts.some(p => p.type === 'tool' || p.type === 'tool_use'))),
+        has_reasoning: !!(message.parts && message.parts.some(p => p.type === 'thinking'))
+      };
+
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to retrieve message: ${error.message}`
       };
     }
   }

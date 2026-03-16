@@ -409,7 +409,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       // Set preferences before component creation
       lively.preferences.set("openai-realtime-chat-tool-permissions", {
         allowCodeEvaluation: false,
-        allowOpenCodeTasks: true
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
       });
 
       // Create new component to load preferences
@@ -419,7 +420,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
       expect(newComponent.toolPermissions).to.deep.equal({
         allowCodeEvaluation: false,
-        allowOpenCodeTasks: true
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
       });
 
       newComponent.remove();
@@ -476,7 +478,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     it('should save tool permissions to preferences', () => {
       component.toolPermissions = {
         allowCodeEvaluation: false,
-        allowOpenCodeTasks: true
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
       };
 
       // Simulate saving
@@ -485,7 +488,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const saved = lively.preferences.get("openai-realtime-chat-tool-permissions");
       expect(saved).to.deep.equal({
         allowCodeEvaluation: false,
-        allowOpenCodeTasks: true
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
       });
     });
 

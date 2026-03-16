@@ -499,7 +499,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     if (allowMessageInspection && workspace) {
       const messageToolset = new MessageToolset(workspace);
       toolsets.push(messageToolset);
-      allowedToolNames.push('get_recent_messages', 'search_messages');
+      allowedToolNames.push('get_recent_messages', 'search_messages', 'get_message_by_id');
     }
 
     // Use CompositeToolset if we have multiple toolsets, otherwise just the basic one

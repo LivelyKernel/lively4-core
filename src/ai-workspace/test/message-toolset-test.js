@@ -12,16 +12,17 @@ describe('MessageToolset', () => {
         getMessages: () => [
           {
             eventSource: 'opencode',
-            info: { role: 'user', time: '2024-01-01T10:00:00Z' },
+            info: { id: 'msg_opencode_001', role: 'user', time: '2024-01-01T10:00:00Z' },
             parts: [{ type: 'text', text: 'Please fix the bug in login.js' }],
             timestamp: '2024-01-01T10:00:00Z'
           },
           {
             eventSource: 'opencode',
-            info: { role: 'assistant', time: '2024-01-01T10:01:00Z' },
+            info: { id: 'msg_opencode_002', role: 'assistant', time: '2024-01-01T10:01:00Z' },
             parts: [
               { type: 'text', text: 'I will fix the bug' },
-              { type: 'tool', name: 'mcp_edit', state: { status: 'completed', output: 'File updated' } }
+              { type: 'thinking', text: 'First I need to analyze the login.js file' },
+              { type: 'tool', name: 'mcp_edit', input: { filePath: 'login.js' }, state: { status: 'completed', output: 'File updated' } }
             ],
             timestamp: '2024-01-01T10:01:00Z'
           }
@@ -31,12 +32,14 @@ describe('MessageToolset', () => {
         conversation: [
           {
             eventSource: 'realtime',
+            item_id: 'msg_realtime_001',
             role: 'user',
             content: 'What is the status?',
             timestamp: '2024-01-01T10:02:00Z'
           },
           {
             eventSource: 'realtime',
+            item_id: 'msg_realtime_002',
             role: 'assistant',
             content: 'The bug has been fixed',
             timestamp: '2024-01-01T10:03:00Z'
@@ -91,15 +94,22 @@ describe('MessageToolset', () => {
       expect(toolset.tools.search_messages.definition).to.exist;
       expect(typeof toolset.tools.search_messages.execute).to.equal('function');
     });
+
+    it('should define get_message_by_id tool', () => {
+      expect(toolset.tools.get_message_by_id).to.exist;
+      expect(toolset.tools.get_message_by_id.definition).to.exist;
+      expect(typeof toolset.tools.get_message_by_id.execute).to.equal('function');
+    });
   });
 
   describe('getDefinitions', () => {
     it('should return array of tool definitions', () => {
       const definitions = toolset.getDefinitions();
       expect(definitions).to.be.an('array');
-      expect(definitions.length).to.equal(2);
+      expect(definitions.length).to.equal(3);
       expect(definitions[0].name).to.equal('get_recent_messages');
       expect(definitions[1].name).to.equal('search_messages');
+      expect(definitions[2].name).to.equal('get_message_by_id');
     });
   });
 
@@ -270,6 +280,88 @@ describe('MessageToolset', () => {
     });
   });
 
+  describe('getMessageById', () => {
+    it('should retrieve opencode message by info.id', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_001' });
+      expect(result.success).to.be.true;
+      expect(result.message_id).to.equal('msg_opencode_001');
+      expect(result.source).to.equal('user');
+      expect(result.full_message).to.exist;
+      expect(result.full_message.info.id).to.equal('msg_opencode_001');
+    });
+
+    it('should retrieve realtime message by item_id', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_realtime_001' });
+      expect(result.success).to.be.true;
+      expect(result.message_id).to.equal('msg_realtime_001');
+      expect(result.source).to.equal('user');
+      expect(result.full_message).to.exist;
+      expect(result.full_message.item_id).to.equal('msg_realtime_001');
+    });
+
+    it('should return error for non-existent message ID', async () => {
+      const result = await toolset.getMessageById({ message_id: 'nonexistent_id' });
+      expect(result.success).to.be.false;
+      expect(result.error).to.include('not found');
+    });
+
+    it('should include parsed content', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_001' });
+      expect(result.success).to.be.true;
+      expect(result.parsed).to.exist;
+      expect(result.parsed.content).to.equal('Please fix the bug in login.js');
+      expect(result.parsed.role).to.equal('user');
+      expect(result.parsed.timestamp).to.exist;
+    });
+
+    it('should extract internal reasoning (thinking parts)', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_002' });
+      expect(result.success).to.be.true;
+      expect(result.parsed.internal_reasoning).to.exist;
+      expect(result.parsed.internal_reasoning).to.be.an('array');
+      expect(result.parsed.internal_reasoning[0]).to.equal('First I need to analyze the login.js file');
+    });
+
+    it('should extract tool calls with full details', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_002' });
+      expect(result.success).to.be.true;
+      expect(result.parsed.tool_calls).to.exist;
+      expect(result.parsed.tool_calls).to.be.an('array');
+      expect(result.parsed.tool_calls.length).to.equal(1);
+      expect(result.parsed.tool_calls[0].name).to.equal('mcp_edit');
+      expect(result.parsed.tool_calls[0].input).to.exist;
+      expect(result.parsed.tool_calls[0].output).to.equal('File updated');
+      expect(result.parsed.tool_calls[0].status).to.equal('completed');
+      expect(result.parsed.tool_calls[0].full_details).to.exist;
+    });
+
+    it('should list all part types', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_002' });
+      expect(result.success).to.be.true;
+      expect(result.parsed.part_types).to.exist;
+      expect(result.parsed.part_types).to.deep.equal(['text', 'thinking', 'tool']);
+    });
+
+    it('should include metadata', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_opencode_002' });
+      expect(result.success).to.be.true;
+      expect(result.metadata).to.exist;
+      expect(result.metadata.event_source).to.equal('opencode');
+      expect(result.metadata.has_parts).to.be.true;
+      expect(result.metadata.parts_count).to.equal(3);
+      expect(result.metadata.has_tool_calls).to.be.true;
+      expect(result.metadata.has_reasoning).to.be.true;
+    });
+
+    it('should handle realtime messages without parts', async () => {
+      const result = await toolset.getMessageById({ message_id: 'msg_realtime_002' });
+      expect(result.success).to.be.true;
+      expect(result.metadata.has_parts).to.be.false;
+      expect(result.metadata.parts_count).to.equal(0);
+      expect(result.parsed.content).to.equal('The bug has been fixed');
+    });
+  });
+
   describe('execute', () => {
     it('should execute get_recent_messages', async () => {
       const result = await toolset.execute('get_recent_messages', { count: 5 });
@@ -281,6 +373,12 @@ describe('MessageToolset', () => {
       const result = await toolset.execute('search_messages', { query: 'bug' });
       expect(result.success).to.be.true;
       expect(result.messages).to.be.an('array');
+    });
+
+    it('should execute get_message_by_id', async () => {
+      const result = await toolset.execute('get_message_by_id', { message_id: 'msg_opencode_001' });
+      expect(result.success).to.be.true;
+      expect(result.full_message).to.exist;
     });
 
     it('should throw error for unknown tool', async () => {
