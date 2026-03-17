@@ -405,6 +405,66 @@ export default class LivelyChatMessage extends Morph {
     return null;
   }
 
+  renderStepEvent(part) {
+    if (!this.showDebug) {
+      return null;
+    }
+    
+    const container = document.createElement('div');
+    container.className = 'step-event';
+    
+    if (part.type === 'step-start') {
+      const emoji = '▶️';
+      let text = `${emoji} Step started`;
+      
+      if (part.snapshot) {
+        text += ` (snapshot: ${part.snapshot.substring(0, 8)})`;
+      }
+      
+      container.textContent = text;
+      container.style.cssText = 'color: #666; font-size: 11px; font-style: italic; margin: 4px 0; padding: 2px 0;';
+      
+    } else if (part.type === 'step-finish') {
+      const emoji = '⏹️';
+      const tokens = part.tokens || {};
+      const parts = [];
+      
+      if (tokens.input !== undefined || tokens.output !== undefined) {
+        const inStr = tokens.input !== undefined ? `${tokens.input.toLocaleString()}` : '?';
+        const outStr = tokens.output !== undefined ? `${tokens.output.toLocaleString()}` : '?';
+        parts.push(`${inStr}→${outStr} tokens`);
+      }
+      
+      if (tokens.reasoning && tokens.reasoning > 0) {
+        parts.push(`${tokens.reasoning.toLocaleString()} thinking`);
+      }
+      
+      if (tokens.cache?.read && tokens.cache.read > 0) {
+        parts.push(`${tokens.cache.read.toLocaleString()} cached`);
+      }
+      
+      if (part.cost && part.cost > 0) {
+        parts.push(`$${part.cost.toFixed(4)}`);
+      }
+      
+      const text = parts.length > 0 
+        ? `${emoji} Step complete: ${parts.join(', ')}`
+        : `${emoji} Step complete`;
+      
+      container.textContent = text;
+      container.style.cssText = 'color: #666; font-size: 11px; font-style: italic; margin: 4px 0; padding: 2px 0;';
+      
+      if (part.snapshot) {
+        const debug = document.createElement('span');
+        debug.textContent = ` (snapshot: ${part.snapshot.substring(0, 8)})`;
+        debug.style.cssText = 'color: #999; font-size: 10px;';
+        container.appendChild(debug);
+      }
+    }
+    
+    return container;
+  }
+
   async renderOpenCodeParts(opencodeMessage) {
     const parts = opencodeMessage.parts || [];
 
@@ -551,25 +611,9 @@ export default class LivelyChatMessage extends Morph {
         const el = await this.dispatchToolRender(part, 'renderToolStreaming');
         if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'step-start' || part.type === 'step-finish') {
-        // Step events - only show in debug mode
-        if (this.showDebug) {
-          const emoji = part.type === 'step-start' ? '▶️' : '⏹️';
-          let md = `### ${emoji} ${part.type}\n\n`;
-          if (part.type === 'step-finish' && part.tokens) {
-            md += `**Tokens:** input: ${part.tokens.input}, output: ${part.tokens.output}`;
-            if (part.tokens.cache?.read) {
-              md += `, cache read: ${part.tokens.cache.read}`;
-            }
-            if (part.cost) {
-              md += `, cost: ${part.cost}`;
-            }
-            md += '\n\n';
-          }
-          if (part.snapshot) {
-            md += `*Snapshot: ${part.snapshot.substring(0, 8)}...*\n\n`;
-          }
-          this.partsContainer.appendChild(await this.createMarkdownElement(md));
-        }
+        // Step events - render as compact one-liners with key information
+        const el = this.renderStepEvent(part);
+        if (el) this.partsContainer.appendChild(el);
       } else {
         // Unknown part type - show as JSON (only in debug mode)
         if (this.showDebug) {

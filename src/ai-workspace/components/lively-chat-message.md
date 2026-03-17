@@ -117,10 +117,24 @@ formatToolMessage(messageObj)
 - Shows status (pending/running/completed)
 - Special handling for `lively4_evaluate_code` - parses structured output
 
-### 5. Step Events (only in debug mode)
+### 5. Step Events (debug mode only)
 ```javascript
-{ type: 'step-start' | 'step-finish', tokens: {...}, cost: '...' }
+{ type: 'step-start', snapshot: '...' }
+{ type: 'step-finish', tokens: {...}, cost: '...', snapshot: '...' }
 ```
+
+**Rendering behavior:**
+- **Normal mode** (`showDebug = false`): Step events are completely hidden (not rendered)
+- **Debug mode** (`showDebug = true`): Rendered as compact one-liners with key details
+
+**Rendered format in debug mode:**
+- `step-start`: "▶️ Step started (snapshot: abc12345)"
+- `step-finish`: "⏹️ Step complete: 1,500→250 tokens, 100 thinking, 500 cached, $0.0042"
+  - Token format: `input→output tokens`
+  - Shows thinking tokens if present and > 0
+  - Shows cache read tokens if present and > 0
+  - Shows cost if available
+  - All on a single line with minimal styling (gray, italic, 11px)
 
 ### 6. Realtime Tool Messages
 ```javascript
