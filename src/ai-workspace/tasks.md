@@ -22,6 +22,16 @@ For Human/Agent team:
 - [ ] auto-commit current agent changes and provides points to jump back
 - [X] implement auto session naming again.... 
 - [X] the diff view in file edit tool calls don't show the whitespace at the moment
+- [ ] render startTask 
+  ```
+  types step-start, reasoning, tool, step-finish
+  ▶️ step-start
+  💭 Thinking...
+  📖 openai-realtime-chat.js (from line 1524)
+  ⏹️ step-finish
+  ```
+- preview one line of details in    💭 Thinking... 
+
 
 ## Refactoring & Bug Fixes
 

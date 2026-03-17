@@ -274,7 +274,17 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
   describe('Duplicate Prevention', () => {
     it('should not save duplicate messages from same item_id', async () => {
-      // First completion
+      // First: Create the message (conversation.item.created)
+      await component.handleRealtimeMessage({
+        type: 'conversation.item.created',
+        item: {
+          id: 'item_123',
+          type: 'message',
+          role: 'assistant'
+        }
+      });
+
+      // Then: First completion
       await component.handleRealtimeMessage({
         type: 'response.audio_transcript.done',
         transcript: 'Hello',
@@ -373,6 +383,113 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(component.conversation).to.have.length(2);
       expect(component.conversation[0].content).to.equal('New message with sequence');
       expect(component.conversation[1].content).to.equal('Old message');
+    });
+  });
+
+  describe('Timestamp Preservation', () => {
+    let component;
+
+    beforeEach(async () => {
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;  // Disable UI for faster tests
+      await component.initialize();
+    });
+
+    afterEach(() => {
+      component.remove();
+    });
+
+    it('should preserve timestamp when updating message with createMessage/updateMessage', async () => {
+      const item_id = 'test_item_123';
+      const role = 'user';
+      
+      // Step 1: Create message with initial content (like "Listening...")
+      await component.createMessage(item_id, role, '_Listening..._', false);
+      
+      // Capture the original timestamp from the Map
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      expect(originalTimestamp).to.exist;
+      expect(originalTimestamp).to.be.a('number');
+      
+      // Wait a bit to ensure time has passed
+      await lively.sleep(10);
+      
+      // Step 2: Update message with final content (like actual transcript)
+      await component.updateMessage(item_id, role, 'Hello world', false);
+      
+      // Verify timestamp was preserved (NOT updated)
+      const updatedTimestamp = component.messageTimestamps.get(item_id);
+      expect(updatedTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should preserve timestamp across multiple updates', async () => {
+      const item_id = 'test_item_456';
+      const role = 'assistant';
+      
+      // Create message
+      await component.createMessage(item_id, role, '', false);
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      
+      // Multiple updates (simulating streaming) - no need to sleep between updates
+      await component.updateMessage(item_id, role, 'Hello', false);
+      await component.updateMessage(item_id, role, 'Hello world', false);
+      await component.updateMessage(item_id, role, 'Hello world!', false);
+      
+      // Timestamp should still be the original
+      const finalTimestamp = component.messageTimestamps.get(item_id);
+      expect(finalTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should use stored timestamp when persisting message', async () => {
+      const item_id = 'test_item_789';
+      const role = 'user';
+      
+      // Create message with timestamp
+      await component.createMessage(item_id, role, 'Initial', false);
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      
+      // Wait and then persist via updateMessage
+      await lively.sleep(20);
+      
+      // Spy on saveMessageToDb to verify the timestamp
+      let savedTimestamp = null;
+      const originalSave = component.saveMessageToDb.bind(component);
+      component.saveMessageToDb = async (message) => {
+        savedTimestamp = message.timestamp;
+        return originalSave(message);
+      };
+      
+      // Update with persist=true
+      await component.updateMessage(item_id, role, 'Final content', true);
+      
+      // Verify the saved timestamp matches the original (not a newer time)
+      expect(savedTimestamp).to.exist;
+      expect(savedTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should maintain correct message ordering after updates', async () => {
+      // Create first message
+      await component.createMessage('item_1', 'user', 'First', false);
+      const timestamp1 = component.messageTimestamps.get('item_1');
+      
+      // Wait to ensure different timestamp
+      await lively.sleep(10);
+      
+      // Create second message
+      await component.createMessage('item_2', 'user', 'Second', false);
+      const timestamp2 = component.messageTimestamps.get('item_2');
+      
+      // Verify second timestamp is later
+      expect(timestamp2).to.be.greaterThan(timestamp1);
+      
+      // Now update first message (should NOT change its timestamp)
+      await lively.sleep(10);
+      await component.updateMessage('item_1', 'user', 'First updated', false);
+      
+      // Verify first message still has earlier timestamp
+      const updatedTimestamp1 = component.messageTimestamps.get('item_1');
+      expect(updatedTimestamp1).to.equal(timestamp1);
+      expect(updatedTimestamp1).to.be.lessThan(timestamp2);
     });
   });
 

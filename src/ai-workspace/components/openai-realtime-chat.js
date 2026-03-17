@@ -199,6 +199,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Track accumulated transcripts for assistant streaming messages
     this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
 
+    // Track message timestamps by item_id to preserve ordering across updates
+    // CRITICAL: Timestamps must never change after initial assignment
+    this.messageTimestamps = this.messageTimestamps || new Map();
+
     // Agent status tracking (for coordination with coding agent)
     this.agentStatus = this.agentStatus || 'idle';
     this.lastAgentUpdate = this.lastAgentUpdate || null;
@@ -822,6 +826,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       "content": text,
       metadata: metadata,
       type: metadata.type || 'tool',
+      source: 'audio',
       timestamp: Date.now()
     };
 
@@ -856,6 +861,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // IMPORTANT: Assign timestamp ONCE at message creation time
     const timestamp = Date.now();
+
+    // Store timestamp in Map for preservation across updates
+    // This ensures the timestamp NEVER changes after initial assignment
+    if (item_id) {
+      this.messageTimestamps.set(item_id, timestamp);
+    }
 
     // Create message data structure
     const messageData = {
@@ -895,15 +906,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
 
   async updateMessage(item_id, role, content, persist = false) {
-    // Get widget to reuse original timestamp
-    const widget = this.chatMessages.get(item_id);
+    // CRITICAL: Retrieve original timestamp from Map
+    // If no timestamp exists, it means createMessage was never called - this is a bug!
+    const timestamp = this.messageTimestamps.get(item_id);
+    if (!timestamp) {
+      throw new Error(`[updateMessage] No timestamp found for ${item_id} - createMessage must be called first`);
+    }
     
     const messageData = {
       role: role,
       content: content,
       source: 'audio',
       streamType: 'realtime',
-      timestamp: widget?._messageData?.timestamp || Date.now(),  // Reuse original timestamp
+      timestamp: timestamp,  // Always use original timestamp from Map
       item_id: item_id  // Include item_id for workspace lookup
     };
 
@@ -912,6 +927,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.dispatchMessageEvent(eventName, messageData);
 
     // Optionally update UI widget if it exists
+    const widget = this.chatMessages.get(item_id);
     if (widget) {
       await widget.setMessage(messageData);
       this.scrollResponsesSoon(10);
@@ -1679,6 +1695,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.chatMessages.clear();
     this.savedResponseItems.clear();
     this.accumulatedTranscripts.clear();
+    this.messageTimestamps.clear();
 
     // Ensure we're not connected to WebRTC during replay
     if (this.peerConnection && this.isStreamingActive) {
@@ -1702,6 +1719,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.chatMessages.clear();
       this.savedResponseItems.clear();
       this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
     }
   }
 
@@ -2035,6 +2053,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.savedResponseItems = other.savedResponseItems || new Set();
     // Note: chatMessages migration handled by base class
     this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
+    this.messageTimestamps = other.messageTimestamps || new Map();
 
     this.get("#voiceBox").value = other.get("#voiceBox").value
     this.get("#modelBox").value = other.get("#modelBox").value
@@ -2063,6 +2082,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Clear conversation data
     this.conversation = [];
+    
+    // Clear timestamp tracking (important for replay rewind)
+    if (this.messageTimestamps) {
+      this.messageTimestamps.clear();
+    }
   }
 
   livelyPrepareSave() {
