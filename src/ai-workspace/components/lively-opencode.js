@@ -654,8 +654,7 @@ export default class LivelyOpencode extends LivelyChat {
     
     if (messagesContainer) {
       messagesContainer.appendChild(permissionDiv);
-      // Scroll to bottom
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      this.scrollToBottom(messagesContainer);
     } else {
       console.error('[opencode] messagesContainer not found! Cannot show permission UI.');
       // Fallback to native dialog
@@ -2431,8 +2430,8 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom (force=true: session switch should always go to bottom)
+    this.scrollToBottom(container, true);
   }
 
   /**
@@ -2534,8 +2533,8 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom (respects sticky flag)
+    this.scrollToBottom(container);
   }
 
   /**
@@ -2578,15 +2577,9 @@ export default class LivelyOpencode extends LivelyChat {
       streamType: 'opencode'
     });
 
-    // Scroll to bottom if we're already near the bottom
+    // Scroll to bottom (respects sticky flag)
     const container = this.get('#messagesContainer');
-    if (container) {
-      const scrollThreshold = 100; // pixels from bottom
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < scrollThreshold;
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
+    if (container) this.scrollToBottom(container);
   }
 
   /**

@@ -382,23 +382,26 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  scrollToBottom(container, force = false, delay = 10) {
-    if (!container) return;
+  setupStickyScroll(container) {
+    if (!container || container._stickyScrollSetup) return;
+    container._stickyScrollSetup = true;
+    container._stickyScroll = true; // start sticky by default
 
-    const shouldScroll = force || this.isAtBottom(container);
-    if (shouldScroll) {
-      setTimeout(() => {
-        if (container) {
-          container.scrollTop = container.scrollHeight;
-        }
-      }, delay);
-    }
+    container.addEventListener('scroll', () => {
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      container._stickyScroll = distFromBottom < 20;
+    });
   }
 
-  isAtBottom(container, threshold = 50) {
-    if (!container) return true;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    return (scrollHeight - scrollTop - clientHeight) < threshold;
+  scrollToBottom(container, force = false, delay = 10) {
+    if (!container) return;
+    this.setupStickyScroll(container);
+
+    if (force || container._stickyScroll) {
+      setTimeout(() => {
+        if (container) container.scrollTop = container.scrollHeight;
+      }, delay);
+    }
   }
 
   generateToggleIcon(state) {

@@ -139,7 +139,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // Wrapper for base class scrollToBottom method for backwards compatibility
   scrollResponsesSoon(delay = 100) {
-    this.scrollToBottom(this.get('#messagesContainer'), true, delay);
+    this.scrollToBottom(this.get('#messagesContainer'), false, delay);
   }
 
   createDebugHeader(metaInfo) {

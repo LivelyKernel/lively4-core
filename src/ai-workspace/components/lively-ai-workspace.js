@@ -491,6 +491,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         streamType: 'opencode'
       });
       this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+      this.scrollToBottom(this.messagesContainer);
     } else {
       this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
       await this.createOpenCodeMessage(msg);
