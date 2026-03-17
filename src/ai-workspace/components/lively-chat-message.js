@@ -515,12 +515,32 @@ export default class LivelyChatMessage extends Morph {
           }
         }
       } else if (part.type === 'reasoning') {
-        // Extended thinking block: collapsible, content rendered in lively-markdown
-        const details = <details>
-          <summary>💭 <em>Thinking...</em></summary>
-        </details>;
-        details.appendChild(await this.createMarkdownElement(part.text));
-        this.partsContainer.appendChild(details);
+        // Extended thinking block: for one-liners, show inline; for multi-line, show collapsible
+        const isOneLiner = !part.text.includes('\n') || part.text.trim().split('\n').length === 1;
+        
+        if (isOneLiner) {
+          // Single line: display inline beside indicator
+          const container = document.createElement('div');
+          container.style.cssText = 'display: inline-flex; align-items: center; gap: 8px; margin: 4px 0; white-space: nowrap;';
+          
+          const indicator = document.createElement('span');
+          indicator.innerHTML = '💭 <em>Thinking...</em>';
+          
+          const content = document.createElement('span');
+          content.style.cssText = 'font-size: 11px; color: #666;';
+          content.textContent = part.text.trim();
+          
+          container.appendChild(indicator);
+          container.appendChild(content);
+          this.partsContainer.appendChild(container);
+        } else {
+          // Multi-line: collapsible details element
+          const details = <details>
+            <summary>💭 <em>Thinking...</em></summary>
+          </details>;
+          details.appendChild(await this.createMarkdownElement(part.text));
+          this.partsContainer.appendChild(details);
+        }
       } else if (part.type === 'tool_use') {
         const el = await this.dispatchToolRender(part, 'renderToolUse');
         if (el) this.partsContainer.appendChild(el);
