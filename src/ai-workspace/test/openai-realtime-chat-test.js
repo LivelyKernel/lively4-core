@@ -404,7 +404,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const role = 'user';
       
       // Step 1: Create message with initial content (like "Listening...")
-      await component.createMessage(item_id, role, '_Listening..._', false);
+      await component.createRealtimeMessage(role, '_Listening..._', { item_id, persist: false });
       
       // Capture the original timestamp from the Map
       const originalTimestamp = component.messageTimestamps.get(item_id);
@@ -427,7 +427,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const role = 'assistant';
       
       // Create message
-      await component.createMessage(item_id, role, '', false);
+      await component.createRealtimeMessage(role, '', { item_id, persist: false });
       const originalTimestamp = component.messageTimestamps.get(item_id);
       
       // Multiple updates (simulating streaming) - no need to sleep between updates
@@ -445,7 +445,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const role = 'user';
       
       // Create message with timestamp
-      await component.createMessage(item_id, role, 'Initial', false);
+      await component.createRealtimeMessage(role, 'Initial', { item_id, persist: false });
       const originalTimestamp = component.messageTimestamps.get(item_id);
       
       // Wait and then persist via updateMessage
@@ -469,14 +469,14 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
     it('should maintain correct message ordering after updates', async () => {
       // Create first message
-      await component.createMessage('item_1', 'user', 'First', false);
+      await component.createRealtimeMessage('user', 'First', { item_id: 'item_1', persist: false });
       const timestamp1 = component.messageTimestamps.get('item_1');
       
       // Wait to ensure different timestamp
       await lively.sleep(10);
       
       // Create second message
-      await component.createMessage('item_2', 'user', 'Second', false);
+      await component.createRealtimeMessage('user', 'Second', { item_id: 'item_2', persist: false });
       const timestamp2 = component.messageTimestamps.get('item_2');
       
       // Verify second timestamp is later
@@ -490,6 +490,70 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const updatedTimestamp1 = component.messageTimestamps.get('item_1');
       expect(updatedTimestamp1).to.equal(timestamp1);
       expect(updatedTimestamp1).to.be.lessThan(timestamp2);
+    });
+  });
+
+  describe('Message Persistence', () => {
+    let component;
+
+    beforeEach(async () => {
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;
+      await component.initialize();
+      // Clear conversation array for clean test
+      component.conversation = [];
+    });
+
+    afterEach(() => {
+      component.remove();
+    });
+
+    it('should persist metadata in tool messages', async () => {
+      const metadata = {
+        type: 'function_call',
+        functionName: 'test_function',
+        call_id: 'call_123',
+        arguments: { arg1: 'value1' }
+      };
+
+      // Create tool message
+      await component.createRealtimeMessage('tool', '🔧 Test tool call', { metadata });
+
+      // Check conversation array
+      expect(component.conversation.length).to.equal(1);
+      const savedMessage = component.conversation[0];
+      
+      // Verify metadata is saved
+      expect(savedMessage.metadata).to.exist;
+      expect(savedMessage.metadata.type).to.equal('function_call');
+      expect(savedMessage.metadata.functionName).to.equal('test_function');
+      expect(savedMessage.metadata.call_id).to.equal('call_123');
+      expect(savedMessage.metadata.arguments).to.deep.equal({ arg1: 'value1' });
+      
+      // Verify type field is also saved (extracted from metadata)
+      expect(savedMessage.type).to.equal('function_call');
+    });
+
+    it('should persist metadata in function results', async () => {
+      const metadata = {
+        type: 'function_call_output',
+        call_id: 'call_123',
+        output: { success: true, result: 'test result' }
+      };
+
+      // Create function result message
+      await component.createRealtimeMessage('tool', '✅ Function result', { metadata });
+
+      // Check conversation array
+      expect(component.conversation.length).to.equal(1);
+      const savedMessage = component.conversation[0];
+      
+      // Verify metadata is saved
+      expect(savedMessage.metadata).to.exist;
+      expect(savedMessage.metadata.type).to.equal('function_call_output');
+      expect(savedMessage.metadata.call_id).to.equal('call_123');
+      expect(savedMessage.metadata.output).to.deep.equal({ success: true, result: 'test result' });
+      expect(savedMessage.type).to.equal('function_call_output');
     });
   });
 

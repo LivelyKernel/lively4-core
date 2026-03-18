@@ -99,14 +99,12 @@ accumulatedTranscripts       // Map<item_id, partial text>
 handleRealtimeMessage(message)
   // Main event handler for WebRTC messages
   
-createMessage(item_id, role, initialContent)
-  // Create new message widget
+createRealtimeMessage(role, content, options)
+  // Unified message creation for streaming and non-streaming messages
+  // options: { item_id, metadata, persist, eventName }
   
 updateMessage(item_id, role, content)
   // Update existing message content
-  
-addMessage(role, text, metadata)
-  // Add message to conversation array
   
 renderMessage(message)
   // Render message to UI

@@ -246,8 +246,7 @@ WebRTC-based real-time voice interaction with OpenAI:
 
 **Message Management:**
 - `getMessages()` - Get message list
-- `addMessage()` - Add new message
-- `createMessage()` - Create message widget
+- `createRealtimeMessage()` - Unified message creation (streaming + non-streaming)
 - `updateMessage()` - Update existing message
 - `renderMessage()` - Render single message
 - `renderConversation()` - Render all messages

@@ -267,9 +267,8 @@ reconnectWithNewVoice()
 **Message Handling:**
 ```javascript
 handleRealtimeMessage(message)   // Main event handler
-createMessage(item_id, role, initialContent)
+createRealtimeMessage(role, content, options)  // Unified message creation
 updateMessage(item_id, role, content)
-addMessage(role, text, metadata)
 renderMessage(message)
 ```
 

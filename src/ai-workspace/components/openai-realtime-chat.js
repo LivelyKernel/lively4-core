@@ -856,73 +856,87 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Live Updates MD*/
 
-  
-  // #important
-  // #TODO #duplicate with createMessage WHAT THE FUCK!!!!!
-  async addMessage(role, text, metadata = {}) {
-    const myMessage = {
-      role,
-      "content": text,
-      metadata: metadata,
-      type: metadata.type || 'tool',
-      source: 'audio',
-      timestamp: Date.now()
-    };
+  /**
+   * Unified method for creating realtime messages
+   * 
+   * @param {string} role - Message role: 'user', 'assistant', or 'tool'
+   * @param {string} content - Message content (may be placeholder for streaming messages)
+   * @param {Object} options - Configuration options
+   * @param {string} options.item_id - OpenAI item_id for streaming messages (enables widget tracking)
+   * @param {Object} options.metadata - Additional metadata (type, functionName, call_id, etc.)
+   * @param {boolean} options.persist - Whether to save to database (auto-determined if null)
+   * @param {string} options.eventName - Custom event name (auto-determined if null)
+   * @returns {Object} messageData object with role, content, timestamp, etc.
+   */
+  async createRealtimeMessage(role, content, {
+    item_id = null,
+    metadata = {},
+    persist = null,
+    eventName = null
+  } = {}) {
+    // Auto-determine persistence if not specified
+    // Streaming messages (with item_id): only persist if content is complete (not placeholder)
+    // Non-streaming messages: always persist
+    const isStreamingMessage = !!item_id;
+    const hasCompleteContent = content && content !== '_Listening..._' && content !== '';
+    const shouldPersist = persist !== null 
+      ? persist 
+      : (isStreamingMessage ? hasCompleteContent : true);
 
-    // Skip adding to conversation array during replay mode
-    if (this.canWriteToDatabase()) {
-      this.conversation.push(myMessage);
-    }
+    // Auto-determine event name if not specified
+    const autoEventName = eventName || (isStreamingMessage
+      ? (role === 'user' ? 'realtime:create-live-user-message' : 'realtime:create-live-assistant-message')
+      : 'realtime:add-message');
 
-    this.log(`[realtime] addMessage: ${role}`);
-    this.dispatchMessageEvent('realtime:add-message', myMessage);
-    await this.renderMessage(myMessage);
-    await this.saveMessageToDb(myMessage);
-  }
-  
-  // #TODO #duplicate with addMessage
-  async createMessage(item_id, role, initialContent = null, persist = false, metadata = {}) {
+    // Generate timestamp
+    const msgTimestamp = Date.now();
     
-    const content = initialContent || (role === 'user' ? '_Listening..._' : '');
-
-    const timestamp = Date.now();
-
-    if (item_id) {
-      this.messageTimestamps.set(item_id, timestamp);
+    // Track timestamp by item_id for streaming messages
+    if (item_id && !this.messageTimestamps.has(item_id)) {
+      this.messageTimestamps.set(item_id, msgTimestamp);
     }
 
+    // Build message data
     const messageData = {
-      role: role,
-      content: content,
-      metadata: metadata,
+      role,
+      content,
+      metadata,
       source: 'audio',
-      streamType: 'realtime',
-      timestamp: timestamp,
-      item_id: item_id
+      timestamp: msgTimestamp,
+      ...(item_id && { item_id }),
+      ...(metadata.type && { type: metadata.type }),
+      ...(isStreamingMessage && { streamType: 'realtime' })
     };
 
-    // Always dispatch event for workspace integration
-    const eventName = role === 'user' ? 'realtime:create-live-user-message' : 'realtime:create-live-assistant-message';
-    this.dispatchMessageEvent(eventName, messageData);
+    // Log creation
+    this.log(`[realtime] createRealtimeMessage: ${role}${item_id ? ` (${item_id})` : ''}`);
 
-    // Optionally render UI widget
+    // Dispatch event for workspace integration
+    this.dispatchMessageEvent(autoEventName, messageData);
+
+    // Render UI widget
+    let widget = null;
     if (this.messagesUI !== false) {
-      const widget = await this.renderMessage(messageData);
-      this.chatMessages.set(item_id, widget);
-      this.log(`[item_id] Created widget for ${item_id} (${role})`);
+      widget = await this.renderMessage(messageData);
+      if (isStreamingMessage && item_id) {
+        this.chatMessages.set(item_id, widget);
+        this.log(`[item_id] Created widget for ${item_id} (${role})`);
+      }
     }
 
-    // Persist to database if requested (skip during replay)
-    if (persist && initialContent && this.canWriteToDatabase()) {
-      const message = {
+    // Persist to database
+    if (shouldPersist && content && this.canWriteToDatabase()) {
+      const dbMessage = {
         role,
-        content: initialContent,
-        timestamp: timestamp,
-        item_id: item_id
+        content,
+        metadata,
+        timestamp: msgTimestamp,
+        ...(item_id && { item_id }),
+        ...(metadata.type && { type: metadata.type })
       };
-      this.conversation.push(message);
-      await this.saveMessageToDb(message);
-      this.log(`[Persistence] Saved ${role} message via createMessage`);
+      this.conversation.push(dbMessage);
+      await this.saveMessageToDb(dbMessage);
+      this.log(`[Persistence] Saved ${role} message${item_id ? ` (${item_id})` : ''}`);
     }
 
     return messageData;
@@ -1613,7 +1627,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           const hasAudioContent = message.item.content?.some(c => c.type === 'input_audio');
           const shouldPersist = initialContent && role === 'user' && !hasAudioContent;
 
-          await this.createMessage(item_id, role, initialContent, shouldPersist);
+          const content = initialContent || (role === 'user' ? '_Listening..._' : '');
+          await this.createRealtimeMessage(role, content, { item_id, persist: shouldPersist });
         }
         break;
       case "conversation.item.input_audio_transcription.delta":
@@ -1843,11 +1858,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Add tool call message to chat
     const argsPreview = JSON.stringify(functionArgs).length > 50 ? JSON.stringify(functionArgs).substring(0, 47) + "..." : JSON.stringify(functionArgs);
-    await this.addMessage("tool", `🔧 Calling **${functionName}**(${argsPreview})`, {
-      type: "function_call",
-      functionName: functionName,
-      call_id: callId,
-      arguments: functionArgs
+    await this.createRealtimeMessage("tool", `🔧 Calling **${functionName}**(${argsPreview})`, {
+      metadata: {
+        type: "function_call",
+        functionName: functionName,
+        call_id: callId,
+        arguments: functionArgs
+      }
     });
     try {
       // Execute the function
@@ -1874,10 +1891,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         resultText = JSON.stringify(result);
       }
 
-      await this.addMessage("tool", `↩️ Result: ${resultText}`, {
-        type: "function_call_output",
-        call_id: callId,
-        output: result
+      await this.createRealtimeMessage("tool", `↩️ Result: ${resultText}`, {
+        metadata: {
+          type: "function_call_output",
+          call_id: callId,
+          output: result
+        }
       });
 
       // Send the result back to the realtime API
@@ -1898,12 +1917,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       lively.notify("Function Error", error.message);
 
       // Add error message to chat
-      await this.addMessage("tool", `❌ Error: ${error.message}`, {
-        type: "function_call_output",
-        call_id: callId,
-        output: {
-          success: false,
-          error: error.message
+      await this.createRealtimeMessage("tool", `❌ Error: ${error.message}`, {
+        metadata: {
+          type: "function_call_output",
+          call_id: callId,
+          output: {
+            success: false,
+            error: error.message
+          }
         }
       });
 

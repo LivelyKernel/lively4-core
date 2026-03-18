@@ -47,7 +47,7 @@ classDiagram
         connectRealtimeWebRTC()
         disconnectRealtimeWebRTC()
         handleRealtimeMessage()
-        createMessage()
+        createRealtimeMessage()
         updateMessage()
     }
     
