@@ -110,17 +110,40 @@ The file watcher now properly handles connection lifecycle with the component's 
     try {
       if (this.isReloadJsEnabled() && expectedUrl.match(/\.((js)|(ts))$/)) {
         const deep = this.isDeepReloadEnabled();
-        await lively.reloadModule(expectedUrl, true, true, deep);
+        const reloadResult = await lively.reloadModule(expectedUrl, true, true, deep);
+        
+        // Store reload info on change object
+        change.reloadInfo = {
+          reloaded: true,
+          duration: reloadResult.duration,
+          reloadedDependencies: reloadResult.reloadedDependencies,
+          failedDependencies: reloadResult.failedDependencies || [],
+          dependencyCount: reloadResult.dependencyCount,
+          deep: reloadResult.deep,
+          success: reloadResult.success,
+          url: expectedUrl
+        };
+        
         const label = deep ? 'reloaded (deep)' : 'reloaded';
         lively.notify(`JS module ${label}: ${pathParts.join('/') || change.path}`, 2000, 'purple');
       } else {
         // Fallback: use LivelyChanges for CSS/HTML/other
         const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
         await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
+        change.reloadInfo = {
+          reloaded: false,
+          applied: true,
+          url: expectedUrl
+        };
         lively.notify(`Applied changes without container: ${pathParts.join('/') || change.path}`, 2000, 'purple');
       }
     } catch (error) {
       console.warn(`Error applying changes without container for ${expectedUrl}:`, error);
+      change.reloadInfo = {
+        reloaded: false,
+        error: error.message,
+        url: expectedUrl
+      };
       lively.notify(`Failed to apply changes: ${pathParts.join('/') || change.path}`, 3000, 'red');
     }
   }
@@ -235,9 +258,16 @@ The file watcher now properly handles connection lifecycle with the component's 
     // auto-reload issues and may need manual refresh of context menus after changes
     // (contextmenu.js appears to be cached or require special invalidation)
     
+    // Enrich change with URL for use in UI and by LivelyChanges.since()
+    const [firstDir, ...pathParts] = change.path.split('/');
+    const url = firstDir === this.currentDirectoryName 
+      ? `${lively4url}/${pathParts.join('/')}` 
+      : `${this.defaultServerURL}/${change.path}`;
+    
     const timestamp = new Date(change.timestamp).toLocaleTimeString();
     const changeInfo = {
       ...change,
+      url: url,
       displayTime: timestamp
     };
     
@@ -366,10 +396,24 @@ The file watcher now properly handles connection lifecycle with the component's 
           await container.applyOutsideChanges(expectedUrl, false, freshSourceCode); // Reactive update with fresh source
           updatedCount++;
           
+          // Track container update (not a module reload)
+          change.reloadInfo = {
+            reloaded: false,
+            containerUpdated: true,
+            containerCount: matchingContainers.length,
+            url: expectedUrl
+          };
+          
           lively.notify(`Reactively updated: ${pathParts.join('/') || change.path}`, 2000, 'blue');
           this.highlightContainerWithMessage(container, 'UPDATED SUCCESSFULLY', 'green', 2000);
         } catch (error) {
           console.warn(`Error applying reactive updates to ${expectedUrl}:`, error);
+          change.reloadInfo = {
+            reloaded: false,
+            containerUpdated: false,
+            error: error.message,
+            url: expectedUrl
+          };
           lively.error(`Failed to update container: ${error.message}`);
           this.highlightContainerWithMessage(container, `UPDATE FAILED: ${error.message}`, 'red', 5000);
         }
@@ -475,17 +519,37 @@ The file watcher now properly handles connection lifecycle with the component's 
         : `../${change.path}`; // Sister directory, use .. to go up
       const editUrl = lively.files.resolve(`edit://${relativePath}`);
       
+      // Build reload info display
+      let reloadInfo = '';
+      if (change.reloadInfo) {
+        if (change.reloadInfo.reloaded) {
+          const duration = change.reloadInfo.duration;
+          const depCount = change.reloadInfo.dependencyCount || 0;
+          const failed = change.reloadInfo.failedDependencies?.length || 0;
+          const depText = failed > 0 
+            ? `${depCount} deps, ${failed} failed` 
+            : `${depCount} deps`;
+          reloadInfo = `⟳ ${duration}ms (${depText})`;
+        } else if (change.reloadInfo.containerUpdated) {
+          reloadInfo = '📝 container updated';
+        } else if (change.reloadInfo.applied) {
+          reloadInfo = '✓ applied';
+        } else if (change.reloadInfo.error) {
+          reloadInfo = `✗ ${change.reloadInfo.error}`;
+        }
+      }
+      
       const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''} ${change._noOpenEditor ? 'no-editor' : ''}`}>
         <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
         <a class="path clickable" 
-           href={editUrl}
            title="Click to open file"
            click={(evt) => {
-             evt.preventDefault();
-             lively.openBrowser(editUrl);
+              evt.preventDefault();
+              lively.openBrowser(change.url);
            }}>
           {change.path}
         </a>
+        {reloadInfo && <span class="reload-info">{reloadInfo}</span>}
         <span class="time">{change.displayTime}</span>
       </div>;
       

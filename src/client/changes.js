@@ -197,5 +197,61 @@ export default class LivelyChanges {
     }
   }
   
+  static since(milliseconds) {
+    // Find the active lively-change-watcher component
+    const watcher = document.querySelector('lively-change-watcher');
+    if (!watcher || !watcher.changes) {
+      return null; // Watcher not running
+    }
+    
+    const now = Date.now();
+    const cutoff = now - milliseconds;
+    
+    // Filter changes by timestamp and transform to agent-friendly format
+    return watcher.changes
+      .filter(change => change.timestamp >= cutoff)
+      .map(change => {
+        // Use enriched URL from change object, or build it if not available
+        const url = change.url || change.reloadInfo?.url || (() => {
+          const [firstDir, ...pathParts] = change.path.split('/');
+          const currentDir = lively4url.match(/(.*)\/([^\/]+$)/)[2];
+          const serverURL = lively4url.match(/(.*)\/([^\/]+$)/)[1];
+          return firstDir === currentDir 
+            ? `${lively4url}/${pathParts.join('/')}` 
+            : `${serverURL}/${change.path}`;
+        })();
+        
+        // Extract reload info captured during actual reload
+        let dependencies = [];
+        let errors = [];
+        let loadedTime = null;
+        let reloadDuration = null;
+        
+        if (change.reloadInfo) {
+          if (change.reloadInfo.reloaded) {
+            dependencies = change.reloadInfo.reloadedDependencies || [];
+            loadedTime = new Date(change.timestamp).toISOString();
+            reloadDuration = change.reloadInfo.duration;
+            if (change.reloadInfo.failedDependencies?.length > 0) {
+              errors = change.reloadInfo.failedDependencies.map(dep => `Failed to reload: ${dep}`);
+            }
+          } else if (change.reloadInfo.error) {
+            errors.push(change.reloadInfo.error);
+          }
+        }
+        
+        return {
+          path: change.path,
+          url: url,
+          date: new Date(change.timestamp).toISOString(),
+          loadedTime: loadedTime,
+          reloadDuration: reloadDuration,
+          errors: errors,
+          dependencies: dependencies,
+          eventType: change.eventType,
+          relativePath: change.relativePath
+        };
+      });
+  }
   
 }

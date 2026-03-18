@@ -18,3 +18,8 @@ class Foo {
   }
   
 }
+
+
+lively.notify("loaded a!!!")
+
+lively.notify("💫 Watcher test #7 - Keep testing a.js changes!")

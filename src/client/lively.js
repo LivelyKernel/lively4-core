@@ -26,6 +26,7 @@ import paths from './paths.js';
 import contextmenu from './contextmenu.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
+import changes from './changes.js';
 import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive from './auth-googledrive.js';
@@ -61,7 +62,7 @@ var debugLogHightlights = new WeakMap();
 var exportmodules = ["preferences", "files", "keys", "paths", "html", "reflection", "components", "persistence",
 // "color",
 "debug",
-"focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows"];
+"focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows", "changes"];
 
 class LivelyNotification {
   constructor(data) {
@@ -302,8 +303,7 @@ export default class Lively {
   }
 
   static async reloadModule(path, force = false, forceRetranspile, deep=true) {
-    // var start = performance.now()
-    // console.profile('reloadModule')
+    const startTime = performance.now();
 
     path = "" + path;
     var changedModule = System.normalizeSync(path);
@@ -311,7 +311,16 @@ export default class Lively {
     if (!load && !force) {
       await this.unloadModule(path); // just to be sure...
       console.warn("Don't reload non-loaded module");
-      return;
+      return {
+        module: null,
+        mainModule: path,
+        reloadedDependencies: [],
+        dependencyCount: 0,
+        duration: 0,
+        deep: deep,
+        success: false,
+        skipped: true
+      };
     }
     if(forceRetranspile) {
       System.forceRetranspilation = true;    
@@ -360,11 +369,13 @@ export default class Lively {
     // start = performance.now()
 
     // and update them
+    let failedDependencies = [];
     for (let ea of dependedModules) {
       try {
         await this.unloadModule(ea);
       } catch (e) {
         lively.notify("[lively] Ignore Error unloadModule dependend module", ea, e);
+        failedDependencies.push(ea);
       }
     }
 
@@ -375,6 +386,9 @@ export default class Lively {
         await System.import(ea);
       } catch (e) {
         lively.error("Error reloading dependend module", ea);
+        if (!failedDependencies.includes(ea)) {
+          failedDependencies.push(ea);
+        }
       }
     }
 
@@ -416,7 +430,18 @@ export default class Lively {
     // console.log("[reloadModule] updated components ",(performance.now() - start) + `ms` ) 
     // console.profileEnd('reloadModule')
 
-    return mod;
+    const duration = performance.now() - startTime;
+
+    return {
+      module: mod,
+      mainModule: path,
+      reloadedDependencies: dependedModules,
+      failedDependencies: failedDependencies,
+      dependencyCount: dependedModules.length,
+      duration: Math.round(duration),
+      deep: deep,
+      success: failedDependencies.length === 0
+    };
   }
 
   static loadJavaScriptThroughDOM(name, src, force = false, type = "text/javascript") {
