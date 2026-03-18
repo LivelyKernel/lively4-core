@@ -64,6 +64,9 @@ export default class LivelyChangeWatcher extends Morph {
         this.onApplyModeChanged();
       });
     }
+
+    this.reloadJsCheckbox = this.get('#reloadJs');
+    this.deepReloadCheckbox = this.get('#deepReload');
     
     this.updateChangesList()
   }
@@ -89,6 +92,14 @@ The file watcher now properly handles connection lifecycle with the component's 
   getApplyMode() {
     return this.applyModeDropdown ? this.applyModeDropdown.value : 'all';
   }
+
+  isReloadJsEnabled() {
+    return this.reloadJsCheckbox ? this.reloadJsCheckbox.checked : true;
+  }
+
+  isDeepReloadEnabled() {
+    return this.deepReloadCheckbox ? this.deepReloadCheckbox.checked : true;
+  }
   
   onApplyModeChanged() {
     const mode = this.getApplyMode();
@@ -97,13 +108,17 @@ The file watcher now properly handles connection lifecycle with the component's 
   
   async applyChangesWithoutContainer(change, expectedUrl, pathParts) {
     try {
-      // Fetch fresh source code from server
-      const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
-      
-      // Apply changes without container using the refactored method
-      await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
-      
-      lively.notify(`Applied changes without container: ${pathParts.join('/') || change.path}`, 2000, 'purple');
+      if (this.isReloadJsEnabled() && expectedUrl.match(/\.((js)|(ts))$/)) {
+        const deep = this.isDeepReloadEnabled();
+        await lively.reloadModule(expectedUrl, true, true, deep);
+        const label = deep ? 'reloaded (deep)' : 'reloaded';
+        lively.notify(`JS module ${label}: ${pathParts.join('/') || change.path}`, 2000, 'purple');
+      } else {
+        // Fallback: use LivelyChanges for CSS/HTML/other
+        const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+        await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
+        lively.notify(`Applied changes without container: ${pathParts.join('/') || change.path}`, 2000, 'purple');
+      }
     } catch (error) {
       console.warn(`Error applying changes without container for ${expectedUrl}:`, error);
       lively.notify(`Failed to apply changes: ${pathParts.join('/') || change.path}`, 3000, 'red');
@@ -499,6 +514,12 @@ The file watcher now properly handles connection lifecycle with the component's 
   livelyMigrate(other) {
     this.changes = other.changes || [];
     this.maxChanges = other.maxChanges || 100;
+    if (this.reloadJsCheckbox && other.reloadJsCheckbox) {
+      this.reloadJsCheckbox.checked = other.reloadJsCheckbox.checked;
+    }
+    if (this.deepReloadCheckbox && other.deepReloadCheckbox) {
+      this.deepReloadCheckbox.checked = other.deepReloadCheckbox.checked;
+    }
   }
 
   async livelyExample() {

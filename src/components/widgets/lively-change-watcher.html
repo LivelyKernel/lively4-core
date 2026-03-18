@@ -150,6 +150,12 @@ a.path.clickable:hover {
       <option value="only-open">Only Open</option>
       <option value="all" selected>All</option>
     </select>
+    <label title="Reload JS modules even without open container" style="font-size:12px">
+      <input type="checkbox" id="reloadJs" checked> Reload JS
+    </label>
+    <label title="Also reload dependent modules" style="font-size:12px">
+      <input type="checkbox" id="deepReload" checked> Deep
+    </label>
     <button id="clearButton" title="Clear change history">Clear</button>
     <button id="reconnectButton" title="Reconnect to file watcher">Reconnect</button>
   </div>
