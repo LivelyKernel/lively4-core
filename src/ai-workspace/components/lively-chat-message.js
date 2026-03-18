@@ -150,6 +150,67 @@ export default class LivelyChatMessage extends Morph {
   }
 
   /**
+   * Append a tool result to an existing tool call message.
+   * Used for linking function_call_output to function_call in realtime chat.
+   * 
+   * @param {Object} resultData - Message data for the function_call_output
+   */
+  async appendToolResult(resultData) {
+    const metadata = resultData.metadata || {};
+    const output = metadata.output || {};
+    
+    // Create a divider to separate call from result
+    const divider = document.createElement('div');
+    divider.style.marginTop = '8px';
+    divider.style.paddingTop = '8px';
+    divider.style.borderTop = '1px solid rgba(128,128,128,0.2)';
+    
+    // Create result element
+    const resultContent = document.createElement('div');
+    resultContent.className = 'tool-result-appended';
+    
+    // Format result text
+    let resultText = '';
+    if (output.error || !output.success) {
+      resultText = `↩️ **Error:** ${output.error || 'Unknown error'}`;
+    } else {
+      // Show compact result
+      if (output.response !== undefined) {
+        resultText = `↩️ **Result:** ${output.response}`;
+      } else if (output.result !== undefined) {
+        const resultStr = typeof output.result === 'object' 
+          ? JSON.stringify(output.result)
+          : String(output.result);
+        resultText = `↩️ **Result:** ${resultStr}`;
+      } else if (output.message) {
+        resultText = `↩️ **Result:** ${output.message}`;
+      } else {
+        resultText = `↩️ **Result:** ${JSON.stringify(output)}`;
+      }
+    }
+    
+    // Render as markdown
+    const resultEl = await this.createMarkdownElement(resultText);
+    resultContent.appendChild(resultEl);
+    
+    // Append to partsContainer
+    if (this.partsContainer) {
+      this.partsContainer.appendChild(divider);
+      this.partsContainer.appendChild(resultContent);
+    }
+    
+    // Update raw display to include result
+    if (this._messageData) {
+      // Store result metadata for debugging
+      if (!this._messageData._appendedResults) {
+        this._messageData._appendedResults = [];
+      }
+      this._messageData._appendedResults.push(resultData);
+      this.updateRawDisplay();
+    }
+  }
+
+  /**
    * Set message from OpenCode API format (with info and parts structure)
    * This is simpler than setMessage() - just store opencode message and render parts
    */

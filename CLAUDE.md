@@ -324,6 +324,16 @@ await lively.openComponentInWindow("component-name")
 - Don't document what can be queried from the live system (search event names, grep patterns, runtime inspection)
 - Let method names and parameters speak for themselves - think Smalltalk, not JavaDoc. No verbose JSDoc.
 
+**Module Reloading:**
+- `lively.reloadModule(path)` works for updating existing methods and properties in the module itself
+- **CRITICAL**: Modifying dependencies requires a **full page reload** (F5/Ctrl+R)
+  - Example: Editing `lively-chat-message.js` and observing changes in `openai-realtime-chat` 
+  - The dependent component has already created instances with the old code
+  - Reloading just the dependency isn't enough - need full reload to get fresh instances
+- **DON'T** repeatedly try `lively.reloadModule()` when changes don't appear - **ASK THE USER** to do a full reload
+- After full reload, all components will use the updated code
+
+**Development Best Practices:**
 - Always check component template paths and ensure proper .js/.html file pairing
 - Use `lively.components.searchTemplateFilename()` to locate templates programmatically
 - Components auto-run dependent tests when saving modules
