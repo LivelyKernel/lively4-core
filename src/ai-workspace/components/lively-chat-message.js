@@ -35,6 +35,7 @@ import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-cod
 import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 // Vox (voice agent) tool renderers
+import { VoxEvaluateCodeTool } from './tool-renderers/vox-evaluate-code-tool.js';
 import { VoxGenericTool } from './tool-renderers/vox-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -83,7 +84,8 @@ export default class LivelyChatMessage extends Morph {
 
     // Register Vox (voice agent) tool renderers - separate code path from OpenCode
     this.voxToolRenderers = this.voxToolRenderers || [
-      new VoxGenericTool(),
+      new VoxEvaluateCodeTool(),
+      new VoxGenericTool(), // Fallback - always last
     ];
 
     // Get references to elements
@@ -153,19 +155,52 @@ export default class LivelyChatMessage extends Morph {
    * Append a tool result to an existing tool call message.
    * Used for linking function_call_output to function_call in realtime chat.
    * 
+   * Strategy: Replace the entire details block with a new one showing code + result
+   * (like OpenCode bash tool - one details block total, not two)
+   * 
    * @param {Object} resultData - Message data for the function_call_output
    */
   async appendToolResult(resultData) {
     const metadata = resultData.metadata || {};
     const output = metadata.output || {};
     
-    // Create a divider to separate call from result
+    // Try to use vox tool renderer to create complete result block
+    let resultElement = null;
+    if (resultData.source === 'audio' && this.voxToolRenderers) {
+      const renderer = this.voxToolRenderers.find(r => r.matches(resultData));
+      if (renderer) {
+        // Render complete result (code + result in one details block)
+        resultElement = await renderer.renderToolResult(resultData, this.showDebug);
+        
+        // REPLACE the existing details block (not append)
+        if (this.partsContainer && resultElement) {
+          const existingDetails = this.partsContainer.querySelector('details');
+          if (existingDetails) {
+            existingDetails.replaceWith(resultElement);
+          } else {
+            // No existing details - just add it
+            this.partsContainer.appendChild(resultElement);
+          }
+        }
+        
+        // Update raw display and return early
+        if (this._messageData) {
+          if (!this._messageData._appendedResults) {
+            this._messageData._appendedResults = [];
+          }
+          this._messageData._appendedResults.push(resultData);
+          this.updateRawDisplay();
+        }
+        return;
+      }
+    }
+    
+    // Fallback to generic text formatting if no renderer matched
     const divider = document.createElement('div');
     divider.style.marginTop = '8px';
     divider.style.paddingTop = '8px';
     divider.style.borderTop = '1px solid rgba(128,128,128,0.2)';
     
-    // Create result element
     const resultContent = document.createElement('div');
     resultContent.className = 'tool-result-appended';
     
@@ -193,7 +228,7 @@ export default class LivelyChatMessage extends Morph {
     const resultEl = await this.createMarkdownElement(resultText);
     resultContent.appendChild(resultEl);
     
-    // Append to partsContainer
+    // Append to partsContainer (fallback path - append, don't replace)
     if (this.partsContainer) {
       this.partsContainer.appendChild(divider);
       this.partsContainer.appendChild(resultContent);

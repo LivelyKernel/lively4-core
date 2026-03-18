@@ -122,7 +122,8 @@ export class BasicToolset {
             return {
               success: true,
               result: resultString,
-              message: `Code executed successfully. Result: ${resultString}`
+              message: `Code executed successfully. Result: ${resultString}`,
+              code
             };
           } catch (error) {
             // Catch any unexpected errors (e.g., SystemJS, promise issues)
