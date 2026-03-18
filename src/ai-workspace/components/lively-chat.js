@@ -186,8 +186,7 @@ export default class LivelyChat extends Morph {
   set showDebug(value) {
     // Control whether debug annotations are shown in messages
     this._showDebug = value;
-    // Also control debug log panel visibility
-    this.setAttribute("hide-debug-log", value ? "false" : "true");
+    // DON'T toggle logging panel - it's used for other purposes (board, etc.) and should be independently controlled
     // Update existing messages if messages container exists
     this.updateMessagesDebugState();
   }

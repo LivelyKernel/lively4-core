@@ -191,9 +191,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     this.windowTitle = "OpenAI Realtime Chat";
 
-    // Initialize debug log visibility (controlled by showDebug property)
-    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
-
     // Realtime WebRTC properties
     this.peerConnection = null;
     this.dataChannel = null;
