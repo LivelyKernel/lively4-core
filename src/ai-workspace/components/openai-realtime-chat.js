@@ -8,6 +8,10 @@ import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
 /*MD # OpenAI Realtime Chat - Pure WebRTC Streaming
+
+
+<https://developers.openai.com/api/reference/resources/realtime/client-events>
+
 MD*/
 
 export default class OpenaiRealtimeChat extends LivelyChat {
@@ -165,6 +169,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     db.version(2).stores({
       conversations: 'id, timestamp, lastMessageTime',
       messages: '++id, conversationId, sequence, timestamp, type, role'
+    });
+    // Version 3: Add item_id for OpenAI Realtime API message tracking
+    db.version(3).stores({
+      conversations: 'id, timestamp, lastMessageTime',
+      messages: '++id, conversationId, sequence, timestamp, type, role, item_id'
     });
     return db;
   }
@@ -820,6 +829,36 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Conversation Messages MD*/
   // #important
+  async renderMessage(message) {
+    if (!this.messagesUI) return; 
+
+    this.log(`[realtime] renderMessage: ${message.role}`);
+    
+    // Check if already rendered by item_id to prevent duplicates
+    if (message.item_id && this.chatMessages.has(message.item_id)) {
+      this.log(`[item_id] Message already rendered: ${message.item_id}`);
+      return this.chatMessages.get(message.item_id);
+    }
+    
+    const chatMessage = await <lively-chat-message></lively-chat-message>;
+    await chatMessage.setMessage(message);
+    this.get('#messagesContainer').appendChild(chatMessage);
+    
+    // Track rendered message by item_id to prevent duplicates
+    if (message.item_id) {
+      this.chatMessages.set(message.item_id, chatMessage);
+      this.log(`[item_id] Tracked rendered message: ${message.item_id}`);
+    }
+    
+    this.scrollResponsesSoon();
+    return chatMessage
+  }
+
+  /*MD ## Live Updates MD*/
+
+  
+  // #important
+  // #TODO #duplicate with createMessage WHAT THE FUCK!!!!!
   async addMessage(role, text, metadata = {}) {
     const myMessage = {
       role,
@@ -840,38 +879,22 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.renderMessage(myMessage);
     await this.saveMessageToDb(myMessage);
   }
-
-  // #important
-  async renderMessage(message) {
-    if (!this.messagesUI) return; 
-
-    this.log(`[realtime] renderMessage: ${message.role}`);
-    const chatMessage = await <lively-chat-message></lively-chat-message>;
-    await chatMessage.setMessage(message);
-    this.get('#messagesContainer').appendChild(chatMessage);
-    this.scrollResponsesSoon();
-    return chatMessage
-  }
-
-  /*MD ## Live Updates MD*/
-
-  async createMessage(item_id, role, initialContent = null, persist = false) {
-    // Use provided content or fallback to placeholder
+  
+  // #TODO #duplicate with addMessage
+  async createMessage(item_id, role, initialContent = null, persist = false, metadata = {}) {
+    
     const content = initialContent || (role === 'user' ? '_Listening..._' : '');
 
-    // IMPORTANT: Assign timestamp ONCE at message creation time
     const timestamp = Date.now();
 
-    // Store timestamp in Map for preservation across updates
-    // This ensures the timestamp NEVER changes after initial assignment
     if (item_id) {
       this.messageTimestamps.set(item_id, timestamp);
     }
 
-    // Create message data structure
     const messageData = {
       role: role,
       content: content,
+      metadata: metadata,
       source: 'audio',
       streamType: 'realtime',
       timestamp: timestamp,
@@ -894,7 +917,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       const message = {
         role,
         content: initialContent,
-        timestamp: timestamp
+        timestamp: timestamp,
+        item_id: item_id
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -948,7 +972,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       const message = {
         role,
         content,
-        timestamp: messageData.timestamp
+        timestamp: messageData.timestamp,
+        item_id: item_id
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -960,7 +985,20 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async renderMessages() {  // Renamed for consistency
     this.log(`[realtime] renderMessages: full redisplay (${this.conversation.length} messages)`);
+    
+    // Populate tracking sets from loaded messages to prevent duplicates
     for (let ea of this.conversation) {
+      if (ea.item_id) {
+        // Track assistant messages to prevent duplicate saves
+        if (ea.role === 'assistant') {
+          this.savedResponseItems.add(ea.item_id);
+        }
+        // Track timestamp for ordering
+        if (ea.timestamp) {
+          this.messageTimestamps.set(ea.item_id, ea.timestamp);
+        }
+      }
+      
       await this.renderMessage(ea);
     }
   }
@@ -986,6 +1024,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role: message.role,
         content: message.content,
         metadata: message.metadata || {},
+        item_id: message.item_id, // OpenAI Realtime API item ID for deduplication
         // Add format markers for workspace integration
         source: 'audio',
         streamType: 'realtime',
@@ -1032,6 +1071,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       });
       this.currentConversationId = conversationId;
       this.conversation = [];
+      
+      // Clear tracking maps for new conversation
+      this.chatMessages.clear();
+      this.savedResponseItems.clear();
+      this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
+      
       this.get('#messagesContainer').innerHTML = '';
 
       // Disconnect if currently connected - user can press Start to begin new conversation
@@ -1075,6 +1121,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
       // Clear event capture buffer when switching conversations
       this.clearEventCapture();
+
+      // Clear tracking maps before rendering new conversation
+      this.chatMessages.clear();
+      this.savedResponseItems.clear();
+      this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
 
       this.get('#messagesContainer').innerHTML = '';
       await this.renderMessages();
@@ -1322,55 +1374,63 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const messagesToSend = this.conversation.filter(msg =>
       msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
     );
+    
     if (messagesToSend.length === 0) {
       this.log("No messages in history");
       return;
     }
     this.log(`Sending ${messagesToSend.length} historical messages (including tool calls) to API`);
 
+    
     // Send each message as a conversation item
     for (const msg of messagesToSend) {
+      let event = {
+        type: "conversation.item.create"
+      }
       if (msg.role === 'tool') {
-        // Handle tool messages based on their type
-        if (msg.type === 'function_call' || msg.metadata?.type === 'function_call') {
-          // Function call - send as function_call item
-          const item = {
-            type: "conversation.item.create",
-            item: {
+        if (msg.type === 'function_call' ) {
+          event.item = {    
               type: "function_call",
               name: msg.metadata.functionName,
               call_id: msg.metadata.call_id,
               arguments: JSON.stringify(msg.metadata.arguments)
             }
-          };
-          this.sendDataChannelMessage(item, { warnOnClosed: false });
-        } else if (msg.type === 'function_call_output' || msg.metadata?.type === 'function_call_output') {
-          // Function call output - send as function_call_output item
-          const item = {
-            type: "conversation.item.create",
-            item: {
+        } else if (msg.type === 'function_call_output' ) {
+          event.item = {
               type: "function_call_output",
               call_id: msg.metadata.call_id,
               output: JSON.stringify(msg.metadata.output)
             }
-          };
-          this.sendDataChannelMessage(item, { warnOnClosed: false });
         }
+      } else if (msg.role === 'user') {
+          event.item = {
+              type: "message",
+              role: msg.role,
+              content: [{
+                type: "input_text",
+                text: msg.content
+              }]
+            }
+          
+      } else if (msg.role === 'assistant') {
+           event.item = {
+              type: "message",
+              role: msg.role,
+              content: [{
+                type: "text",
+                text: msg.content
+              }]
+            }
       } else {
-        // User or assistant message
-        const item = {
-          type: "conversation.item.create",
-          item: {
-            type: "message",
-            role: msg.role,
-            content: [{
-              type: "input_text",
-              text: msg.content
-            }]
-          }
-        };
-        this.sendDataChannelMessage(item, { warnOnClosed: false });
+         throw new Error("replay not supported")
       }
+      
+      // Include item_id if available to preserve OpenAI message IDs
+      if (msg.item_id && event.item) {
+        event.item.id = msg.item_id;
+      }
+      
+      this.sendDataChannelMessage(event, { warnOnClosed: false });
     }
     lively.notify("History Loaded", `${messagesToSend.length} messages sent to context`);
   }
