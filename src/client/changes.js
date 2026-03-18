@@ -1,5 +1,6 @@
 import {updateEditors, updateLivelyIFrames} from "utils";
 
+
 export default class LivelyChanges {
   
   static async calculateContentHash(content) {
@@ -221,21 +222,34 @@ export default class LivelyChanges {
             : `${serverURL}/${change.path}`;
         })();
         
-        // Extract reload info captured during actual reload
+        // Extract reload info captured during actual reload or container update
         let dependencies = [];
         let errors = [];
         let loadedTime = null;
         let reloadDuration = null;
+        let containerUpdated = false;
+        let containerCount = 0;
         
         if (change.reloadInfo) {
           if (change.reloadInfo.reloaded) {
+            // Module was reloaded
             dependencies = change.reloadInfo.reloadedDependencies || [];
             loadedTime = new Date(change.timestamp).toISOString();
             reloadDuration = change.reloadInfo.duration;
             if (change.reloadInfo.failedDependencies?.length > 0) {
               errors = change.reloadInfo.failedDependencies.map(dep => `Failed to reload: ${dep}`);
             }
-          } else if (change.reloadInfo.error) {
+          } else if (change.reloadInfo.containerUpdated) {
+            // Container was updated
+            containerUpdated = true;
+            containerCount = change.reloadInfo.containerCount || 0;
+            loadedTime = new Date(change.timestamp).toISOString();
+          } else if (change.reloadInfo.applied) {
+            // Changes applied without container
+            loadedTime = new Date(change.timestamp).toISOString();
+          }
+          
+          if (change.reloadInfo.error) {
             errors.push(change.reloadInfo.error);
           }
         }
@@ -246,12 +260,58 @@ export default class LivelyChanges {
           date: new Date(change.timestamp).toISOString(),
           loadedTime: loadedTime,
           reloadDuration: reloadDuration,
+          containerUpdated: containerUpdated,
+          containerCount: containerCount,
           errors: errors,
           dependencies: dependencies,
           eventType: change.eventType,
           relativePath: change.relativePath
         };
       });
+  }
+  
+  static async verifyFileUpdate(pathFragment, sinceMilliseconds = 60000, waitMs = 1000) {
+    // Wait for file system events to propagate
+    if (waitMs > 0) {
+      await lively.sleep(waitMs);
+    }
+    
+    const changes = this.since(sinceMilliseconds);
+    
+    if (!changes) {
+      console.warn('⚠ Change watcher not running');
+      return false;
+    }
+    
+    const change = changes.find(c => c.path.includes(pathFragment));
+    
+    if (!change) {
+      console.warn(`⚠ No changes detected for ${pathFragment}`);
+      return false;
+    }
+    
+    if (change.errors.length > 0) {
+      console.error(`✗ Errors reloading ${pathFragment}:`, change.errors);
+      return false;
+    }
+    
+    if (change.loadedTime) {
+      if (change.reloadDuration) {
+        // Module was reloaded
+        console.log(`✓ ${pathFragment} reloaded in ${change.reloadDuration}ms`);
+      } else if (change.containerUpdated) {
+        // Container was updated
+        const containerInfo = change.containerCount > 0 ? ` (${change.containerCount} container${change.containerCount > 1 ? 's' : ''})` : '';
+        console.log(`✓ ${pathFragment} updated in container${containerInfo}`);
+      } else {
+        // Changes applied without container
+        console.log(`✓ ${pathFragment} applied`);
+      }
+      return true;
+    }
+    
+    console.log(`ℹ ${pathFragment} detected but not loaded (${change.eventType})`);
+    return true; // File detected, but not a module that gets loaded
   }
   
 }

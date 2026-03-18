@@ -337,6 +337,24 @@ await lively.openComponentInWindow("component-name")
 - **DON'T** repeatedly try `lively.reloadModule()` when changes don't appear - **ASK THE USER** to do a full reload
 - After full reload, all components will use the updated code
 
+**Verifying Live Updates:**
+
+Use `lively.changes.verifyFileUpdate(pathFragment, sinceMs=60000, waitMs=1000)` to confirm edits were detected:
+
+```javascript
+// Waits 1 second, checks last minute of changes
+await lively.changes.verifyFileUpdate('my-component.js');
+// Output: ✓ my-component.js reloaded in 45ms (module reload)
+// Output: ✓ my-component.js updated in container (1 container) (container update)
+// Output: ⚠ No changes detected (not found)
+
+// Check what was detected
+let recent = await lively.changes.since(60000);
+console.log(recent.map(c => c.relativePath));
+```
+
+Changes are tracked with `containerUpdated` (file updated in open editor) or `reloadDuration` (module reloaded). If verification fails, check if lively-change-watcher is running or if a full page reload is needed.
+
 **Development Best Practices:**
 - Always check component template paths and ensure proper .js/.html file pairing
 - Use `lively.components.searchTemplateFilename()` to locate templates programmatically
