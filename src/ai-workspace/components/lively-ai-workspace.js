@@ -587,6 +587,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (!this.messagesContainer || !this.workspaceId) return;
 
     this.chatMessages.clear();
+    this.pendingToolCalls.clear(); // Clear tool call tracking when switching sessions
 
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)

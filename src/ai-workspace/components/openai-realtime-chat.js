@@ -205,9 +205,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Track accumulated transcripts for assistant streaming messages
     this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
 
-    // Track pending tool calls by call_id to append results
-    this.pendingToolCalls = this.pendingToolCalls || new Map();
-
     // Track message timestamps by item_id to preserve ordering across updates
     // CRITICAL: Timestamps must never change after initial assignment
     this.messageTimestamps = this.messageTimestamps || new Map();
@@ -840,32 +837,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       return this.chatMessages.get(message.item_id);
     }
     
-    const metadata = message.metadata || {};
-    
-    // Special handling for function_call_output: append to pending call if exists
-    if (metadata.type === 'function_call_output' && metadata.call_id) {
-      const pendingCall = this.pendingToolCalls.get(metadata.call_id);
-      if (pendingCall) {
-        // Append result to existing widget instead of creating new one
-        this.log(`[tool-call] Appending result to pending call ${metadata.call_id} (history render)`);
-        await pendingCall.appendToolResult(message);
-        this.pendingToolCalls.delete(metadata.call_id); // Clear pending
-        return pendingCall; // Return existing widget
-      } else {
-        // Orphaned result - render standalone
-        this.log(`[tool-call] Orphaned result for ${metadata.call_id} - rendering standalone (history)`);
-      }
-    }
-    
-    const chatMessage = await <lively-chat-message></lively-chat-message>;
-    await chatMessage.setMessage(message);
-    this.get('#messagesContainer').appendChild(chatMessage);
-    
-    // Track function_call widgets for result appending
-    if (metadata.type === 'function_call' && metadata.call_id) {
-      this.pendingToolCalls.set(metadata.call_id, chatMessage);
-      this.log(`[tool-call] Tracking pending call ${metadata.call_id} (history render)`);
-    }
+    // Use base class method which handles tool call appending automatically
+    const chatMessage = await this.renderChatMessage(message, message.item_id, {
+      container: this.get('#messagesContainer'),
+      enableBuffering: false
+    });
     
     // Track rendered message by item_id to prevent duplicates
     if (message.item_id) {
@@ -937,37 +913,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Dispatch event for workspace integration
     this.dispatchMessageEvent(autoEventName, messageData);
 
-    // Render UI widget
+    // Render UI widget (appending logic now handled by base class renderChatMessage)
     let widget = null;
     if (this.messagesUI !== false) {
-      // Special handling for function_call_output: append to pending call if exists
-      if (metadata.type === 'function_call_output' && metadata.call_id) {
-        const pendingCall = this.pendingToolCalls.get(metadata.call_id);
-        if (pendingCall) {
-          // Append result to existing widget instead of creating new one
-          this.log(`[tool-call] Appending result to pending call ${metadata.call_id}`);
-          await pendingCall.appendToolResult(messageData);
-          widget = pendingCall; // Return existing widget
-          this.pendingToolCalls.delete(metadata.call_id); // Clear pending
-        } else {
-          // Orphaned result - render standalone
-          this.log(`[tool-call] Orphaned result for ${metadata.call_id} - rendering standalone`);
-          widget = await this.renderMessage(messageData);
-        }
-      } else {
-        // Normal message rendering
-        widget = await this.renderMessage(messageData);
-        
-        // Track function_call widgets for result appending
-        if (metadata.type === 'function_call' && metadata.call_id) {
-          this.pendingToolCalls.set(metadata.call_id, widget);
-          this.log(`[tool-call] Tracking pending call ${metadata.call_id}`);
-        }
-        
-        if (isStreamingMessage && item_id) {
-          this.chatMessages.set(item_id, widget);
-          this.log(`[item_id] Created widget for ${item_id} (${role})`);
-        }
+      widget = await this.renderMessage(messageData);
+      
+      if (isStreamingMessage && item_id) {
+        this.chatMessages.set(item_id, widget);
+        this.log(`[item_id] Created widget for ${item_id} (${role})`);
       }
     }
 
@@ -1046,6 +999,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async renderMessages() {  // Renamed for consistency
     this.log(`[realtime] renderMessages: full redisplay (${this.conversation.length} messages)`);
+    
+    // Clear tool call tracking when re-rendering all messages (session switch, etc.)
+    this.pendingToolCalls.clear();
     
     // Populate tracking sets from loaded messages to prevent duplicates
     for (let ea of this.conversation) {
