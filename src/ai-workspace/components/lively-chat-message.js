@@ -42,7 +42,6 @@ export default class LivelyChatMessage extends Morph {
     this.windowTitle = "Chat Message";
 
     // Store message data
-    this._isExpanded = this._isExpanded || false;
     this._showRaw = this._showRaw || false;
 
     // Register OpenCode tool renderers - order matters! Generic should be last (fallback)
@@ -91,14 +90,10 @@ export default class LivelyChatMessage extends Morph {
     this.debugHeader = this.get("#debugHeader");
     this.contentDiv = this.get("#content");
     this.partsContainer = this.get("#partsContainer");
-    this.expandIndicator = this.get("#expandIndicator");
     this.viewRawButton = this.get("#viewRawButton");
     this.rawDisplay = this.get("#rawDisplay");
     this.rawJson = this.get("#rawJson");
     this.usageStatsEl = this.get("#usageStats");
-
-    // Setup click handler for tool messages
-    this.addEventListener('click', (evt) => this.onMessageClick(evt));
 
     this.registerButtons()
     if (this._opencodeMessage) {
@@ -691,11 +686,6 @@ export default class LivelyChatMessage extends Morph {
       this.partsContainer.innerHTML = '';
       this.partsContainer.appendChild(await this.createMarkdownElement(content));
     }
-
-    // For tool messages, check if content is long and should be collapsible
-    if (messageObj.role === 'tool') {
-      this.updateExpandState();
-    }
   }
 
   /**
@@ -894,38 +884,7 @@ export default class LivelyChatMessage extends Morph {
     return formatted;
   }
 
-  updateExpandState() {
-    if (!this.contentDiv || !this.expandIndicator) return;
 
-    // Check if content is taller than collapsed height
-    const contentHeight = this.contentDiv.scrollHeight;
-    const isLong = contentHeight > 100;
-
-    if (isLong) {
-      if (!this._isExpanded) {
-        this.contentDiv.classList.add('collapsed');
-        this.expandIndicator.style.display = 'block';
-        this.expandIndicator.textContent = '▼ Click to expand';
-      } else {
-        this.contentDiv.classList.remove('collapsed');
-        this.expandIndicator.style.display = 'block';
-        this.expandIndicator.textContent = '▲ Click to collapse';
-      }
-    } else {
-      // Content is short, no need for expand/collapse
-      this.contentDiv.classList.remove('collapsed');
-      this.expandIndicator.style.display = 'none';
-    }
-  }
-
-  onMessageClick(evt) {
-    // Only handle clicks on tool messages
-    if (this._messageData && this._messageData.role === 'tool') {
-      this._isExpanded = !this._isExpanded;
-      this.updateExpandState();
-      evt.stopPropagation();
-    }
-  }
 
   formatTimestamp(timestamp) {
     try {
@@ -984,7 +943,6 @@ export default class LivelyChatMessage extends Morph {
 
   livelyMigrate(other) {
     this._messageData = other._messageData;
-    this._isExpanded = other._isExpanded;
     this._opencodeMessage = other._opencodeMessage || other._rawMessage; // Handle old name
     this._showRaw = other._showRaw;
   }
