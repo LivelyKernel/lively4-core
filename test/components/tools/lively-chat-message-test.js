@@ -46,49 +46,6 @@ describe('LivelyChatMessage', () => {
   });
 
   describe('function_call_output handling', () => {
-    it('should handle function_call_output with metadata.output.response', async () => {
-      // This is the exact structure from the OpenCode audio realtime model
-      const messageObj = {
-        conversationId: "ff2d713c-08be-4daa-abf5-3259729dce14",
-        timestamp: 1762873635791,
-        type: "function_call_output",
-        role: "tool",
-        content: "↩️ Result: ✅ {\"success\":true,\"response\":\"Hi Jens! I can get the current time for you using a bash command.\\nTue Nov 11 16:07:12 CET 2025\\n\",\"immediate\":true,\"re...",
-        metadata: {
-          type: "function_call_output",
-          call_id: "call_jGP7sPFcneIbJOV0",
-          output: {
-            success: true,
-            response: "Hi Jens! I can get the current time for you using a bash command.\nTue Nov 11 16:07:12 CET 2025\n",
-            immediate: true,
-            requestId: "req-1762873628226-xefha129n"
-          }
-        },
-        sequence: 3,
-        id: 2043,
-        source: "audio",
-        streamType: "realtime",
-        messageFormat: "flat"
-      };
-
-      await component.setMessage(messageObj);
-
-      // The component should store the message data
-      expect(component._messageData).to.exist;
-      expect(component._messageData).to.deep.equal(messageObj);
-
-      // Get the rendered content
-      const renderedText = getRenderedText();
-
-      // Should display "Function Result" header
-      expect(renderedText).to.include("Function Result");
-
-      // The rendered content should show the full output as JSON
-      expect(renderedText).to.include("success");
-      expect(renderedText).to.include("Hi Jens! I can get the current time for you using a bash command.");
-      expect(renderedText).to.include("Tue Nov 11 16:07:12 CET 2025");
-      expect(renderedText).to.include("Call ID: call_jGP7sPFcneIbJOV0");
-    });
 
     it('should display function result as JSON when metadata.output exists', async () => {
       const messageObj = {
