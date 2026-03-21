@@ -53,6 +53,10 @@ export default class LivelyChat extends Morph {
     this.chatMessages = this.chatMessages || new Map();           // messageId -> widget element
     this.pendingUpdates = this.pendingUpdates || new Map();       // messageId -> array of updates that arrived early
     this.renderingMessages = this.renderingMessages || new Set(); // messageIds currently being rendered
+    
+    // Tool call tracking for appending results to function calls (shared across all chat components)
+    // Map<call_id, widget> - tracks function_call widgets waiting for function_call_output
+    this.pendingToolCalls = this.pendingToolCalls || new Map();
   }
 
   /**
@@ -186,8 +190,7 @@ export default class LivelyChat extends Morph {
   set showDebug(value) {
     // Control whether debug annotations are shown in messages
     this._showDebug = value;
-    // Also control debug log panel visibility
-    this.setAttribute("hide-debug-log", value ? "false" : "true");
+    // DON'T toggle logging panel - it's used for other purposes (board, etc.) and should be independently controlled
     // Update existing messages if messages container exists
     this.updateMessagesDebugState();
   }
@@ -209,18 +212,22 @@ export default class LivelyChat extends Morph {
   /*MD ## Message Rendering - Shared Logic MD*/
 
   /**
-   * Render a chat message widget and track it (SINGLE SOURCE OF TRUTH)
+   * CENTRALIZED CHAT MESSAGE RENDERING - Used by all chat components
    * 
-   * This method handles message rendering with support for:
-   * - Simple messages (realtime voice chat)
-   * - Complex streaming with race conditions (OpenCode SSE)
-   * - Buffering for parts that arrive before message creation
-   * - Late updates that arrive during rendering
+   * This method handles message widget creation with proper ordering, buffering,
+   * and race condition protection. All chat components should use this instead of
+   * creating widgets directly.
    * 
-   * The complexity here solves real streaming problems:
+   * Race conditions it solves:
    * 1. Parts can arrive via SSE before the message.created event
    * 2. Updates can arrive while setOpenCodeMessage() is still running (async)
    * 3. Multiple components render into same container (workspace)
+   * 
+   * Tool call appending (shared logic):
+   * - Tracks function_call widgets by call_id in pendingToolCalls Map
+   * - When function_call_output arrives, appends to existing widget instead of creating new one
+   * - Works automatically for realtime chat, workspace, and any future components
+   * - Clear pendingToolCalls when switching sessions/conversations
    * 
    * @param {Object} message - Message object (OpenCode format or simple {role, content})
    * @param {string} messageId - Unique message ID for tracking
@@ -231,7 +238,7 @@ export default class LivelyChat extends Morph {
    * @returns {HTMLElement} The created message widget
    */
   async renderChatMessage(message, messageId, options = {}) {
-    const {
+    let {
       container = this.messagesContainer,
       enableBuffering = true,
       metadata = null
@@ -266,21 +273,44 @@ export default class LivelyChat extends Morph {
       }
     }
 
-    // Step 2: Create widget
+    // Step 2: Tool call appending (shared logic for all chat components)
+    // Check if this is a function_call_output that should append to existing function_call
+    const msgMeta = message.metadata || {};
+    if (msgMeta.type === 'function_call_output' && msgMeta.call_id) {
+      const pendingCall = this.pendingToolCalls.get(msgMeta.call_id);
+      if (pendingCall) {
+        // Append result to existing widget instead of creating new one
+        this.log(`[tool-call] Appending result to pending call ${msgMeta.call_id}`);
+        await pendingCall.appendToolResult(message);
+        this.pendingToolCalls.delete(msgMeta.call_id); // Clear pending
+        return pendingCall; // Return existing widget
+      } else {
+        // Orphaned result - will render standalone (widget created below)
+        this.log(`[tool-call] Orphaned result for ${msgMeta.call_id} - rendering standalone`);
+      }
+    }
+    
+    // Step 3: Create widget
     const widget = await lively.create('lively-chat-message');
 
-    // Step 3: Append to DOM IMMEDIATELY to preserve message order
+    // Step 4: Append to DOM IMMEDIATELY to preserve message order
     // CRITICAL: Must happen before async setOpenCodeMessage() call
     // Otherwise messages can appear out of order when streaming
     container.appendChild(widget);
     
-    // Step 4: Track element IMMEDIATELY after creation
+    // Step 5: Track element IMMEDIATELY after creation
     // This prevents race conditions where part updates arrive before rendering completes
     if (messageId) {
       this.chatMessages.set(messageId, widget);
     }
+    
+    // Track function_call widgets for result appending
+    if (msgMeta.type === 'function_call' && msgMeta.call_id) {
+      this.pendingToolCalls.set(msgMeta.call_id, widget);
+      this.log(`[tool-call] Tracking pending call ${msgMeta.call_id}`);
+    }
 
-    // Step 5: Set content (auto-detect format and call appropriate method)
+    // Step 6: Set content (auto-detect format and call appropriate method)
     if (message.info && message.parts) {
       // OpenCode format: {info: {id, role, time}, parts: [...]}
       await widget.setOpenCodeMessage(message, metadata);
@@ -292,7 +322,7 @@ export default class LivelyChat extends Morph {
     // Apply debug state from parent
     widget.showDebug = this.showDebug;
 
-    // Step 6: Post-render handling (for streaming with race conditions)
+    // Step 7: Post-render handling (for streaming with race conditions)
     if (enableBuffering && messageId) {
       this.log(`[chat] renderMessage complete for ${messageId}`);
       this.renderingMessages.delete(messageId);
@@ -314,7 +344,7 @@ export default class LivelyChat extends Morph {
       }
     }
     
-    // Step 7: Scroll to bottom (unless batching)
+    // Step 8: Scroll to bottom (unless batching)
     if (!this._batchRendering) {
       this.scrollToBottom(container);
     }
@@ -382,23 +412,26 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  scrollToBottom(container, force = false, delay = 10) {
-    if (!container) return;
+  setupStickyScroll(container) {
+    if (!container || container._stickyScrollSetup) return;
+    container._stickyScrollSetup = true;
+    container._stickyScroll = true; // start sticky by default
 
-    const shouldScroll = force || this.isAtBottom(container);
-    if (shouldScroll) {
-      setTimeout(() => {
-        if (container) {
-          container.scrollTop = container.scrollHeight;
-        }
-      }, delay);
-    }
+    container.addEventListener('scroll', () => {
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      container._stickyScroll = distFromBottom < 20;
+    });
   }
 
-  isAtBottom(container, threshold = 50) {
-    if (!container) return true;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    return (scrollHeight - scrollTop - clientHeight) < threshold;
+  scrollToBottom(container, force = false, delay = 10) {
+    if (!container) return;
+    this.setupStickyScroll(container);
+
+    if (force || container._stickyScroll) {
+      setTimeout(() => {
+        if (container) container.scrollTop = container.scrollHeight;
+      }, delay);
+    }
   }
 
   generateToggleIcon(state) {

@@ -364,6 +364,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/widgets/',
         lively4url + '/src/components/tools/',
         lively4url + '/src/ai-workspace/components/',
+        lively4url + '/src/architecture-view/components/',
         lively4url + '/src/components/halo/',
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',

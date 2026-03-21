@@ -1310,6 +1310,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onKeyDown(evt) {
+    if (evt.ctrlKey  || evt.altkey) return
     if(FILTER_KEY_BLACKLIST.includes(evt.key)) { return; }
 
     if(evt.key == "PageUp" || evt.key == "PageDown") {

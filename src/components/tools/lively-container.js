@@ -719,7 +719,6 @@ export default class Container extends Morph {
   /*MD ## Testing MD*/
   
   async isTemplate(url) {
-    debugger
     var filename = url.replace(/[#?].*/,"").toString().replace(/.*\//,"") // #Idea #Refactor Extract getFilename, add "filename" to URL class 
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
     return lively.files.resolve(url) == lively.files.resolve(foundTemplate)
@@ -1329,6 +1328,12 @@ export default class Container extends Morph {
     this.editFile();
   }
 
+  async onArchitecture(evt) {
+    const viewer = await lively.openComponentInWindow('lively-architecture-viewer');
+    await lively.sleep(0)
+    viewer.addModule(this.getURL().toString());
+  }
+
   async onCancel() {
     this.setAttribute("mode", "show");
     await this.reloadContent();
@@ -1586,6 +1591,7 @@ export default class Container extends Morph {
     const showMode = mode === "show";
     const isHTML = this.getURL().pathname.endsWith('.html')
     const isMarkdown = this.getURL().pathname.endsWith('.md')
+    const isJavaScript = this.getURL().pathname.endsWith('.js')
       
     function enabledIcon(enabled) {
       return enabled ? 
@@ -1671,6 +1677,11 @@ export default class Container extends Morph {
       menuItems.push(["browse dependencies", (evt, item) => {
         this.onDependencies(evt)
       }, '', <i class="fa fa-sitemap" aria-hidden="true"></i>]);
+    }
+    if ((editMode || showMode) && isJavaScript) {
+      menuItems.push(["view architecture", async (evt, item) => {
+        await this.onArchitecture(evt)
+      }, '', <i class="fa fa-object-group" aria-hidden="true"></i>]);
     }
     if (editMode) {
       menuItems.push(["sync changes", (evt, item) => {

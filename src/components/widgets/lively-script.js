@@ -49,6 +49,11 @@ export default class LivelyScript extends Morph {
     var result = await this.boundEval(src)
     if (result.isError) {
       this.get("#result").innerHTML = "<lively-error><pre>" + stripErrorString(result.value).replace(/</g,"&lt;") + "</pre></lively-error>" 
+      // IMPORTANT: Resolve the promise even on error so markdown rendering doesn't hang
+      if (this.resolveEvaluated) {
+        this.resolveEvaluated()
+        this.resolveEvaluated = null
+      }
       return 
     }
     

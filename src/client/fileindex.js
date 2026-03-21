@@ -294,10 +294,13 @@ export default class FileIndex {
 MD*/  
   
   async updateAllModuleSemantics() {
-    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, this.db.functions, () => {
-      this.db.files.where("type").equals("file").each((file) => {
-        this.addModuleSemantics(file)
-      })
+    return this.showProgress("update module semantics", async () => {
+      this.db.files.where("name").notEqual("").modify((file) => {
+        if (file.name.match(/\.js$/)) {
+          console.log("update module semantics: " + file.name) 
+          this.addModuleSemantics(file);
+        }
+      });
     })
   }
   
@@ -305,12 +308,12 @@ MD*/
     if (file.name && file.name.match(/\.js$/)) { 
       // console.log("[fileindex] addModuleSemantics " + file.name)
       var result = this.extractModuleSemantics(file)
-      this.updateModule(file.url, result)
-      this.updateClasses(file, result)
-      this.updateFunctions(file, result)
-      this.updateExportEntry(file.url, result)
-      this.updateUnboundIdentifiers(file, result)
-      this.updateComments(file, result)
+      await this.updateModule(file.url, result)
+      await this.updateClasses(file, result)
+      await this.updateFunctions(file, result)
+      await this.updateExportEntry(file.url, result)
+      await this.updateUnboundIdentifiers(file, result)
+      await this.updateComments(file, result)
     }
   }
   
@@ -377,12 +380,12 @@ MD*/
   
   async addFunction(func) {
     await this.db.functions.where({name: func.name, url: func.url}).delete()
-    this.db.functions.put(func)
+    await this.db.functions.put(func)
   }
   
   async addClass(clazz) {
     await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
-    this.db.classes.put(clazz)
+    await this.db.classes.put(clazz)
   }
   
   async updateExportEntry(url, semantics) {

@@ -11,7 +11,7 @@ import d3 from "src/external/d3.v5.js"
 
 (async () => {
   var now = moment(Date.now())
-  var url = lively4url + "/demos/"
+  var url = lively4url + "/src/ai-workspace/"
   var tree = {
     children: []
   }
@@ -19,7 +19,7 @@ import d3 from "src/external/d3.v5.js"
   var classes = await FileCache.current().db.classes.toArray();
   classes = classes
     .filter(ea => ea.url.match(lively4url)) // only show local files...
-    .filter(ea => ea.url.match("src/client/")) // only some aspects
+    .filter(ea => ea.url.match("src/ai-workspace/")) // only some aspects
 
   var nodesMap = new Map()
 

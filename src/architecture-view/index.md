@@ -1,0 +1,103 @@
+# Architecture View
+
+<lively-import src="_navigation.html"></lively-import>
+
+Interactive visualization tools for exploring software architecture and code structure in Lively4.
+
+
+## Components
+
+### Viewer Components
+
+- **[lively-architecture-viewer](components/lively-architecture-viewer.js)** - Main architecture visualization component
+  - Pan and zoom navigation
+  - Method detail pane with syntax highlighting
+  - Integrates diagram rendering with interactive exploration
+  - Based on lively-class-diagram with added UX features
+
+- **[lively-class-diagram](components/lively-class-diagram.js)** - Core diagram rendering component
+  - Multiple rendering strategies (Mermaid UML, polymetric view, 2D treemap, 3D treemap)
+  - FileIndex integration for automatic class discovery
+  - Persistent configuration with operation replay
+  - Clickable methods with source navigation
+  - Collapsible classes for managing complexity
+  - Composition relationship detection from HTML templates
+
+## Renderers
+
+The diagram component uses a **strategy pattern** for different visualization approaches:
+
+- **[MermaidRenderer](components/renderers/mermaid-renderer.js)** - UML class diagrams
+  - Shows inheritance hierarchies
+  - Displays methods and properties
+  - Supports hand-drawn and classic styles
+  - ELK layout for automatic positioning
+
+- **[PolymetricRenderer](components/renderers/polymetric-renderer.js)** - Metrics visualization
+  - Rectangle packing by code size
+  - Color coding by modification time
+  - Directory hierarchy visualization
+  - Based on d3-polymetricview component
+
+- **[TreemapRenderer](components/renderers/treemap-renderer.js)** - 2D squarified treemap
+  - Nested rectangles showing directory/class hierarchy
+  - Sized by code length
+  - Color coded by modification time
+  - Methods shown as sub-rectangles within classes
+
+- **[Treemap3DRenderer](components/renderers/treemap-3d-renderer.js)** - Interactive 3D treemap
+  - WebGL-based visualization using gloperate
+  - Weight (area) mapped to lines of code
+  - Height mapped to number of methods
+  - Color mapped to code metrics
+  - Interactive navigation and selection
+
+## Features
+
+### Data Sources
+
+- **FileIndex integration** - Automatic discovery of classes from indexed files
+- **Module loading** - Add individual modules by URL
+- **Path scanning** - Recursively add all classes in a directory
+- **Custom Mermaid** - Append custom diagram syntax for manual additions
+
+### Interaction
+
+- **Click handlers** - Navigate to class/method definitions
+- **Collapse/expand** - Manage diagram complexity
+- **Pan and zoom** - Navigate large diagrams
+- **Context menu** - Toggle rendering styles
+- **Method details** - View source code and comments inline
+
+### Persistence
+
+- **Operation replay** - Diagrams save as operation sequences
+- **Collapsed state** - Remembers which classes are collapsed
+- **Look preference** - Saves rendering style choice
+
+## Documentation
+
+- **[Renderer API](doc/renderers.md)** - How to create new renderers
+- **[Component Guide](components/lively-class-diagram.md)** - Using the class diagram
+
+## Development
+
+The architecture view follows object-oriented patterns with strategy-based rendering for extensibility.
+
+
+# Lively Class Diagram
+
+-  lively-architecture-view
+  - lively-class-diagram
+    - urls to classes, custom mermaid code
+    - generates mermaid source
+    - renders as svg
+  - panning, zooming
+  - details of selected method
+ 
+
+## Agent Instructions
+
+- Before creating you own instances to test things out... look for currently open instances with querySelect for the component directly. 
+- no glazing
+- when we speak about "that" consider evaluating the global variable "window.that" which is update whenever the user selects an element with the Halo tool

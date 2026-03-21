@@ -92,26 +92,26 @@ This document outlines the design for enabling true multi-agent coordination whe
 ┌─────────────────────────────────────────────────────────────────┐
 │                    lively-ai-workspace                          │
 │                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │              COORDINATION BLACKBOARD                    │   │
-│  │  ┌──────────┬──────────┬────────────┬─────────────┐    │   │
-│  │  │  Tasks   │  Notes   │  Context   │  Resources  │    │   │
-│  │  └──────────┴──────────┴────────────┴─────────────┘    │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              COORDINATION BLACKBOARD                    │    │
+│  │  ┌──────────┬──────────┬────────────┬─────────────┐     │    │
+│  │  │  Tasks   │  Notes   │  Context   │  Resources  │     │    │
+│  │  └──────────┴──────────┴────────────┴─────────────┘     │    │
+│  └─────────────────────────────────────────────────────────┘    │
 │           ▲                                    ▲                │
 │           │ read/write                         │ read/write     │
 │           │                                    │                │
-│  ┌────────┴────────────┐          ┌───────────┴────────────┐   │
-│  │ Voice Agent         │          │ Coding Agent           │   │
-│  │ (Realtime Chat)     │◄────────►│ (OpenCode)             │   │
-│  │                     │          │                        │   │
-│  │ Tools:              │          │ Tools:                 │   │
-│  │ • evaluate_code     │          │ • mcp_read/write       │   │
-│  │ • read_blackboard   │          │ • mcp_bash/grep/glob   │   │
-│  │ • write_blackboard  │          │ • mcp_edit             │   │
-│  │ • read_coding_msgs  │          │ • mcp_todowrite        │   │
-│  │ • read_tasks_file   │          │ • (all MCP tools)      │   │
-│  └─────────────────────┘          └────────────────────────┘   │
+│  ┌────────┴────────────┐          ┌────────────┴───────────┐    │
+│  │ Voice Agent         │          │ Coding Agent           │    │
+│  │ (Realtime Chat)     │◄────────►│ (OpenCode)             │    │
+│  │                     │          │                        │    │
+│  │ Tools:              │          │ Tools:                 │    │
+│  │ • evaluate_code     │          │ • mcp_read/write       │    │
+│  │ • read_blackboard   │          │ • mcp_bash/grep/glob   │    │
+│  │ • write_blackboard  │          │ • mcp_edit             │    │
+│  │ • read_coding_msgs  │          │ • mcp_todowrite        │    │
+│  │ • read_tasks_file   │          │ • (all MCP tools)      │    │
+│  └─────────────────────┘          └────────────────────────┘    │
 │           │                                    │                │
 │           └────────────────┬───────────────────┘                │
 │                            ▼                                    │

@@ -239,6 +239,11 @@ Before claiming a fix works, ALWAYS verify the test fails WITHOUT your fix and p
 **Directory Structure:**
 - `src/components/` - Web components (tools/, widgets/, demo/, halo/)
   - Modern components are created in `src/components/tools/` with both `.html` and `.js` files
+- `src/ai-workspace/` - AI coding assistance subproject (see [AI Workspace docs](browse://src/ai-workspace/))
+- `src/architecture-view/` - Software architecture visualization subproject
+  - `components/` - Viewer and diagram components
+  - `components/renderers/` - Strategy-based rendering implementations
+  - See [Architecture View docs](browse://src/architecture-view/)
 - `templates/` - **DEPRECATED** - Old component templates (do not create new components here)
 - `src/client/` - Core runtime and utilities (lively.js, boot.js, etc.)
 - `src/external/` - Third-party libraries
@@ -319,6 +324,38 @@ await lively.openComponentInWindow("component-name")
 - Don't document what can be queried from the live system (search event names, grep patterns, runtime inspection)
 - Let method names and parameters speak for themselves - think Smalltalk, not JavaDoc. No verbose JSDoc.
 
+**Module Reloading:**
+- **Automatic Reloading**: When `lively-change-watcher` is active, modules are automatically reloaded on file changes
+  - **DO NOT** manually call `lively.reloadModule()` when the change watcher is running
+  - The watcher detects file modifications and triggers reloads automatically
+  - Just edit files and let the system handle the reload
+- `lively.reloadModule(path)` works for updating existing methods and properties in the module itself (manual use only when watcher is not active)
+- **CRITICAL**: Modifying dependencies requires a **full page reload** (F5/Ctrl+R)
+  - Example: Editing `lively-chat-message.js` and observing changes in `openai-realtime-chat` 
+  - The dependent component has already created instances with the old code
+  - Reloading just the dependency isn't enough - need full reload to get fresh instances
+- **DON'T** repeatedly try `lively.reloadModule()` when changes don't appear - **ASK THE USER** to do a full reload
+- After full reload, all components will use the updated code
+
+**Verifying Live Updates:**
+
+Use `lively.changes.verifyFileUpdate(pathFragment, sinceMs=60000, waitMs=1000)` to confirm edits were detected:
+
+```javascript
+// Waits 1 second, checks last minute of changes
+await lively.changes.verifyFileUpdate('my-component.js');
+// Output: ✓ my-component.js reloaded in 45ms (module reload)
+// Output: ✓ my-component.js updated in container (1 container) (container update)
+// Output: ⚠ No changes detected (not found)
+
+// Check what was detected
+let recent = await lively.changes.since(60000);
+console.log(recent.map(c => c.relativePath));
+```
+
+Changes are tracked with `containerUpdated` (file updated in open editor) or `reloadDuration` (module reloaded). If verification fails, check if lively-change-watcher is running or if a full page reload is needed.
+
+**Development Best Practices:**
 - Always check component template paths and ensure proper .js/.html file pairing
 - Use `lively.components.searchTemplateFilename()` to locate templates programmatically
 - Components auto-run dependent tests when saving modules

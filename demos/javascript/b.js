@@ -2,4 +2,4 @@
 // b.js
 import { value } from './a.js'
 // somewhere
-lively.notify(value)
+lively.notify("🔥 Watcher test #2 - b.js reloaded with value: " + value)

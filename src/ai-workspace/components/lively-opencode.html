@@ -544,6 +544,53 @@
   border-radius: 4px;
 }
 
+/* ESC Key Indicator */
+.esc-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 24px 32px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  z-index: 10000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 3px solid #ff6b6b;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.esc-indicator.visible {
+  opacity: 1;
+}
+
+.esc-indicator.first-press {
+  border-color: #ffd93d;
+  background: rgba(255, 165, 0, 0.95);
+}
+
+.esc-indicator.aborting {
+  border-color: #ff6b6b;
+  background: rgba(220, 20, 60, 0.95);
+}
+
+.esc-indicator-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.esc-indicator-text {
+  font-size: 16px;
+  margin-top: 8px;
+  font-weight: normal;
+}
+
 
 </style>
 
@@ -643,6 +690,13 @@
 
   <!-- Hidden terminal for running OpenCode server -->
   <div id="serverTerminalContainer" style="display: none;"></div>
+  
+  <!-- ESC key visual indicator -->
+  <div id="escIndicator" class="esc-indicator">
+    <span class="esc-indicator-icon">⏸️</span>
+    <div id="escIndicatorMessage">Press ESC again to abort</div>
+    <div class="esc-indicator-text" id="escIndicatorSubtext"></div>
+  </div>
 </div>
 
 <content></content>

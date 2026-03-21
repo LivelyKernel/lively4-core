@@ -1,5 +1,9 @@
 # Tool Renderers — Architecture Overview
 
+
+<lively-import src="../../_navigation.html"></lively-import>
+
+
 Each renderer is a plain ES6 class (no web component). Instances are created once and stored
 in a registry; the host component iterates the registry calling `matches()` to dispatch.
 

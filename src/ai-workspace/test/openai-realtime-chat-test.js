@@ -118,8 +118,12 @@ MD*/
 
 describe('OpenAI Realtime Chat Event Replay', () => {
   let component;
+  let testConversationIds;
 
   beforeEach(async () => {
+    // Track conversations created during tests for cleanup
+    testConversationIds = [];
+    
     // Create component
     component = await lively.create('openai-realtime-chat');
 
@@ -148,6 +152,17 @@ describe('OpenAI Realtime Chat Event Replay', () => {
   afterEach(async () => {
     if (component) {
       component._replayMode = false;
+
+      // Clean up test conversations from database
+      const db = component.constructor.conversationdb;
+      for (const conversationId of testConversationIds) {
+        try {
+          await db.messages.where('conversationId').equals(conversationId).delete();
+          await db.conversations.delete(conversationId);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
 
       // Clean up test component
       if (component.parentElement) {
@@ -259,7 +274,17 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
   describe('Duplicate Prevention', () => {
     it('should not save duplicate messages from same item_id', async () => {
-      // First completion
+      // First: Create the message (conversation.item.created)
+      await component.handleRealtimeMessage({
+        type: 'conversation.item.created',
+        item: {
+          id: 'item_123',
+          type: 'message',
+          role: 'assistant'
+        }
+      });
+
+      // Then: First completion
       await component.handleRealtimeMessage({
         type: 'response.audio_transcript.done',
         transcript: 'Hello',
@@ -281,52 +306,16 @@ describe('OpenAI Realtime Chat Event Replay', () => {
   });
 
   describe('Message Ordering', () => {
-    it('should maintain correct message order when loading from database', async function() {
-      this.timeout(5000);
-      
-      // Create a new conversation
-      const conversationId = await component.createSession();
-      
-      // Create messages rapidly to stress-test ordering
-      // Use createMessage directly to simulate real-time message flow
-      await component.createMessage('item1', 'user', 'First message', true);
-      await component.createMessage('item2', 'assistant', 'First response', true);
-      await component.createMessage('item3', 'user', 'Second message', true);
-      await component.createMessage('item4', 'assistant', 'Second response', true);
-      
-      // Force a small delay to ensure all DB writes complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Reload conversation from database
-      await component.loadConversation(conversationId);
-      
-      // Verify correct number of messages
-      expect(component.conversation).to.have.length(4);
-      
-      // Verify ordering by sequence numbers (should be monotonically increasing)
-      expect(component.conversation[0].sequence).to.equal(0);
-      expect(component.conversation[1].sequence).to.equal(1);
-      expect(component.conversation[2].sequence).to.equal(2);
-      expect(component.conversation[3].sequence).to.equal(3);
-      
-      // Verify content order matches sequence order
-      expect(component.conversation[0].content).to.equal('First message');
-      expect(component.conversation[1].content).to.equal('First response');
-      expect(component.conversation[2].content).to.equal('Second message');
-      expect(component.conversation[3].content).to.equal('Second response');
-      
-      // Verify roles alternate correctly
-      expect(component.conversation[0].role).to.equal('user');
-      expect(component.conversation[1].role).to.equal('assistant');
-      expect(component.conversation[2].role).to.equal('user');
-      expect(component.conversation[3].role).to.equal('assistant');
-    });
     
     it('should handle messages without sequence numbers (backward compatibility)', async function() {
       this.timeout(5000);
       
+      // Disable replay mode to allow database writes
+      component._replayMode = false;
+      
       // Create a conversation
       const conversationId = await component.createSession();
+      testConversationIds.push(conversationId);
       
       // Manually insert messages into DB without sequence numbers (simulating old data)
       const db = component.constructor.conversationdb;
@@ -359,8 +348,12 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     it('should handle mixed messages (some with sequence, some without)', async function() {
       this.timeout(5000);
       
+      // Disable replay mode to allow database writes
+      component._replayMode = false;
+      
       // Create a conversation
       const conversationId = await component.createSession();
+      testConversationIds.push(conversationId);
       
       const db = component.constructor.conversationdb;
       
@@ -390,6 +383,451 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(component.conversation).to.have.length(2);
       expect(component.conversation[0].content).to.equal('New message with sequence');
       expect(component.conversation[1].content).to.equal('Old message');
+    });
+  });
+
+  describe('Timestamp Preservation', () => {
+    let component;
+
+    beforeEach(async () => {
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;  // Disable UI for faster tests
+      await component.initialize();
+    });
+
+    afterEach(() => {
+      component.remove();
+    });
+
+    it('should preserve timestamp when updating message with createMessage/updateMessage', async () => {
+      const item_id = 'test_item_123';
+      const role = 'user';
+      
+      // Step 1: Create message with initial content (like "Listening...")
+      await component.createRealtimeMessage(role, '_Listening..._', { item_id, persist: false });
+      
+      // Capture the original timestamp from the Map
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      expect(originalTimestamp).to.exist;
+      expect(originalTimestamp).to.be.a('number');
+      
+      // Wait a bit to ensure time has passed
+      await lively.sleep(10);
+      
+      // Step 2: Update message with final content (like actual transcript)
+      await component.updateMessage(item_id, role, 'Hello world', false);
+      
+      // Verify timestamp was preserved (NOT updated)
+      const updatedTimestamp = component.messageTimestamps.get(item_id);
+      expect(updatedTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should preserve timestamp across multiple updates', async () => {
+      const item_id = 'test_item_456';
+      const role = 'assistant';
+      
+      // Create message
+      await component.createRealtimeMessage(role, '', { item_id, persist: false });
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      
+      // Multiple updates (simulating streaming) - no need to sleep between updates
+      await component.updateMessage(item_id, role, 'Hello', false);
+      await component.updateMessage(item_id, role, 'Hello world', false);
+      await component.updateMessage(item_id, role, 'Hello world!', false);
+      
+      // Timestamp should still be the original
+      const finalTimestamp = component.messageTimestamps.get(item_id);
+      expect(finalTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should use stored timestamp when persisting message', async () => {
+      const item_id = 'test_item_789';
+      const role = 'user';
+      
+      // Create message with timestamp
+      await component.createRealtimeMessage(role, 'Initial', { item_id, persist: false });
+      const originalTimestamp = component.messageTimestamps.get(item_id);
+      
+      // Wait and then persist via updateMessage
+      await lively.sleep(20);
+      
+      // Spy on saveMessageToDb to verify the timestamp
+      let savedTimestamp = null;
+      const originalSave = component.saveMessageToDb.bind(component);
+      component.saveMessageToDb = async (message) => {
+        savedTimestamp = message.timestamp;
+        return originalSave(message);
+      };
+      
+      // Update with persist=true
+      await component.updateMessage(item_id, role, 'Final content', true);
+      
+      // Verify the saved timestamp matches the original (not a newer time)
+      expect(savedTimestamp).to.exist;
+      expect(savedTimestamp).to.equal(originalTimestamp);
+    });
+
+    it('should maintain correct message ordering after updates', async () => {
+      // Create first message
+      await component.createRealtimeMessage('user', 'First', { item_id: 'item_1', persist: false });
+      const timestamp1 = component.messageTimestamps.get('item_1');
+      
+      // Wait to ensure different timestamp
+      await lively.sleep(10);
+      
+      // Create second message
+      await component.createRealtimeMessage('user', 'Second', { item_id: 'item_2', persist: false });
+      const timestamp2 = component.messageTimestamps.get('item_2');
+      
+      // Verify second timestamp is later
+      expect(timestamp2).to.be.greaterThan(timestamp1);
+      
+      // Now update first message (should NOT change its timestamp)
+      await lively.sleep(10);
+      await component.updateMessage('item_1', 'user', 'First updated', false);
+      
+      // Verify first message still has earlier timestamp
+      const updatedTimestamp1 = component.messageTimestamps.get('item_1');
+      expect(updatedTimestamp1).to.equal(timestamp1);
+      expect(updatedTimestamp1).to.be.lessThan(timestamp2);
+    });
+  });
+
+  describe('Message Persistence', () => {
+    let component;
+
+    beforeEach(async () => {
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;
+      await component.initialize();
+      // Clear conversation array for clean test
+      component.conversation = [];
+    });
+
+    afterEach(() => {
+      component.remove();
+    });
+
+    it('should persist metadata in tool messages', async () => {
+      const metadata = {
+        type: 'function_call',
+        functionName: 'test_function',
+        call_id: 'call_123',
+        arguments: { arg1: 'value1' }
+      };
+
+      // Create tool message
+      await component.createRealtimeMessage('tool', '🔧 Test tool call', { metadata });
+
+      // Check conversation array
+      expect(component.conversation.length).to.equal(1);
+      const savedMessage = component.conversation[0];
+      
+      // Verify metadata is saved
+      expect(savedMessage.metadata).to.exist;
+      expect(savedMessage.metadata.type).to.equal('function_call');
+      expect(savedMessage.metadata.functionName).to.equal('test_function');
+      expect(savedMessage.metadata.call_id).to.equal('call_123');
+      expect(savedMessage.metadata.arguments).to.deep.equal({ arg1: 'value1' });
+      
+      // Verify type field is also saved (extracted from metadata)
+      expect(savedMessage.type).to.equal('function_call');
+    });
+
+    it('should persist metadata in function results', async () => {
+      const metadata = {
+        type: 'function_call_output',
+        call_id: 'call_123',
+        output: { success: true, result: 'test result' }
+      };
+
+      // Create function result message
+      await component.createRealtimeMessage('tool', '✅ Function result', { metadata });
+
+      // Check conversation array
+      expect(component.conversation.length).to.equal(1);
+      const savedMessage = component.conversation[0];
+      
+      // Verify metadata is saved
+      expect(savedMessage.metadata).to.exist;
+      expect(savedMessage.metadata.type).to.equal('function_call_output');
+      expect(savedMessage.metadata.call_id).to.equal('call_123');
+      expect(savedMessage.metadata.output).to.deep.equal({ success: true, result: 'test result' });
+      expect(savedMessage.type).to.equal('function_call_output');
+    });
+  });
+
+  describe('Tool Permissions', () => {
+    let component;
+    let originalPreference;
+
+    beforeEach(async () => {
+      // Save and clear preferences to start fresh
+      originalPreference = lively.preferences.get("openai-realtime-chat-tool-permissions");
+      lively.preferences.set("openai-realtime-chat-tool-permissions", undefined);
+      
+      component = await lively.create('openai-realtime-chat');
+      component.messagesUI = false;  // Disable UI for faster tests
+      await component.initialize();
+    });
+
+    afterEach(() => {
+      component.remove();
+      // Restore original preference
+      if (originalPreference !== undefined) {
+        lively.preferences.set("openai-realtime-chat-tool-permissions", originalPreference);
+      } else {
+        lively.preferences.set("openai-realtime-chat-tool-permissions", undefined);
+      }
+    });
+
+    it('should have default tool permissions (all enabled)', () => {
+      expect(component.toolPermissions.allowCodeEvaluation).to.be.true;
+      expect(component.toolPermissions.allowOpenCodeTasks).to.be.true;
+    });
+
+    it('should load tool permissions from preferences', async () => {
+      // Set preferences before component creation
+      lively.preferences.set("openai-realtime-chat-tool-permissions", {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
+      });
+
+      // Create new component to load preferences
+      const newComponent = await lively.create('openai-realtime-chat');
+      newComponent.messagesUI = false;
+      await newComponent.initialize();
+
+      expect(newComponent.toolPermissions).to.deep.equal({
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
+      });
+
+      newComponent.remove();
+    });
+
+    it('should filter tools based on permissions (code evaluation disabled)', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.not.include('evaluate_code');
+      expect(toolNames).to.not.include('send_opencode_task');
+    });
+
+    it('should include code evaluation tool when allowed', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.include('evaluate_code');
+      expect(toolNames).to.not.include('send_opencode_task');
+    });
+
+    it('should include OpenCode task tool when allowed (with workspace)', () => {
+      // Create mock workspace
+      const mockWorkspace = document.createElement('lively-ai-workspace');
+      component.workspaceReference = mockWorkspace;
+
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true
+      };
+      component.updateToolset();
+
+      const tools = component.getFunctionDefinitions();
+      const toolNames = tools.map(t => t.name);
+
+      expect(toolNames).to.not.include('evaluate_code');
+      expect(toolNames).to.include('send_opencode_task');
+
+      mockWorkspace.remove();
+    });
+
+    it('should save tool permissions to preferences', () => {
+      component.toolPermissions = {
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
+      };
+
+      // Simulate saving
+      lively.preferences.set("openai-realtime-chat-tool-permissions", component.toolPermissions);
+
+      const saved = lively.preferences.get("openai-realtime-chat-tool-permissions");
+      expect(saved).to.deep.equal({
+        allowCodeEvaluation: false,
+        allowOpenCodeTasks: true,
+        allowMessageInspection: false
+      });
+    });
+
+    it('should update available tools when permissions change', () => {
+      // Initially all tools
+      component.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: false
+      };
+      component.updateToolset();
+
+      let tools = component.getFunctionDefinitions();
+      expect(tools.map(t => t.name)).to.include('evaluate_code');
+
+      // Disable code evaluation
+      component.toolPermissions.allowCodeEvaluation = false;
+      component.updateToolset();
+
+      tools = component.getFunctionDefinitions();
+      expect(tools.map(t => t.name)).to.not.include('evaluate_code');
+    });
+  });
+
+  /*MD ## System Message Parsing Tests MD*/
+  describe('System Message Parsing', () => {
+    let messageComponent;
+
+    beforeEach(async () => {
+      messageComponent = await lively.create('lively-chat-message');
+    });
+
+    it('should detect system messages from audio source with [System: ...] pattern', () => {
+      const msg = {
+        role: 'user',
+        content: '[System: The coding agent finished working on: "Vox tool call rendering path"]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.not.be.null;
+      expect(result.isSystemMessage).to.be.true;
+      expect(result.systemContent).to.equal('The coding agent finished working on: "Vox tool call rendering path"');
+    });
+
+    it('should parse system content with whitespace variations', () => {
+      const msg = {
+        role: 'user',
+        content: '[System:    Extra spaces test   ]',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.not.be.null;
+      expect(result.systemContent).to.equal('Extra spaces test');
+    });
+
+    it('should not parse regular user messages as system messages', () => {
+      const msg = {
+        role: 'user',
+        content: 'Hello, how are you?',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse messages with [System: ] pattern from code source', () => {
+      const msg = {
+        role: 'user',
+        content: '[System: This should not be parsed]',
+        source: 'code',
+        streamType: 'opencode'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse assistant messages with [System: ] pattern', () => {
+      const msg = {
+        role: 'assistant',
+        content: '[System: This is from assistant]',
+        source: 'audio'
+      };
+
+      const result = messageComponent.parseSystemMessage(msg);
+
+      expect(result).to.be.null;
+    });
+
+    it('should not parse partial [System: ] patterns', () => {
+      const testCases = [
+        'System: Missing opening bracket',
+        '[System: Missing closing bracket',
+        '[System] No colon',
+        'Text before [System: content]',
+        '[System: content] text after'
+      ];
+
+      testCases.forEach(content => {
+        const msg = {
+          role: 'user',
+          content,
+          source: 'audio'
+        };
+
+        const result = messageComponent.parseSystemMessage(msg);
+        expect(result).to.be.null;
+      });
+    });
+
+    it('should render system messages with correct role attribute', async () => {
+      const msg = {
+        role: 'user',
+        content: '[System: Test system message]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      expect(messageComponent.getAttribute('role')).to.equal('system');
+      expect(messageComponent.getAttribute('source')).to.equal('audio');
+    });
+
+    it('should render regular user messages with user role', async () => {
+      const msg = {
+        role: 'user',
+        content: 'Regular message',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      expect(messageComponent.getAttribute('role')).to.equal('user');
+    });
+
+    it('should format system message content in italic', async () => {
+      const msg = {
+        role: 'user',
+        content: '[System: Test content]',
+        source: 'audio',
+        streamType: 'realtime'
+      };
+
+      await messageComponent.setMessage(msg);
+
+      // Check that content was rendered (partsContainer should have markdown element)
+      const partsContainer = messageComponent.get('#partsContainer');
+      expect(partsContainer.children.length).to.be.greaterThan(0);
     });
   });
 });

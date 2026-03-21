@@ -1,5 +1,9 @@
 # Tasks
 
+
+<lively-import src="_navigation.html"></lively-import>
+
+
 For Human/Agent team:
 
 
@@ -17,6 +21,17 @@ For Human/Agent team:
 - [X] in lively-opencode: start server, should check if server is actually running.... 
 - [ ] auto-commit current agent changes and provides points to jump back
 - [X] implement auto session naming again.... 
+- [X] the diff view in file edit tool calls don't show the whitespace at the moment
+- [ ] render startTask 
+  ```
+  types step-start, reasoning, tool, step-finish
+  ▶️ step-start
+  💭 Thinking...
+  📖 openai-realtime-chat.js (from line 1524)
+  ⏹️ step-finish
+  ```
+- preview one line of details in    💭 Thinking... 
+
 
 ## Refactoring & Bug Fixes
 
@@ -28,3 +43,9 @@ See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and 
 - [ ] Session metadata sync (#17 in refactoring.md)
 - [ ] Method render double bug (#18 in refactoring.md)
 - [ ] Voice chat timestamp issues (#19 in refactoring.md)
+
+
+- [] Issue with lots of "Bye" etc... in chat: Overly Sensitive VAD (Voice Activity Detection) 
+  - The "server_vad" mode might be interpreting short pauses or background noise as the end of your turn, leading it to conclude the conversation prematurey. 
+  - Solution: Adjust the silence threshold in your server_vad settings if you are using the API, or speak more continuously.
+  - docs: https://developers.openai.com/api/docs/guides/realtime-vad/

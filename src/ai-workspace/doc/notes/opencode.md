@@ -1,5 +1,7 @@
 # Lively OpenCode Architecture
 
+[AI Workspace](ai-workspace.md)
+
 ## Overview
 
 `lively-opencode` is a text-based AI coding agent interface that connects to OpenCode.ai server (port 9100). It's one of three components in the unified AI workspace architecture.
@@ -65,42 +67,64 @@ User sends → POST /session/:id/message
 
 ### ❌ Not Working / TODO
 
-- [ ] **Interaction - Agent asking for rights/permissions**
-  - Agent cannot pause for user confirmation
-  - No UI for approving dangerous operations
-  - No permission system for file operations
-  
-- [ ] **Intercepting agent execution**
-  - Cannot pause/modify agent mid-execution
-  - No "approve next tool call" mode
-  - No step-through debugging
+- [ ] **ESC abort UI feedback**
+  - Double-ESC mechanism works but lacks visual feedback
+  - No indication after first ESC press that user should press ESC again
+  - Should show toast/banner: "Press ESC again within 500ms to abort"
+  - First press at line 232, abort at line 229 in lively-opencode.js
 
-- [ ] **Visualization of tool calls**
-  - Basic text rendering only
-  - No special UI for read/edit/eval operations
-  - File diffs not highlighted
-  - No file tree showing affected files
-  
-- [ ] **Enhanced tool call display**
-  - `read_file` - Could show file icon, syntax highlighting preview
-  - `edit_file` - Could show diff view, before/after comparison
-  - `lively4_evaluate_code` - Could show console output separately, syntax highlight code
-  - Tool results often truncated or hard to read
+### 🔮 Future Work
 
-- [ ] **Agent state visibility**
-  - No visual indicator of "thinking" vs "executing tool" vs "waiting"
-  - Tool execution progress not shown
-  - No queue of pending operations
+Items that would be nice to have but are unlikely to happen in the foreseeable future:
+
+- [ ] **Advanced Agent Interception** - Step-through and modification capabilities
+  - "Approve next tool call" mode for cautious execution
+  - Step-through debugging with pause/resume
+  - Ability to modify tool inputs before execution
+  - Tool call preview before execution
+
+- [ ] **Subagent rendering**
+  - Visual representation of spawned subagents
+  - Agent hierarchy/tree view
+  - Track which agent generated which messages
+
+### ✅ Recently Completed
+
+- [x] **Permission system & interactive questions** (`opencode-question-tool`)
+  - Agent can pause and ask user for confirmation using `mcp_question` tool
+  - Interactive UI with radio/checkbox options for single/multiple choice
+  - Custom text input support ("Type your own answer")
+  - User responses sent back to agent via POST to `/tool-call/:id/answer`
+  - Implemented in `src/ai-workspace/components/tool-renderers/opencode-question-tool.js`
+
+- [x] **Agent interception & abort mechanism**
+  - Double-ESC (within 500ms) aborts current message generation
+  - Uses OpenCode API: `POST /session/:id/abort`
+  - Keyboard handler in `onKeyDown()` at line 219 of lively-opencode.js
+  - First ESC records timestamp, second ESC triggers abort
+  - Works but could use better UI feedback (see TODO above)
+
+- [x] **Comprehensive tool call visualization** (25+ specialized renderers)
+  - `opencode-read-tool` - Shows file content with syntax highlighting
+  - `opencode-edit-tool` - Shows inline diffs using diff-match-patch
+  - `opencode-evaluate-code-tool` - Shows code execution with formatted output
+  - `opencode-bash-tool` - Shows command output
+  - `opencode-grep-tool`, `opencode-glob-tool` - Shows search results
+  - `opencode-question-tool` - Shows interactive questions
+  - `opencode-plan-tool`, `opencode-todowrite-tool` - Shows task management
+  - Plus many more specialized renderers for all tool types
+  - Located in: `src/ai-workspace/components/tool-renderers/`
+
+- [x] **Streaming reasoning updates**
+  - Reasoning parts update incrementally as deltas arrive via SSE
+  - `handleMessagePartUpdated` finds existing part and updates via `Object.assign`
+  - UI re-renders automatically with updated text
+  - Rendered as collapsible `<details>` blocks with 💭 emoji
 
 - [x] **Thinking steps rendering**
   - Extended thinking blocks render as collapsible `<details>` elements
   - Differentiated with 💭 emoji and italic "Thinking..." summary
   - Part type: `{ type: 'reasoning', text: '...' }` from OpenCode API
-
-- [ ] **(Optional) Subagent rendering**
-  - If OpenCode supports spawning subagents, no visual representation
-  - Could show agent hierarchy/tree
-  - Track which agent generated which messages
 
 - [x] **Activating "thinking" mode**
   - Variant button cycles through none/high/max thinking modes
@@ -110,17 +134,54 @@ User sends → POST /session/:id/message
 
 ## Key Components
 
-**Base Class:** `src/components/tools/lively-chat.js`
+**Base Class:** `src/ai-workspace/components/lively-chat.js`
 - Shared chat functionality, event capture, replay controls
 
-**Message Renderer:** `src/components/tools/lively-chat-message.js`
+**Message Renderer:** `src/ai-workspace/components/lively-chat-message.js`
 - Handles both flat (realtime) and structured (OpenCode) message formats
 - Renders tool_use and tool_result parts
+- Dispatches to specialized tool renderers
 - Filters internal coordination functions
 
-**Files:**
-- `src/components/tools/lively-opencode.js` - Main component
-- `src/components/tools/lively-opencode.html` - UI template
+**Main Component:**
+- `src/ai-workspace/components/lively-opencode.js` - Main component logic
+- `src/ai-workspace/components/lively-opencode.html` - UI template
+
+**Tool Renderers:** `src/ai-workspace/components/tool-renderers/`
+
+All tool renderers extend `OpenCodeBaseTool` base class which provides:
+- `matches(part)` - Pattern matching for tool types
+- `renderToolUse(part, component)` - Render tool call
+- `renderToolResult(part, component)` - Render tool result  
+- `renderToolStreaming(part, component)` - Render streaming tool execution
+- `renderCompact(part, result, showDebug)` - Compact view in `<details>` blocks
+- Helper methods for markdown rendering, file path formatting, etc.
+
+**Available Renderers:**
+- `opencode-read-tool` - File reads with syntax highlighting
+- `opencode-edit-tool` - File edits with inline diffs
+- `opencode-write-tool` - File writes
+- `opencode-bash-tool` - Shell command execution
+- `opencode-evaluate-code-tool` - JavaScript evaluation in browser
+- `opencode-grep-tool` - Code search results
+- `opencode-glob-tool` - File pattern matching
+- `opencode-ls-tool` - Directory listings
+- `opencode-apply-patch-tool` - Patch application
+- `opencode-multiedit-tool` - Multiple file edits
+- `opencode-question-tool` - Interactive questions
+- `opencode-plan-tool` - Planning steps
+- `opencode-todowrite-tool` - TODO management
+- `opencode-task-tool` - Subagent task spawning
+- `opencode-run-tests-tool` - Test execution
+- `opencode-inspect-tests-tool` - Test result inspection
+- `opencode-lsp-tool` - Language Server Protocol operations
+- `opencode-codesearch-tool` - Semantic code search
+- `opencode-webfetch-tool` - Web page fetching
+- `opencode-websearch-tool` - Web search
+- `opencode-skill-tool` - Skill loading
+- `opencode-batch-tool` - Batch operations
+- `opencode-invalid-tool` - Invalid tool calls
+- `opencode-generic-tool` - Fallback for unmatched tools
 
 ## OpenCode Server
 
@@ -195,17 +256,3 @@ Available via opencode-server tools.json:
 - `lively4_evaluate_code` - Execute JS in live browser
 - File operations (read/write/edit via standard MCP)
 - Additional tools configurable in server
-
-## Next Steps (Priority Order)
-
-1. **Streaming Reasoning Updates** - Implement live streaming for reasoning text
-   - Currently reasoning parts render as static collapsed blocks
-   - Need to handle `message.part.updated` events with `type: "reasoning"`
-   - Update reasoning text incrementally as `delta` chunks arrive
-   - Show "thinking..." indicator while streaming in progress
-   
-2. **Permission System** - Add user approval UI for dangerous operations
-3. **Tool Call Visualization** - Enhanced rendering for read/edit/eval
-4. **Agent Interception** - Pause/approve mechanism during execution
-5. **State Indicators** - Visual feedback for agent activity
-6. **Diff Viewer** - Side-by-side file changes for edit operations

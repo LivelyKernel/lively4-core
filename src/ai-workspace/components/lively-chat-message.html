@@ -35,7 +35,14 @@
     :host([role="tool"]) {
       background-color: #fff3e0;
       border-left: 3px solid #ff9800;
-      cursor: pointer;
+    }
+
+    /* System messages (special voice-agent system notifications) */
+    :host([role="system"]) {
+      background-color: #f0f4fa;
+      border-left: 3px solid #607d8b;
+      font-style: italic;
+      opacity: 0.9;
     }
 
     :host([role="tool"]:hover) {
@@ -85,30 +92,9 @@
       margin: 0;
     }
 
-    .content.collapsed {
-      max-height: 100px;
-      overflow: hidden;
-      position: relative;
-    }
 
-    .content.collapsed::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 40px;
-      background: linear-gradient(transparent, #fff3e0);
-      pointer-events: none;
-    }
 
-    .expand-indicator {
-      font-size: 10px;
-      color: #ff9800;
-      font-weight: bold;
-      margin-top: 5px;
-      text-align: center;
-    }
+
 
     lively-markdown {
       display: block;
@@ -236,6 +222,7 @@
       font-family: monospace;
       font-size: 12px;
       line-height: 1.6;
+      white-space: pre-wrap;
       padding: 8px;
       background-color: #f8f9fa;
       border-radius: 3px;
@@ -527,7 +514,6 @@
     <div id="rawDisplay" class="raw-display debug" style="display:none">
       <pre id="rawJson"></pre>
     </div>
-    <div id="expandIndicator" class="expand-indicator" style="display: none;"></div>
     <div id="usageStats" class="usage-stats hidden"></div>
   </div>
 </template>

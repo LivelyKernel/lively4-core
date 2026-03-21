@@ -48,6 +48,7 @@ export default class Sync extends Morph {
     const char = String.fromCharCode(evt.keyCode || evt.charCode);
     const ctrl = evt.ctrlKey || evt.metaKey;
 
+    
     if (evt.repeated) {
       lively.notify("Key rep! " + char)
       return;
@@ -61,13 +62,14 @@ export default class Sync extends Morph {
       return;
     }
 
-    if(char === "Q") {
-      this.onSquashButton();
+    // is used by window toggling
+    // if(char === "Q") {
+    //   this.onSquashButton();
     
-      evt.stopPropagation();
-      evt.preventDefault();
-      return;
-    }
+    //   evt.stopPropagation();
+    //   evt.preventDefault();
+    //   return;
+    // }
   }
   
   log(s) {

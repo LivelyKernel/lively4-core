@@ -4,9 +4,11 @@ import moment from "src/external/moment.js";
 import Strings from "src/client/strings.js"
 
 var htmlBeautify;
-System.import(lively4url + "/src/external/beautify-html.js").then(function(obj){
-    htmlBeautify = obj.html_beautify;
-});
+// Note: beautify-html.js uses AMD require which SystemJS doesn't support
+// HTML beautification is optional, so we skip it for now
+// System.import(lively4url + "/src/external/beautify-html.js").then(function(obj){
+//     htmlBeautify = obj.html_beautify;
+// });
 
 export function handle(el) {
   // collect information about the component
@@ -254,6 +256,23 @@ export default class ComponentCreator {
         span.textContent = " "
         li.appendChild(span)
 
+        var mdFile =  ea.name.replace(/\.html/,".md")
+        if (opts.contents.find(ea => ea.name == mdFile)) {
+          var mdLink = document.createElement("a")
+          mdLink.innerHTML = "md"
+          mdLink.href = mdFile
+          mdLink.onclick = (evt) => {
+            evt.preventDefault()
+            container.followPath(dir + "/" + mdFile)
+            return true
+          }
+          li.appendChild(mdLink)
+        }
+
+        var span = document.createElement("span")
+        span.textContent = " "
+        li.appendChild(span)
+
         var testFile =  ea.name.replace(/\.html/,"-test.js")
         if (tests.indexOf(testFile) !== -1) {
           var testLink = document.createElement("a")
@@ -326,6 +345,23 @@ export default class ComponentCreator {
 
       lively.html.fixLinks(li.querySelectorAll("a"), dir, url => container.followPath(url) )
 
+
+      var span = document.createElement("span");
+      span.textContent = " ";
+      li.appendChild(span);
+
+      var mdFile = ea.name.replace(/\.html/, ".md");
+      if (opts.contents.find(ea => ea.name == mdFile)) {
+        var mdLink = document.createElement("a");
+        mdLink.innerHTML = "md";
+        mdLink.href = mdFile;
+        mdLink.onclick = evt => {
+          evt.preventDefault();
+          container.followPath(dir + "/" + mdFile);
+          return true;
+        };
+        li.appendChild(mdLink);
+      }
 
       var span = document.createElement("span");
       span.textContent = " ";

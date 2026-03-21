@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mermaid ELK Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .diagram { margin: 20px 0; padding: 20px; border: 2px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>ELK Orthogonal Edges</h1>
+
+    <div class="diagram">
+        <pre class="mermaid">
+%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%
+graph TB
+    A[Start] --> B[Process 1]
+    A --> C[Process 2]
+    B --> D[Middle]
+    C --> D
+    D --> E[End 1]
+    D --> F[End 2]
+    B --> G[Side Branch]
+    G --> F
+        </pre>
+    </div>
+
+    <script type="module">
+        const mermaid = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+        const elk = await import('https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs');
+        
+        await mermaid.default.registerLayoutLoaders(elk.default);
+        mermaid.default.initialize({ startOnLoad: true });
+        await mermaid.default.run();
+    </script>
+</body>
+</html>

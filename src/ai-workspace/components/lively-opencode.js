@@ -205,11 +205,28 @@ export default class LivelyOpencode extends LivelyChat {
 
   connectedCallback() {
     this.shouldReconnect = true;
+    
+    // Create and add global ESC key listener so it works even when component doesn't have focus
+    // Use capture phase (true) to run before other handlers can stop propagation
+    if (!this._globalEscHandler) {
+      this._globalEscHandler = (evt) => {
+        if (evt.key === 'Escape') {
+          this.onKeyDown(evt);
+        }
+      };
+      document.addEventListener('keydown', this._globalEscHandler, true);
+    }
+    
     // Auto-reconnect to running server (AUTOSTART disabled - server must be started manually)
     this.connectToServer();
   }
 
   disconnectedCallback() {
+    // Remove global ESC key listener (must use same capture flag as addEventListener)
+    if (this._globalEscHandler) {
+      document.removeEventListener('keydown', this._globalEscHandler, true);
+    }
+    
     this.disconnectFromServer();
   }
 
@@ -226,12 +243,61 @@ export default class LivelyOpencode extends LivelyChat {
         // Double ESC press detected
         evt.preventDefault();
         evt.stopPropagation();
+        this.showEscIndicator('aborting', '⛔', 'Aborting generation...', '');
         this.abortCurrentSession();
         this.lastEscPress = 0; // Reset after successful double-press
       } else {
-        // First ESC press - just record the timestamp
+        // First ESC press - show visual indicator
         this.lastEscPress = now;
+        this.showEscIndicator('first-press', '⏸️', 'Press ESC again to abort', 
+                              this.isGenerating ? 'AI is generating response' : 'No active generation');
+        
+        // Auto-hide after 500ms if no second press
+        setTimeout(() => {
+          if (Date.now() - this.lastEscPress >= 500) {
+            this.hideEscIndicator();
+          }
+        }, 500);
       }
+    }
+  }
+  
+  /**
+   * Show the ESC key visual indicator
+   * @param {string} state - 'first-press' or 'aborting'
+   * @param {string} icon - Emoji icon to display
+   * @param {string} message - Main message text
+   * @param {string} subtext - Secondary text (optional)
+   */
+  showEscIndicator(state, icon, message, subtext = '') {
+    const indicator = this.get('#escIndicator');
+    const iconEl = indicator?.querySelector('.esc-indicator-icon');
+    const messageEl = this.get('#escIndicatorMessage');
+    const subtextEl = this.get('#escIndicatorSubtext');
+    
+    if (!indicator) return;
+    
+    // Update content
+    if (iconEl) iconEl.textContent = icon;
+    if (messageEl) messageEl.textContent = message;
+    if (subtextEl) subtextEl.textContent = subtext;
+    
+    // Update state classes
+    indicator.classList.remove('first-press', 'aborting');
+    indicator.classList.add(state, 'visible');
+  }
+  
+  /**
+   * Hide the ESC key visual indicator
+   */
+  hideEscIndicator() {
+    const indicator = this.get('#escIndicator');
+    if (indicator) {
+      indicator.classList.remove('visible');
+      // Clean up classes after fade out
+      setTimeout(() => {
+        indicator.classList.remove('first-press', 'aborting');
+      }, 200);
     }
   }
 
@@ -240,19 +306,22 @@ export default class LivelyOpencode extends LivelyChat {
    * Uses OpenCode API: POST /session/:id/abort
    */
   async abortCurrentSession() {
-    lively.notify("abortCurrentSession")
     if (!this.currentSession) {
-      lively.notify('No active session to abort');
+      this.showEscIndicator('first-press', '⚠️', 'No active session', 'Nothing to abort');
+      setTimeout(() => this.hideEscIndicator(), 1500);
       return;
     }
 
     if (!this.isGenerating) {
-      lively.notify('No active generation to abort');
+      this.showEscIndicator('first-press', 'ℹ️', 'No active generation', 'AI is idle');
+      setTimeout(() => this.hideEscIndicator(), 1500);
       return;
     }
 
     try {
       this.log(`Aborting session ${this.currentSession.id}...`);
+      this.showEscIndicator('aborting', '⏹️', 'Sending abort request...', '');
+      
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
         method: 'POST'
       });
@@ -261,12 +330,16 @@ export default class LivelyOpencode extends LivelyChat {
         throw new Error(`Failed to abort session: ${response.status}`);
       }
 
-      lively.notify('Message generation aborted');
+      this.showEscIndicator('aborting', '✅', 'Generation aborted', 'Request sent successfully');
       this.isGenerating = false;
+      
+      // Hide indicator after showing success
+      setTimeout(() => this.hideEscIndicator(), 1500);
 
     } catch (error) {
       console.error('Error aborting session:', error);
-      lively.error(`Failed to abort: ${error.message}`);
+      this.showEscIndicator('aborting', '❌', 'Abort failed', error.message);
+      setTimeout(() => this.hideEscIndicator(), 2000);
     }
   }
 
@@ -581,8 +654,7 @@ export default class LivelyOpencode extends LivelyChat {
     
     if (messagesContainer) {
       messagesContainer.appendChild(permissionDiv);
-      // Scroll to bottom
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      this.scrollToBottom(messagesContainer);
     } else {
       console.error('[opencode] messagesContainer not found! Cannot show permission UI.');
       // Fallback to native dialog
@@ -1137,19 +1209,30 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Select a project by path (relative to working directory).
-   * Tries to load its index.md, saves the path to localStorage,
-   * and binds the project to the current session.
-   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace'
+   * If the path is a file, load it directly.
+   * Otherwise, try to load index.md from the directory.
+   * Saves the path to localStorage and binds the project to the current session.
+   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace' or 'src/ai-workspace/index.md' or 'CLAUDE.md'
    */
   async selectProject(projectPath) {
-    // Try to load index.md from this path
-    const content = await this.tryFetchProjectFile(projectPath, 'index.md');
+    // Check if the path is a file (has extension) or a directory
+    const isFile = /\.[^/]+$/.test(projectPath);
+    
+    let content;
+    if (isFile) {
+      // Load the file directly
+      content = await this.tryFetchProjectFile(projectPath);
+    } else {
+      // Load index.md from the directory
+      content = await this.tryFetchProjectFile(projectPath, 'index.md');
+    }
 
     const project = {
       path: projectPath,
       url: this.buildProjectUrl(projectPath),
       name: projectPath.split('/').pop(),
-      indexContent: content // null if no index.md exists
+      indexContent: content, // null if file doesn't exist
+      isFile: isFile
     };
 
     this.currentProject = project;
@@ -1167,8 +1250,8 @@ export default class LivelyOpencode extends LivelyChat {
 
     this.updateProjectSelector();
 
-    const hasContext = content ? ' (with index.md context)' : '';
-    lively.success(`Project focus: ${project.name}${hasContext}`);
+    const contextType = isFile ? 'with file context' : (content ? 'with index.md context' : '');
+    lively.success(`Project focus: ${project.name}${contextType ? ' (' + contextType + ')' : ''}`);
   }
 
   /**
@@ -1232,12 +1315,23 @@ export default class LivelyOpencode extends LivelyChat {
       this.projectPath = null;
     } else if (!this.currentProject || this.currentProject.path !== storedPath) {
       // Different project - load it silently (no success toast)
-      const content = await this.tryFetchProjectFile(storedPath, 'index.md');
+      const isFile = /\.[^/]+$/.test(storedPath);
+      
+      let content;
+      if (isFile) {
+        // Load the file directly
+        content = await this.tryFetchProjectFile(storedPath);
+      } else {
+        // Load index.md from the directory
+        content = await this.tryFetchProjectFile(storedPath, 'index.md');
+      }
+      
       this.currentProject = {
         path: storedPath,
         url: this.buildProjectUrl(storedPath),
         name: storedPath.split('/').pop(),
-        indexContent: content
+        indexContent: content,
+        isFile: isFile
       };
       this.projectPath = storedPath;
     }
@@ -1253,15 +1347,32 @@ export default class LivelyOpencode extends LivelyChat {
     if (!indicator) return;
 
     if (this.currentProject) {
-      const hasIndex = this.currentProject.indexContent ? ' [index.md]' : '';
-      indicator.textContent = this.currentProject.path + hasIndex;
-      indicator.style.display = 'block';
-      if (this.currentProject.indexContent) {
-        const preview = this.currentProject.indexContent.slice(0, 300);
-        indicator.title = `${this.currentProject.path}/index.md:\n\n${preview}`;
+      const isFile = this.currentProject.isFile;
+      const hasContent = this.currentProject.indexContent;
+      
+      if (isFile) {
+        // Show the file name with indicator if content loaded
+        const contentIndicator = hasContent ? ' [loaded]' : '';
+        indicator.textContent = this.currentProject.path + contentIndicator;
+        if (hasContent) {
+          const preview = this.currentProject.indexContent.slice(0, 300);
+          indicator.title = `${this.currentProject.path}:\n\n${preview}`;
+        } else {
+          indicator.title = `File not found: ${this.currentProject.path}`;
+        }
       } else {
-        indicator.title = `No index.md in ${this.currentProject.path}`;
+        // Show directory with index.md indicator
+        const hasIndex = hasContent ? ' [index.md]' : '';
+        indicator.textContent = this.currentProject.path + hasIndex;
+        if (hasContent) {
+          const preview = this.currentProject.indexContent.slice(0, 300);
+          indicator.title = `${this.currentProject.path}/index.md:\n\n${preview}`;
+        } else {
+          indicator.title = `No index.md in ${this.currentProject.path}`;
+        }
       }
+      
+      indicator.style.display = 'block';
     } else {
       indicator.style.display = 'none';
     }
@@ -1341,8 +1452,10 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Build a full URL for a project path using the configured URL base.
    * e.g. buildProjectUrl('src/ai-workspace') → 'http://localhost:9005/lively4-core/src/ai-workspace/'
-   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace'
-   * @returns {string} Full URL with trailing slash
+   * e.g. buildProjectUrl('src/ai-workspace/index.md') → 'http://localhost:9005/lively4-core/src/ai-workspace/index.md'
+   * e.g. buildProjectUrl('CLAUDE.md') → 'http://localhost:9005/lively4-core/CLAUDE.md'
+   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace' or 'CLAUDE.md'
+   * @returns {string} Full URL (with trailing slash for directories, without for files)
    */
   buildProjectUrl(projectPath) {
     const storedBase = this.loadProjectUrlBase();
@@ -1355,11 +1468,14 @@ export default class LivelyOpencode extends LivelyChat {
       if (typeof lively4url !== 'undefined') {
         base = lively4url.replace(/[^/]+$/, '');
       } else {
-        // No URL base configured and no browser global - return path as-is
-        return projectPath + '/';
+        // No URL base configured and no browser global
+        const isFile = /\.[^/]+$/.test(projectPath);
+        return isFile ? projectPath : projectPath + '/';
       }
     }
-    return base + projectPath + '/';
+    // Add trailing slash only for directories (not for files)
+    const isFile = /\.[^/]+$/.test(projectPath);
+    return base + projectPath + (isFile ? '' : '/');
   }
 
   /**
@@ -1368,8 +1484,10 @@ export default class LivelyOpencode extends LivelyChat {
    * to map the subproject path to a fetchable URL.
    * Falls back to deriving base from lively4url if no URL base is configured.
    * Returns file content as string, or null if not found / no server.
+   * @param {string} relativePath - Path relative to working directory
+   * @param {string} [filename] - Optional filename to append. If omitted, relativePath is treated as complete file path.
    */
-  async tryFetchProjectFile(relativePath, filename) {
+  async tryFetchProjectFile(relativePath, filename = null) {
     try {
       const storedBase = this.loadProjectUrlBase();
       let base;
@@ -1380,7 +1498,7 @@ export default class LivelyOpencode extends LivelyChat {
         // Fallback: derive from lively4url browser global
         base = lively4url.replace(/[^/]+$/, '');
       }
-      const url = base + relativePath + '/' + filename;
+      const url = filename ? base + relativePath + '/' + filename : base + relativePath;
       const response = await fetch(url);
       return response.ok ? await response.text() : null;
     } catch (e) {
@@ -1394,27 +1512,40 @@ export default class LivelyOpencode extends LivelyChat {
    * displays it as a collapsible details block, and Claude Code treats it as
    * contextual information rather than the primary message.
    *
-   * The subproject's index.md acts as a second-level CLAUDE.md — it can store
-   * project-focus-specific insights, conventions, and notes for AI assistants.
+   * The subproject's index.md or any focused file acts as a second-level CLAUDE.md — 
+   * it can store project-focus-specific insights, conventions, and notes for AI assistants.
    */
   buildProjectContextMessage(message) {
     if (!this.currentProject) return message;
 
     const projectUrl = this.currentProject.url || this.currentProject.path;
-    const indexUrl = projectUrl + 'index.md';
+    const isFile = this.currentProject.isFile;
     
-    const contextParts = [
-      `We are focusing on subproject [${projectUrl}](${projectUrl})`
-    ];
+    const contextParts = [];
 
-    if (this.currentProject.indexContent) {
-      contextParts.push(
-        `\nThe [${indexUrl}](${indexUrl}) file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
-      );
+    if (isFile) {
+      // Project is a direct file - link to it directly
+      contextParts.push(`We are focusing on subproject [${projectUrl}](${projectUrl})`);
+      
+      if (this.currentProject.indexContent) {
+        contextParts.push(
+          `\nThe [${projectUrl}](${projectUrl}) file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
+        );
+      }
     } else {
-      contextParts.push(
-        `\nNote: [${indexUrl}](${indexUrl}) can be used to store project-focus-specific insights, conventions, and context (like a second-level CLAUDE.md). No index.md found yet.`
-      );
+      // Project is a directory - reference index.md within it
+      const indexUrl = projectUrl + 'index.md';
+      contextParts.push(`We are focusing on subproject [${projectUrl}](${projectUrl})`);
+      
+      if (this.currentProject.indexContent) {
+        contextParts.push(
+          `\nThe [${indexUrl}](${indexUrl}) file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
+        );
+      } else {
+        contextParts.push(
+          `\nNote: [${indexUrl}](${indexUrl}) can be used to store project-focus-specific insights, conventions, and context (like a second-level CLAUDE.md). No index.md found yet.`
+        );
+      }
     }
 
     const context = contextParts.join('\n');
@@ -2136,7 +2267,6 @@ export default class LivelyOpencode extends LivelyChat {
   async loadMessagesForSession(sessionId) {
     if (this._replayMode) return; // Skip server fetch during replay
 
-    lively.notify("loadMessagesForSession " + sessionId)
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
       if (!response.ok) {
@@ -2300,8 +2430,8 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom (force=true: session switch should always go to bottom)
+    this.scrollToBottom(container, true);
   }
 
   /**
@@ -2403,8 +2533,8 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
-    // Scroll to bottom
-    container.scrollTop = container.scrollHeight;
+    // Scroll to bottom (respects sticky flag)
+    this.scrollToBottom(container);
   }
 
   /**
@@ -2447,15 +2577,9 @@ export default class LivelyOpencode extends LivelyChat {
       streamType: 'opencode'
     });
 
-    // Scroll to bottom if we're already near the bottom
+    // Scroll to bottom (respects sticky flag)
     const container = this.get('#messagesContainer');
-    if (container) {
-      const scrollThreshold = 100; // pixels from bottom
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < scrollThreshold;
-      if (isNearBottom) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
+    if (container) this.scrollToBottom(container);
   }
 
   /**

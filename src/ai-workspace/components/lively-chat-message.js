@@ -34,16 +34,18 @@ import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-cod
 // Internal / fallback
 import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
+// Vox (voice agent) tool renderers
+import { VoxEvaluateCodeTool } from './tool-renderers/vox-evaluate-code-tool.js';
+import { VoxGenericTool } from './tool-renderers/vox-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
   async initialize() {
     this.windowTitle = "Chat Message";
 
     // Store message data
-    this._isExpanded = this._isExpanded || false;
     this._showRaw = this._showRaw || false;
 
-    // Register tool renderers - order matters! Generic should be last (fallback)
+    // Register OpenCode tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
       // File / filesystem
       new OpenCodeReadTool(),
@@ -80,18 +82,20 @@ export default class LivelyChatMessage extends Morph {
       new OpenCodeGenericTool(),
     ];
 
+    // Register Vox (voice agent) tool renderers - separate code path from OpenCode
+    this.voxToolRenderers = this.voxToolRenderers || [
+      new VoxEvaluateCodeTool(),
+      new VoxGenericTool(), // Fallback - always last
+    ];
+
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
     this.contentDiv = this.get("#content");
     this.partsContainer = this.get("#partsContainer");
-    this.expandIndicator = this.get("#expandIndicator");
     this.viewRawButton = this.get("#viewRawButton");
     this.rawDisplay = this.get("#rawDisplay");
     this.rawJson = this.get("#rawJson");
     this.usageStatsEl = this.get("#usageStats");
-
-    // Setup click handler for tool messages
-    this.addEventListener('click', (evt) => this.onMessageClick(evt));
 
     this.registerButtons()
     if (this._opencodeMessage) {
@@ -145,6 +149,100 @@ export default class LivelyChatMessage extends Morph {
     this.renderDebugHeader(messageObj);
 
     await this.renderContent(messageObj);
+  }
+
+  /**
+   * Append a tool result to an existing tool call message.
+   * Used for linking function_call_output to function_call in realtime chat.
+   * 
+   * Strategy: Replace the entire details block with a new one showing code + result
+   * (like OpenCode bash tool - one details block total, not two)
+   * 
+   * @param {Object} resultData - Message data for the function_call_output
+   */
+  async appendToolResult(resultData) {
+    const metadata = resultData.metadata || {};
+    const output = metadata.output || {};
+    
+    // Try to use vox tool renderer to create complete result block
+    let resultElement = null;
+    if (resultData.source === 'audio' && this.voxToolRenderers) {
+      const renderer = this.voxToolRenderers.find(r => r.matches(resultData));
+      if (renderer) {
+        // Render complete result (code + result in one details block)
+        resultElement = await renderer.renderToolResult(resultData, this.showDebug);
+        
+        // REPLACE the existing details block (not append)
+        if (this.partsContainer && resultElement) {
+          const existingDetails = this.partsContainer.querySelector('details');
+          if (existingDetails) {
+            existingDetails.replaceWith(resultElement);
+          } else {
+            // No existing details - just add it
+            this.partsContainer.appendChild(resultElement);
+          }
+        }
+        
+        // Update raw display and return early
+        if (this._messageData) {
+          if (!this._messageData._appendedResults) {
+            this._messageData._appendedResults = [];
+          }
+          this._messageData._appendedResults.push(resultData);
+          this.updateRawDisplay();
+        }
+        return;
+      }
+    }
+    
+    // Fallback to generic text formatting if no renderer matched
+    const divider = document.createElement('div');
+    divider.style.marginTop = '8px';
+    divider.style.paddingTop = '8px';
+    divider.style.borderTop = '1px solid rgba(128,128,128,0.2)';
+    
+    const resultContent = document.createElement('div');
+    resultContent.className = 'tool-result-appended';
+    
+    // Format result text
+    let resultText = '';
+    if (output.error || !output.success) {
+      resultText = `↩️ **Error:** ${output.error || 'Unknown error'}`;
+    } else {
+      // Show compact result
+      if (output.response !== undefined) {
+        resultText = `↩️ **Result:** ${output.response}`;
+      } else if (output.result !== undefined) {
+        const resultStr = typeof output.result === 'object' 
+          ? JSON.stringify(output.result)
+          : String(output.result);
+        resultText = `↩️ **Result:** ${resultStr}`;
+      } else if (output.message) {
+        resultText = `↩️ **Result:** ${output.message}`;
+      } else {
+        resultText = `↩️ **Result:** ${JSON.stringify(output)}`;
+      }
+    }
+    
+    // Render as markdown
+    const resultEl = await this.createMarkdownElement(resultText);
+    resultContent.appendChild(resultEl);
+    
+    // Append to partsContainer (fallback path - append, don't replace)
+    if (this.partsContainer) {
+      this.partsContainer.appendChild(divider);
+      this.partsContainer.appendChild(resultContent);
+    }
+    
+    // Update raw display to include result
+    if (this._messageData) {
+      // Store result metadata for debugging
+      if (!this._messageData._appendedResults) {
+        this._messageData._appendedResults = [];
+      }
+      this._messageData._appendedResults.push(resultData);
+      this.updateRawDisplay();
+    }
   }
 
   /**
@@ -219,7 +317,7 @@ export default class LivelyChatMessage extends Morph {
   applyPositioning(messageObj) {
     // Remove all existing position classes
     this.classList.remove('position-left', 'position-mid-left', 'position-mid-right', 'position-right');
-    this.classList.remove('audio-user', 'audio-tool', 'audio-assistant');
+    this.classList.remove('audio-user', 'audio-tool', 'audio-assistant', 'audio-system');
     this.classList.remove('code-user', 'code-tool', 'code-assistant');
 
     const role = this.role;
@@ -232,6 +330,8 @@ export default class LivelyChatMessage extends Morph {
         this.classList.add('audio-tool'); 
       } else if (role === 'assistant') {
         this.classList.add('audio-assistant');
+      } else if (role === 'system') {
+        this.classList.add('audio-system');
       }
     } else if (source === 'code') {
       if (role === 'user') {
@@ -373,7 +473,15 @@ export default class LivelyChatMessage extends Morph {
    */
   async createMarkdownElement(markdownText) {
     const md = await lively.create('lively-markdown');
-    await md.setContent(markdownText);
+    try {
+      await md.setContent(markdownText);
+    } catch (error) {
+      // If markdown rendering fails (e.g., script error), show error instead of breaking message
+      console.error('[lively-chat-message] Markdown rendering error:', error);
+      const errorMd = await lively.create('lively-markdown');
+      await errorMd.setContent(`**⚠️ Markdown Rendering Error**\n\n\`\`\`\n${error.message || error}\n\`\`\``);
+      return errorMd;
+    }
     return md;
   }
 
@@ -386,6 +494,66 @@ export default class LivelyChatMessage extends Morph {
     
     console.warn('No renderer matched - is GenericTool registered?', part);
     return null;
+  }
+
+  renderStepEvent(part) {
+    if (!this.showDebug) {
+      return null;
+    }
+    
+    const container = document.createElement('div');
+    container.className = 'step-event';
+    
+    if (part.type === 'step-start') {
+      const emoji = '▶️';
+      let text = `${emoji} Step started`;
+      
+      if (part.snapshot) {
+        text += ` (snapshot: ${part.snapshot.substring(0, 8)})`;
+      }
+      
+      container.textContent = text;
+      container.style.cssText = 'color: #666; font-size: 11px; font-style: italic; margin: 4px 0; padding: 2px 0;';
+      
+    } else if (part.type === 'step-finish') {
+      const emoji = '⏹️';
+      const tokens = part.tokens || {};
+      const parts = [];
+      
+      if (tokens.input !== undefined || tokens.output !== undefined) {
+        const inStr = tokens.input !== undefined ? `${tokens.input.toLocaleString()}` : '?';
+        const outStr = tokens.output !== undefined ? `${tokens.output.toLocaleString()}` : '?';
+        parts.push(`${inStr}→${outStr} tokens`);
+      }
+      
+      if (tokens.reasoning && tokens.reasoning > 0) {
+        parts.push(`${tokens.reasoning.toLocaleString()} thinking`);
+      }
+      
+      if (tokens.cache?.read && tokens.cache.read > 0) {
+        parts.push(`${tokens.cache.read.toLocaleString()} cached`);
+      }
+      
+      if (part.cost && part.cost > 0) {
+        parts.push(`$${part.cost.toFixed(4)}`);
+      }
+      
+      const text = parts.length > 0 
+        ? `${emoji} Step complete: ${parts.join(', ')}`
+        : `${emoji} Step complete`;
+      
+      container.textContent = text;
+      container.style.cssText = 'color: #666; font-size: 11px; font-style: italic; margin: 4px 0; padding: 2px 0;';
+      
+      if (part.snapshot) {
+        const debug = document.createElement('span');
+        debug.textContent = ` (snapshot: ${part.snapshot.substring(0, 8)})`;
+        debug.style.cssText = 'color: #999; font-size: 10px;';
+        container.appendChild(debug);
+      }
+    }
+    
+    return container;
   }
 
   async renderOpenCodeParts(opencodeMessage) {
@@ -498,12 +666,32 @@ export default class LivelyChatMessage extends Morph {
           }
         }
       } else if (part.type === 'reasoning') {
-        // Extended thinking block: collapsible, content rendered in lively-markdown
-        const details = <details>
-          <summary>💭 <em>Thinking...</em></summary>
-        </details>;
-        details.appendChild(await this.createMarkdownElement(part.text));
-        this.partsContainer.appendChild(details);
+        // Extended thinking block: for one-liners, show inline; for multi-line, show collapsible
+        const isOneLiner = !part.text.includes('\n') || part.text.trim().split('\n').length === 1;
+        
+        if (isOneLiner) {
+          // Single line: display inline beside indicator
+          const container = document.createElement('div');
+          container.style.cssText = 'display: inline-flex; align-items: center; gap: 8px; margin: 4px 0; white-space: nowrap;';
+          
+          const indicator = document.createElement('span');
+          indicator.innerHTML = '💭 <em>Thinking...</em>';
+          
+          const content = document.createElement('span');
+          content.style.cssText = 'font-size: 11px; color: #666;';
+          content.textContent = part.text.trim();
+          
+          container.appendChild(indicator);
+          container.appendChild(content);
+          this.partsContainer.appendChild(container);
+        } else {
+          // Multi-line: collapsible details element
+          const details = <details>
+            <summary>💭 <em>Thinking...</em></summary>
+          </details>;
+          details.appendChild(await this.createMarkdownElement(part.text));
+          this.partsContainer.appendChild(details);
+        }
       } else if (part.type === 'tool_use') {
         const el = await this.dispatchToolRender(part, 'renderToolUse');
         if (el) this.partsContainer.appendChild(el);
@@ -514,25 +702,9 @@ export default class LivelyChatMessage extends Morph {
         const el = await this.dispatchToolRender(part, 'renderToolStreaming');
         if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'step-start' || part.type === 'step-finish') {
-        // Step events - only show in debug mode
-        if (this.showDebug) {
-          const emoji = part.type === 'step-start' ? '▶️' : '⏹️';
-          let md = `### ${emoji} ${part.type}\n\n`;
-          if (part.type === 'step-finish' && part.tokens) {
-            md += `**Tokens:** input: ${part.tokens.input}, output: ${part.tokens.output}`;
-            if (part.tokens.cache?.read) {
-              md += `, cache read: ${part.tokens.cache.read}`;
-            }
-            if (part.cost) {
-              md += `, cost: ${part.cost}`;
-            }
-            md += '\n\n';
-          }
-          if (part.snapshot) {
-            md += `*Snapshot: ${part.snapshot.substring(0, 8)}...*\n\n`;
-          }
-          this.partsContainer.appendChild(await this.createMarkdownElement(md));
-        }
+        // Step events - render as compact one-liners with key information
+        const el = this.renderStepEvent(part);
+        if (el) this.partsContainer.appendChild(el);
       } else {
         // Unknown part type - show as JSON (only in debug mode)
         if (this.showDebug) {
@@ -544,15 +716,54 @@ export default class LivelyChatMessage extends Morph {
   }
 
 
+  /**
+   * Detect if a message contains a system-like pattern: [System: ...]
+   * These are technically user messages but contain system information
+   * @param {Object} messageObj - Message object to check
+   * @returns {Object|null} - Parsed system info or null if not a system message
+   */
+  parseSystemMessage(messageObj) {
+    // Only check user messages from audio source (voice agent)
+    if (messageObj.role !== 'user' || messageObj.source !== 'audio') {
+      return null;
+    }
+
+    const content = messageObj.content || '';
+    const systemPattern = /^\[System:\s*(.+)\]$/;
+    const match = content.match(systemPattern);
+    
+    if (match) {
+      return {
+        isSystemMessage: true,
+        systemContent: match[1].trim()
+      };
+    }
+    
+    return null;
+  }
+
   async renderContent(messageObj) {
     let content = messageObj.content || '';
+
+    // Check if this is a special system message from voice agent
+    const systemInfo = this.parseSystemMessage(messageObj);
+    if (systemInfo) {
+      await this.renderSystemMessage(systemInfo.systemContent, messageObj);
+      return;
+    }
 
     // Format user messages with quotes (matching current behavior)
     if (messageObj.role === 'user') {
       content = `"${content}"`;
     }
 
-    // For tool messages, create structured display
+    // For vox (voice agent) tool messages, use dedicated vox tool renderers
+    if (messageObj.role === 'tool' && messageObj.source === 'audio' && messageObj.metadata) {
+      await this.renderVoxToolMessage(messageObj);
+      return;
+    }
+
+    // For other tool messages, create structured display (legacy path)
     if (messageObj.role === 'tool' && messageObj.metadata) {
       content = this.formatToolMessage(messageObj);
 
@@ -571,10 +782,80 @@ export default class LivelyChatMessage extends Morph {
       this.partsContainer.innerHTML = '';
       this.partsContainer.appendChild(await this.createMarkdownElement(content));
     }
+  }
 
-    // For tool messages, check if content is long and should be collapsible
-    if (messageObj.role === 'tool') {
-      this.updateExpandState();
+  /**
+   * Render a system message with special styling
+   * @param {string} systemContent - The system message content
+   * @param {Object} originalMessage - Original message object for metadata
+   */
+  async renderSystemMessage(systemContent, originalMessage) {
+    // Change role attribute to 'system' for proper styling
+    this.setAttribute('role', 'system');
+    this.setAttribute('source', 'audio');
+    
+    // Apply positioning for system messages
+    this.applyPositioning({ role: 'system', source: 'audio' });
+
+    // Show the message
+    this.style.display = '';
+
+    // Render system content in italic style
+    const formattedContent = `*${systemContent}*`;
+
+    // Set markdown content
+    if (this.partsContainer) {
+      this.partsContainer.innerHTML = '';
+      this.partsContainer.appendChild(await this.createMarkdownElement(formattedContent));
+    }
+  }
+
+  /**
+   * Render vox (voice agent) tool messages using dedicated vox tool renderers.
+   * This provides a separate rendering path from OpenCode tools while matching the style.
+   */
+  async renderVoxToolMessage(messageObj) {
+    const metadata = messageObj.metadata || {};
+    
+    // Check if this is a local/internal function that should be hidden
+    const functionName = metadata.functionName || '';
+    if (this.isLocalFunction(functionName)) {
+      this.style.display = 'none';
+      return;
+    }
+
+    // Show the message
+    this.style.display = '';
+
+    // Clear previous content
+    if (this.partsContainer) {
+      this.partsContainer.innerHTML = '';
+    }
+
+    // Find matching renderer
+    const renderer = this.voxToolRenderers.find(r => r.matches(messageObj));
+    
+    if (!renderer) {
+      console.warn('No vox renderer matched for message:', messageObj);
+      // Fallback to old formatToolMessage
+      const content = this.formatToolMessage(messageObj);
+      if (content && this.partsContainer) {
+        this.partsContainer.appendChild(await this.createMarkdownElement(content));
+      }
+      return;
+    }
+
+    // Render using the appropriate method based on message type
+    let element = null;
+    if (metadata.type === 'function_call') {
+      element = await renderer.renderToolCall(messageObj, this.showDebug);
+    } else if (metadata.type === 'function_call_output') {
+      element = await renderer.renderToolResult(messageObj, this.showDebug);
+    }
+
+    // Append rendered element
+    if (element && this.partsContainer) {
+      this.partsContainer.appendChild(element);
     }
   }
 
@@ -699,38 +980,7 @@ export default class LivelyChatMessage extends Morph {
     return formatted;
   }
 
-  updateExpandState() {
-    if (!this.contentDiv || !this.expandIndicator) return;
 
-    // Check if content is taller than collapsed height
-    const contentHeight = this.contentDiv.scrollHeight;
-    const isLong = contentHeight > 100;
-
-    if (isLong) {
-      if (!this._isExpanded) {
-        this.contentDiv.classList.add('collapsed');
-        this.expandIndicator.style.display = 'block';
-        this.expandIndicator.textContent = '▼ Click to expand';
-      } else {
-        this.contentDiv.classList.remove('collapsed');
-        this.expandIndicator.style.display = 'block';
-        this.expandIndicator.textContent = '▲ Click to collapse';
-      }
-    } else {
-      // Content is short, no need for expand/collapse
-      this.contentDiv.classList.remove('collapsed');
-      this.expandIndicator.style.display = 'none';
-    }
-  }
-
-  onMessageClick(evt) {
-    // Only handle clicks on tool messages
-    if (this._messageData && this._messageData.role === 'tool') {
-      this._isExpanded = !this._isExpanded;
-      this.updateExpandState();
-      evt.stopPropagation();
-    }
-  }
 
   formatTimestamp(timestamp) {
     try {
@@ -789,7 +1039,6 @@ export default class LivelyChatMessage extends Morph {
 
   livelyMigrate(other) {
     this._messageData = other._messageData;
-    this._isExpanded = other._isExpanded;
     this._opencodeMessage = other._opencodeMessage || other._rawMessage; // Handle old name
     this._showRaw = other._showRaw;
   }

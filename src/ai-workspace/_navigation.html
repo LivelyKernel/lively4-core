@@ -1,0 +1,32 @@
+<lively-script><script>
+var context = lively.query(this, "lively-import")
+if (context) {
+  var contextURL = context.getAttribute("src")
+} 
+if (contextURL) {
+  contextURL = contextURL.replace(/[^\/]*$/,"")
+  
+  var links = {
+    overview: "index.md",
+    doc: "doc/index.md",
+    tasks: "tasks.md",
+    components: "components/index.md",
+    // "realtime-chat-tools": "components/realtime-chat-tools/index.md",
+    // "tool-renderers": "components/tool-renderers/index.md",
+    "paper-draft": "doc/content.md",
+  }
+  var container = lively.query(this, "lively-container")
+  var base = contextURL;
+  var div = document.createElement("div")
+  if (container) {
+    Object.keys(links).forEach(ea => {
+      div.appendChild(container.createLink(base, ea, links[ea]))
+      div.appendChild(document.createTextNode(" | "))
+    })
+  };
+  var result = div
+} else {
+  var result = <b>please use lively-import to include this page</b>
+};
+result
+</script></lively-script>

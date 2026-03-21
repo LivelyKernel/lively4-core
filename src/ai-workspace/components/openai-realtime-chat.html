@@ -104,6 +104,31 @@
       min-width: 150px;
     }
 
+    #vadTypeBox {
+      min-width: 140px;
+    }
+
+    #vadEagernessBox {
+      min-width: 100px;
+    }
+
+    #vadThresholdContainer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    #vadThresholdSlider {
+      width: 80px;
+    }
+
+    #vadThresholdValue {
+      min-width: 35px;
+      font-weight: 500;
+      color: #333;
+    }
+
     #mainContent {
       display: flex;
       flex: 1;
@@ -240,6 +265,125 @@
     :host([hide-debug-log="true"]) .logging-panel {
       display: none;
     }
+
+    /* Tool Settings Modal */
+    #toolSettingsModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid #4a90e2;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 10000;
+      min-width: 400px;
+      max-width: 500px;
+    }
+
+    #toolSettingsModal.visible {
+      display: block;
+    }
+
+    #toolSettingsOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+    }
+
+    #toolSettingsOverlay.visible {
+      display: block;
+    }
+
+    .tool-settings-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .tool-setting-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      background: #f8f9fa;
+    }
+
+    .tool-setting-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .tool-setting-item label {
+      cursor: pointer;
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .tool-setting-description {
+      font-size: 12px;
+      color: #666;
+      margin-left: 26px;
+      margin-top: -8px;
+      margin-bottom: 12px;
+    }
+
+    .tool-settings-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .tool-settings-footer button {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .tool-settings-footer button:hover {
+      background: #f5f5f5;
+    }
+
+    .tool-settings-footer button.primary {
+      background: #4a90e2;
+      color: white;
+      border-color: #4a90e2;
+    }
+
+    .tool-settings-footer button.primary:hover {
+      background: #357abd;
+    }
+
+    #toolSettingsButton {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    #toolSettingsButton:hover {
+      background: #f5f5f5;
+    }
   </style>
   <div id="pane" style=" ">
     <div id="statusBar"></div>
@@ -248,6 +392,16 @@
       <button id="resetButton">🆕 New</button>
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
+      <input-combobox id="vadTypeBox"></input-combobox>
+      <input-combobox id="vadEagernessBox"></input-combobox>
+      <div id="vadThresholdContainer">
+        <label for="vadThresholdSlider">Threshold:</label>
+        <input type="range" id="vadThresholdSlider" min="0" max="1" step="0.05" />
+        <span id="vadThresholdValue">0.85</span>
+      </div>
+      <button id="toolSettingsButton" title="Configure tool permissions">
+        🔧 Tools
+      </button>
       <div id="replayControlsPlaceholder"></div>
       <div style="width:20px">
       </div>
@@ -265,7 +419,7 @@
           <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
         </div>
       </div>
-      <lively-separator></lively-separator>
+      <lively-separator reverse="true"></lively-separator>
 
       <div class="logging-panel" id="loggingPanel">
         <div class="logging-header">
@@ -275,6 +429,43 @@
           </button>
         </div>
         <ul id="debugLog"></ul>
+      </div>
+    </div>
+
+    <!-- Tool Settings Modal -->
+    <div id="toolSettingsOverlay"></div>
+    <div id="toolSettingsModal">
+      <div class="tool-settings-header">
+        Configure Tool Permissions for Vox
+      </div>
+      <div id="toolSettingsContent">
+        <div class="tool-setting-item">
+          <input type="checkbox" id="allowCodeEvaluation" />
+          <label for="allowCodeEvaluation">Allow Code Evaluation</label>
+        </div>
+        <div class="tool-setting-description">
+          Enables Vox to execute JavaScript code in the Lively4 environment
+        </div>
+
+        <div class="tool-setting-item">
+          <input type="checkbox" id="allowOpenCodeTasks" />
+          <label for="allowOpenCodeTasks">Allow OpenCode Tasks</label>
+        </div>
+        <div class="tool-setting-description">
+          Enables Vox to send coding tasks to the OpenCode agent (Scribe)
+        </div>
+
+        <div class="tool-setting-item">
+          <input type="checkbox" id="allowMessageInspection" />
+          <label for="allowMessageInspection">Allow Message Inspection</label>
+        </div>
+        <div class="tool-setting-description">
+          Enables Vox to retrieve and search through conversation history
+        </div>
+      </div>
+      <div class="tool-settings-footer">
+        <button id="cancelToolSettings">Cancel</button>
+        <button id="saveToolSettings" class="primary">Save</button>
       </div>
     </div>
   </div>

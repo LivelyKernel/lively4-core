@@ -1,5 +1,7 @@
 # Message Ordering Bug in OpenAI Realtime Chat
 
+> **Note:** This document describes a historical bug that has been fixed. The methods `createMessage()` and `addMessage()` have been unified into `createRealtimeMessage()` which implements the fix described here.
+
 ## Issue Report
 
 **Conversation ID:** `fb9d6c39-16a9-4626-8deb-cefda355d9d1`

@@ -13,17 +13,25 @@ Display board for agent-related information like TODOs, session links, tool usag
   - Total tool usage count
   - File operation summary (total reads/writes)
 - Session links section showing:
-  - Project Focus (index.md link)
+  - Project Focus (direct file or directory index.md)
+  - Project Tasks (conditional - only for directory-based projects)
   - Files read during session (with read counts)
   - Files written during session (with write counts)
 - Reusable across different AI components (lively-opencode, lively-ai-workspace)
+- Smart handling of file-based vs directory-based project focus
 
 **Usage:**
 ```javascript
 const board = await lively.create("lively-agent-board");
 
-// Set project focus
-board.setProjectFocus("src/ai-workspace/index.md");
+// Set project focus with project object
+board.updateProjectFocus({
+  path: 'src/ai-workspace',
+  url: 'http://localhost:9005/lively4-core/src/ai-workspace/',
+  name: 'ai-workspace',
+  isFile: false, // true if focusing on a direct file (not a directory)
+  indexContent: '# AI Workspace\n...'
+});
 
 // Track tool usages
 board.addToolUsage("mcp_read");
@@ -63,6 +71,7 @@ export default class LivelyAgentBoard extends Morph {
     this.workingDirectory = null;
     this.projectPath = null;
     this.urlBase = null;
+    this.currentProject = null; // Store full project object
   }
 
   updateTodos(todos) {
@@ -149,17 +158,35 @@ export default class LivelyAgentBoard extends Morph {
   /**
    * Update project focus from a project object.
    * 
-   * @param {Object} project - Project object with url and path
+   * @param {Object} project - Project object with url, path, and isFile flag
    * @param {string} project.url - Project URL (optional)
    * @param {string} project.path - Project path
+   * @param {boolean} project.isFile - True if the project is a direct file (not a directory)
    */
   updateProjectFocus(project) {
-    if (!project) return;
+    if (!project) {
+      this.currentProject = null;
+      this.links.projectFocus = null;
+      this.render();
+      return;
+    }
     
-    const indexUrl = project.url 
-      ? project.url + 'index.md' 
-      : `${project.path}/index.md`;
-    this.setProjectFocus(indexUrl);
+    // Store full project object for later use (e.g., tasks link)
+    this.currentProject = project;
+    
+    // Build project focus URL
+    let focusUrl;
+    if (project.isFile) {
+      // Project is already a file - use it directly
+      focusUrl = project.url || project.path;
+    } else {
+      // Project is a directory - append index.md
+      focusUrl = project.url 
+        ? project.url + 'index.md' 
+        : `${project.path}/index.md`;
+    }
+    
+    this.setProjectFocus(focusUrl);
   }
 
   /**
@@ -430,7 +457,6 @@ export default class LivelyAgentBoard extends Morph {
         <div class="link-item">
           <span class="link-icon">📁</span>
           <a class="link-path" click={() => {
-              debugger
               lively.openBrowser(this.links.projectFocus, true)
             }} title={this.links.projectFocus}>
             Project Focus
@@ -439,18 +465,24 @@ export default class LivelyAgentBoard extends Morph {
       );
     }
 
-    // Project Tasks
-    section.appendChild(
-      <div class="link-item">
-        <span class="link-icon">📋</span>
-        <a class="link-path" click={() => {
-            const tasksUrl = this.buildFileUrl('/home/jens/lively4/lively4-core/src/ai-workspace/tasks.md');
-            lively.openBrowser(tasksUrl, true)
-          }} title="src/ai-workspace/tasks.md">
-          Project Tasks
-        </a>
-      </div>
-    );
+    // Project Tasks - only show for directory-based projects
+    if (this.currentProject && !this.currentProject.isFile) {
+      const tasksPath = this.currentProject.path + '/tasks.md';
+      const tasksUrl = this.currentProject.url 
+        ? this.currentProject.url + 'tasks.md'
+        : tasksPath;
+      
+      section.appendChild(
+        <div class="link-item">
+          <span class="link-icon">📋</span>
+          <a class="link-path" click={() => {
+              lively.openBrowser(tasksUrl, true)
+            }} title={tasksPath}>
+            Project Tasks
+          </a>
+        </div>
+      );
+    }
 
     // Files Read
     if (filesRead.length > 0) {
@@ -574,8 +606,14 @@ export default class LivelyAgentBoard extends Morph {
       urlBase: 'http://localhost:9005/lively4-core'
     });
     
-    // Set project focus
-    this.setProjectFocus("src/ai-workspace/index.md");
+    // Set project focus using proper project object
+    this.updateProjectFocus({
+      path: 'src/ai-workspace',
+      url: 'http://localhost:9005/lively4-core/src/ai-workspace/',
+      name: 'ai-workspace',
+      isFile: false,
+      indexContent: '# AI Workspace\n\nExample project...'
+    });
     
     // Add some tool usages (simulating AI agent activity)
     this.addToolUsage('mcp_read');

@@ -26,6 +26,7 @@ import paths from './paths.js';
 import contextmenu from './contextmenu.js';
 import keys from './keys.js';
 import components from './morphic/component-loader.js';
+import changes from './changes.js';
 import authGithub from './auth-github.js';
 import authDropbox from './auth-dropbox.js';
 import authGoogledrive from './auth-googledrive.js';
@@ -61,7 +62,7 @@ var debugLogHightlights = new WeakMap();
 var exportmodules = ["preferences", "files", "keys", "paths", "html", "reflection", "components", "persistence",
 // "color",
 "debug",
-"focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows"];
+"focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows", "changes"];
 
 class LivelyNotification {
   constructor(data) {
@@ -302,8 +303,7 @@ export default class Lively {
   }
 
   static async reloadModule(path, force = false, forceRetranspile, deep=true) {
-    // var start = performance.now()
-    // console.profile('reloadModule')
+    const startTime = performance.now();
 
     path = "" + path;
     var changedModule = System.normalizeSync(path);
@@ -311,7 +311,16 @@ export default class Lively {
     if (!load && !force) {
       await this.unloadModule(path); // just to be sure...
       console.warn("Don't reload non-loaded module");
-      return;
+      return {
+        module: null,
+        mainModule: path,
+        reloadedDependencies: [],
+        dependencyCount: 0,
+        duration: 0,
+        deep: deep,
+        success: false,
+        skipped: true
+      };
     }
     if(forceRetranspile) {
       System.forceRetranspilation = true;    
@@ -360,11 +369,13 @@ export default class Lively {
     // start = performance.now()
 
     // and update them
+    let failedDependencies = [];
     for (let ea of dependedModules) {
       try {
         await this.unloadModule(ea);
       } catch (e) {
         lively.notify("[lively] Ignore Error unloadModule dependend module", ea, e);
+        failedDependencies.push(ea);
       }
     }
 
@@ -375,6 +386,9 @@ export default class Lively {
         await System.import(ea);
       } catch (e) {
         lively.error("Error reloading dependend module", ea);
+        if (!failedDependencies.includes(ea)) {
+          failedDependencies.push(ea);
+        }
       }
     }
 
@@ -416,7 +430,18 @@ export default class Lively {
     // console.log("[reloadModule] updated components ",(performance.now() - start) + `ms` ) 
     // console.profileEnd('reloadModule')
 
-    return mod;
+    const duration = performance.now() - startTime;
+
+    return {
+      module: mod,
+      mainModule: path,
+      reloadedDependencies: dependedModules,
+      failedDependencies: failedDependencies,
+      dependencyCount: dependedModules.length,
+      duration: Math.round(duration),
+      deep: deep,
+      success: failedDependencies.length === 0
+    };
   }
 
   static loadJavaScriptThroughDOM(name, src, force = false, type = "text/javascript") {
@@ -443,6 +468,89 @@ export default class Lively {
       };
       document.head.appendChild(script);
     });
+  }
+
+  static loadJavaScriptModuleThroughDOM(name, src, force = false) {
+    // Create global cache for modules
+    if (!window.__lively_modules__) {
+      window.__lively_modules__ = {};
+    }
+    
+    // Create global cache for in-flight loading promises
+    if (!window.__lively_module_promises__) {
+      window.__lively_module_promises__ = {};
+    }
+    
+    // Check if module is already fully loaded (and not forced reload)
+    if (!force) {
+      const cachedModule = window.__lively_modules__[name];
+      if (cachedModule) {
+        return Promise.resolve(cachedModule);
+      }
+      
+      // Check if module is currently being loaded - return same promise
+      const inFlightPromise = window.__lively_module_promises__[name];
+      if (inFlightPromise) {
+        return inFlightPromise;
+      }
+    }
+    
+    // Create new loading promise
+    const loadPromise = new Promise((resolve, reject) => {
+      var scriptNode = document.querySelector("#" + name);
+
+      if (scriptNode) {
+        scriptNode.remove();
+      }
+
+      // Create unique callback name
+      const callbackName = `__lively_module_callback_${name}_${Date.now()}`;
+      
+      // Create inline module script that imports and exposes the module
+      var script = document.createElement("script");
+      script.id = name;
+      script.type = "module";
+      
+      const moduleSrc = force ? src + ("?" + Date.now()) : src;
+      
+      script.textContent = `
+        try {
+          const module = await import('${moduleSrc}');
+          window.__lively_modules__['${name}'] = module;
+          if (window['${callbackName}']) {
+            window['${callbackName}'](module);
+            delete window['${callbackName}'];
+          }
+        } catch (error) {
+          if (window['${callbackName}_error']) {
+            window['${callbackName}_error'](error);
+            delete window['${callbackName}_error'];
+          }
+        }
+      `;
+      
+      // Set up callbacks
+      window[callbackName] = (module) => {
+        // Clean up in-flight promise cache
+        delete window.__lively_module_promises__[name];
+        resolve(module);
+      };
+      
+      window[callbackName + '_error'] = (error) => {
+        // Clean up in-flight promise cache on error
+        delete window.__lively_module_promises__[name];
+        reject(error);
+      };
+      
+      document.head.appendChild(script);
+    });
+    
+    // Cache the in-flight promise (unless force reload)
+    if (!force) {
+      window.__lively_module_promises__[name] = loadPromise;
+    }
+    
+    return loadPromise;
   }
 
   static loadCSSThroughDOM(name, href, force) {
@@ -2035,7 +2143,10 @@ export default class Lively {
             // ace.gotoLine(lineAndColumn.line, lineAndColumn.column)
             );
           } else if (locationObject) {
-            codeMirror.setSelection(locationObject.start, locationObject.end);
+            let start = _.isNumber(locationObject.start) ? codeMirror.posFromIndex(locationObject.start) : locationObject
+            let end = _.isNumber(locationObject.end) ? codeMirror.posFromIndex(locationObject.end) : locationObject
+            
+            codeMirror.setSelection(start, end);
           }
           codeMirror.focus();
           codeMirror.scrollIntoView(codeMirror.getCursor(), 200);

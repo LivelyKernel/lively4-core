@@ -1,10 +1,17 @@
 import OpenAI from "src/client/openai.js";
 import LivelyChat from './lively-chat.js';
 import { BasicToolset } from "./realtime-chat-tools/basic-toolset.js";
+import { WorkspaceToolset } from "./realtime-chat-tools/workspace-toolset.js";
+import { MessageToolset } from "./realtime-chat-tools/message-toolset.js";
+import { CompositeToolset } from "./realtime-chat-tools/composite-toolset.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
 /*MD # OpenAI Realtime Chat - Pure WebRTC Streaming
+
+
+<https://developers.openai.com/api/reference/resources/realtime/client-events>
+
 MD*/
 
 export default class OpenaiRealtimeChat extends LivelyChat {
@@ -136,7 +143,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // Wrapper for base class scrollToBottom method for backwards compatibility
   scrollResponsesSoon(delay = 100) {
-    this.scrollToBottom(this.get('#messagesContainer'), true, delay);
+    this.scrollToBottom(this.get('#messagesContainer'), false, delay);
   }
 
   createDebugHeader(metaInfo) {
@@ -163,6 +170,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       conversations: 'id, timestamp, lastMessageTime',
       messages: '++id, conversationId, sequence, timestamp, type, role'
     });
+    // Version 3: Add item_id for OpenAI Realtime API message tracking
+    db.version(3).stores({
+      conversations: 'id, timestamp, lastMessageTime',
+      messages: '++id, conversationId, sequence, timestamp, type, role, item_id'
+    });
     return db;
   }
 
@@ -179,17 +191,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     this.windowTitle = "OpenAI Realtime Chat";
 
-    // Initialize debug log visibility (controlled by showDebug property)
-    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
-
     // Realtime WebRTC properties
     this.peerConnection = null;
     this.dataChannel = null;
     this.isStreamingActive = false;
     this.ephemeralToken = null;
-
-    // Message sequencing for debug
-    this.messageSequence = this.messageSequence || 0;
 
     // Track saved response items by OpenAI item_id to prevent duplicates
     this.savedResponseItems = this.savedResponseItems || new Set();
@@ -198,6 +204,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Track accumulated transcripts for assistant streaming messages
     this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
+
+    // Track message timestamps by item_id to preserve ordering across updates
+    // CRITICAL: Timestamps must never change after initial assignment
+    this.messageTimestamps = this.messageTimestamps || new Map();
 
     // Agent status tracking (for coordination with coding agent)
     this.agentStatus = this.agentStatus || 'idle';
@@ -210,7 +220,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // External configuration (can be set by container)
     this.customInstructions = this.customInstructions || null;
     this.availableTools = this.availableTools || null; // null = all tools
+    this.workspaceReference = this.workspaceReference || null; // Reference to lively-ai-workspace if embedded
 
+    // Tool permissions will be loaded in setupToolSettings()
     // Initialize toolset (basic tools for pure audio chat)
     this.toolset = this.toolset || new BasicToolset();
 
@@ -223,8 +235,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.ensureConversation();
     await this.setupSessionsComponent();
     await this.setupVoiceSelection();
+    await this.setupVadSelection();
 
-    await this.setupModelSelecton()
+    await this.setupModelSelecton();
+    await this.setupToolSettings();
     this.setupUI();
     await this.renderMessages();
     lively.ensureID(this);
@@ -235,7 +249,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
   
   setupModelSelecton() {
-    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-mini"]);
+    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-1.5","gpt-realtime-mini"]);
     this.get("#modelBox").value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
     this.get("#modelBox").addEventListener("change", () => {
       lively.preferences.set("openai-realtime-chat-model", this.get("#modelBox").value);
@@ -251,20 +265,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         if (conversations.length > 0) {
           // Load existing conversation
           const convId = conversations[0].id;
-          // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+          // Sort by timestamp for correct ordering
           const messages = await this.getMessages(convId).toArray();
-          messages.sort((a, b) => {
-            if (a.sequence !== undefined && b.sequence !== undefined) {
-              return a.sequence - b.sequence;
-            }
-            return (a.timestamp || 0) - (b.timestamp || 0);
-          });
+          messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
           this.currentConversationId = convId;
           this.conversation = messages;
-
-          // Update sequence counter based on loaded messages
-          const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
-          this.messageSequence = maxSequence + 1;
         } else {
           // Create new conversation if none exist
           await this.createSession();
@@ -292,6 +297,235 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       await this.reconnectWithNewVoice();
     });
     this.realtimeVoice = voiceBox.value;
+  }
+
+  async setupVadSelection() {
+    // Setup VAD type selection
+    const vadTypeBox = this.get("#vadTypeBox");
+    vadTypeBox.setOptions(["server_vad", "semantic_vad"]);
+    vadTypeBox.value = lively.preferences.get("openai-realtime-chat-vad-type") || "server_vad";
+    this.vadType = vadTypeBox.value;
+
+    // Setup VAD eagerness selection (only for semantic_vad)
+    const vadEagernessBox = this.get("#vadEagernessBox");
+    vadEagernessBox.setOptions(["low", "medium", "high", "auto"]);
+    vadEagernessBox.value = lively.preferences.get("openai-realtime-chat-vad-eagerness") || "medium";
+    this.vadEagerness = vadEagernessBox.value;
+
+    // Setup VAD threshold slider (only for server_vad)
+    const vadThresholdSlider = this.get("#vadThresholdSlider");
+    const vadThresholdValue = this.get("#vadThresholdValue");
+    const vadThresholdContainer = this.get("#vadThresholdContainer");
+    
+    const savedThreshold = lively.preferences.get("openai-realtime-chat-vad-threshold");
+    this.vadThreshold = savedThreshold !== undefined ? savedThreshold : 0.85;
+    vadThresholdSlider.value = this.vadThreshold;
+    vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
+
+    // Show/hide controls based on VAD type
+    const updateControlsVisibility = () => {
+      vadEagernessBox.style.display = this.vadType === "semantic_vad" ? "block" : "none";
+      vadThresholdContainer.style.display = this.vadType === "server_vad" ? "flex" : "none";
+    };
+    updateControlsVisibility();
+
+    // VAD type change handler
+    vadTypeBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-vad-type", vadTypeBox.value);
+      this.vadType = vadTypeBox.value;
+      updateControlsVisibility();
+      await this.updateVadSettings();
+    });
+
+    // Eagerness change handler
+    vadEagernessBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-vad-eagerness", vadEagernessBox.value);
+      this.vadEagerness = vadEagernessBox.value;
+      await this.updateVadSettings();
+    });
+
+    // Threshold slider change handler
+    vadThresholdSlider.addEventListener("input", (evt) => {
+      this.vadThreshold = parseFloat(evt.target.value);
+      vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
+    });
+
+    vadThresholdSlider.addEventListener("change", async (evt) => {
+      this.vadThreshold = parseFloat(evt.target.value);
+      lively.preferences.set("openai-realtime-chat-vad-threshold", this.vadThreshold);
+      vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
+      await this.updateVadSettings();
+    });
+  }
+
+  async setupToolSettings() {
+    // Load saved tool permissions
+    this.loadToolPermissions();
+
+    // Setup modal event handlers
+    const toolSettingsButton = this.get("#toolSettingsButton");
+    const toolSettingsModal = this.get("#toolSettingsModal");
+    const toolSettingsOverlay = this.get("#toolSettingsOverlay");
+    const saveButton = this.get("#saveToolSettings");
+    const cancelButton = this.get("#cancelToolSettings");
+
+    // Open modal
+    toolSettingsButton?.addEventListener("click", () => {
+      this.openToolSettingsModal();
+    });
+
+    // Close modal on overlay click
+    toolSettingsOverlay?.addEventListener("click", () => {
+      this.closeToolSettingsModal();
+    });
+
+    // Cancel button
+    cancelButton?.addEventListener("click", () => {
+      this.closeToolSettingsModal();
+    });
+
+    // Save button
+    saveButton?.addEventListener("click", () => {
+      this.saveToolPermissions();
+      this.closeToolSettingsModal();
+    });
+
+    // Update toolset based on loaded permissions
+    this.updateToolset();
+  }
+
+  openToolSettingsModal() {
+    const modal = this.get("#toolSettingsModal");
+    const overlay = this.get("#toolSettingsOverlay");
+
+    // Load current settings into checkboxes
+    const allowCodeEval = this.get("#allowCodeEvaluation");
+    const allowOpenCode = this.get("#allowOpenCodeTasks");
+    const allowMessageInspection = this.get("#allowMessageInspection");
+
+    if (allowCodeEval) {
+      allowCodeEval.checked = this.toolPermissions.allowCodeEvaluation;
+    }
+    if (allowOpenCode) {
+      allowOpenCode.checked = this.toolPermissions.allowOpenCodeTasks;
+    }
+    if (allowMessageInspection) {
+      allowMessageInspection.checked = this.toolPermissions.allowMessageInspection;
+    }
+
+    // Show modal
+    modal?.classList.add("visible");
+    overlay?.classList.add("visible");
+  }
+
+  closeToolSettingsModal() {
+    const modal = this.get("#toolSettingsModal");
+    const overlay = this.get("#toolSettingsOverlay");
+
+    modal?.classList.remove("visible");
+    overlay?.classList.remove("visible");
+  }
+
+  loadToolPermissions() {
+    // Load from preferences, use defaults if not set
+    const savedPermissions = lively.preferences.get("openai-realtime-chat-tool-permissions");
+    
+    // Always set toolPermissions, don't rely on || operator
+    if (savedPermissions && typeof savedPermissions === 'object') {
+      this.toolPermissions = {
+        allowCodeEvaluation: savedPermissions.allowCodeEvaluation !== false,
+        allowOpenCodeTasks: savedPermissions.allowOpenCodeTasks !== false,
+        allowMessageInspection: savedPermissions.allowMessageInspection !== false
+      };
+    } else {
+      // Defaults: all enabled
+      this.toolPermissions = {
+        allowCodeEvaluation: true,
+        allowOpenCodeTasks: true,
+        allowMessageInspection: true
+      };
+    }
+
+    this.log("[Tool Permissions] Loaded:", this.toolPermissions);
+  }
+
+  saveToolPermissions() {
+    // Read from checkboxes
+    const allowCodeEval = this.get("#allowCodeEvaluation");
+    const allowOpenCode = this.get("#allowOpenCodeTasks");
+    const allowMessageInspection = this.get("#allowMessageInspection");
+
+    this.toolPermissions = {
+      allowCodeEvaluation: allowCodeEval?.checked !== false,
+      allowOpenCodeTasks: allowOpenCode?.checked !== false,
+      allowMessageInspection: allowMessageInspection?.checked !== false
+    };
+
+    // Save to preferences
+    lively.preferences.set("openai-realtime-chat-tool-permissions", this.toolPermissions);
+
+    this.log("[Tool Permissions] Saved:", this.toolPermissions);
+
+    // Update toolset with new permissions
+    this.updateToolset();
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+      lively.success("Tool permissions updated", "Reconnect to apply changes");
+    } else {
+      lively.success("Tool permissions saved");
+    }
+  }
+
+  updateToolset() {
+    const { allowCodeEvaluation, allowOpenCodeTasks, allowMessageInspection } = this.toolPermissions;
+
+    // Get workspace reference if available (for WorkspaceToolset and MessageToolset)
+    // Try stored reference first, then query DOM
+    const workspace = this.workspaceReference || lively.query(document.body, "lively-ai-workspace");
+
+    // Build toolset based on permissions
+    const toolsets = [];
+    const allowedToolNames = [];
+
+    // BasicToolset tools
+    const basicToolset = new BasicToolset();
+    toolsets.push(basicToolset);
+
+    // Add BasicToolset tool names if allowed
+    if (allowCodeEvaluation) {
+      allowedToolNames.push('evaluate_code');
+    }
+
+    // Add WorkspaceToolset if OpenCode tasks are allowed AND workspace is available
+    if (allowOpenCodeTasks && workspace) {
+      const workspaceToolset = new WorkspaceToolset(workspace);
+      toolsets.push(workspaceToolset);
+      allowedToolNames.push('send_opencode_task');
+    }
+
+    // Add MessageToolset if message inspection is allowed AND workspace is available
+    if (allowMessageInspection && workspace) {
+      const messageToolset = new MessageToolset(workspace);
+      toolsets.push(messageToolset);
+      allowedToolNames.push('get_recent_messages', 'search_messages', 'get_message_by_id');
+    }
+
+    // Use CompositeToolset if we have multiple toolsets, otherwise just the basic one
+    if (toolsets.length > 1) {
+      this.toolset = new CompositeToolset(...toolsets);
+    } else {
+      this.toolset = toolsets[0];
+    }
+
+    // Use setAvailableTools to filter based on permissions
+    // This leverages the existing filtering in getFunctionDefinitions()
+    // Empty array = no tools allowed, null = all tools allowed
+    this.setAvailableTools(allowedToolNames);
+
+    this.log("[Tool Permissions] Toolset updated with permissions:", this.toolPermissions);
+    this.log("[Tool Permissions] Available tools:", this.getFunctionDefinitions().map(t => t.name));
   }
   
   /*MD ## WebRTC Lifecycle MD*/
@@ -399,6 +633,16 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   onResetButton(evt) {
     this.createSession();
     this.clearDebugLog()
+  }
+  onToolSettingsButton() {
+    this.openToolSettingsModal();
+  }
+  onSaveToolSettings() {
+    this.saveToolPermissions();
+    this.closeToolSettingsModal();
+  }
+  onCancelToolSettings() {
+    this.closeToolSettingsModal();
   }
   
   async setupUI() {
@@ -582,81 +826,117 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Conversation Messages MD*/
   // #important
-  async addMessage(role, text, metadata = {}) {
-    const myMessage = {
-      role,
-      "content": text,
-      sequence: this.messageSequence++,
-      metadata: metadata,
-      type: metadata.type || 'tool',
-      timestamp: Date.now()
-    };
-
-    // Skip adding to conversation array during replay mode
-    if (this.canWriteToDatabase()) {
-      this.conversation.push(myMessage);
-    }
-
-    this.log(`[realtime] addMessage: ${role} (seq ${myMessage.sequence})`);
-    this.dispatchMessageEvent('realtime:add-message', myMessage);
-    await this.renderMessage(myMessage);
-    await this.saveMessageToDb(myMessage);
-  }
-
-  // #important
   async renderMessage(message) {
     if (!this.messagesUI) return; 
 
-    this.log(`[realtime] renderMessage: ${message.role} (seq ${message.sequence})`);
-    const chatMessage = await <lively-chat-message></lively-chat-message>;
-    await chatMessage.setMessage(message);
-    this.get('#messagesContainer').appendChild(chatMessage);
+    this.log(`[realtime] renderMessage: ${message.role}`);
+    
+    // Check if already rendered by item_id to prevent duplicates
+    if (message.item_id && this.chatMessages.has(message.item_id)) {
+      this.log(`[item_id] Message already rendered: ${message.item_id}`);
+      return this.chatMessages.get(message.item_id);
+    }
+    
+    // Use base class method which handles tool call appending automatically
+    const chatMessage = await this.renderChatMessage(message, message.item_id, {
+      container: this.get('#messagesContainer'),
+      enableBuffering: false
+    });
+    
+    // Track rendered message by item_id to prevent duplicates
+    if (message.item_id) {
+      this.chatMessages.set(message.item_id, chatMessage);
+      this.log(`[item_id] Tracked rendered message: ${message.item_id}`);
+    }
+    
     this.scrollResponsesSoon();
     return chatMessage
   }
 
   /*MD ## Live Updates MD*/
 
-  async createMessage(item_id, role, initialContent = null, persist = false) {
-    // Use provided content or fallback to placeholder
-    const content = initialContent || (role === 'user' ? '_Listening..._' : '');
+  /**
+   * Unified method for creating realtime messages
+   * 
+   * @param {string} role - Message role: 'user', 'assistant', or 'tool'
+   * @param {string} content - Message content (may be placeholder for streaming messages)
+   * @param {Object} options - Configuration options
+   * @param {string} options.item_id - OpenAI item_id for streaming messages (enables widget tracking)
+   * @param {Object} options.metadata - Additional metadata (type, functionName, call_id, etc.)
+   * @param {boolean} options.persist - Whether to save to database (auto-determined if null)
+   * @param {string} options.eventName - Custom event name (auto-determined if null)
+   * @returns {Object} messageData object with role, content, timestamp, etc.
+   */
+  async createRealtimeMessage(role, content, {
+    item_id = null,
+    metadata = {},
+    persist = null,
+    eventName = null
+  } = {}) {
+    // Auto-determine persistence if not specified
+    // Streaming messages (with item_id): only persist if content is complete (not placeholder)
+    // Non-streaming messages: always persist
+    const isStreamingMessage = !!item_id;
+    const hasCompleteContent = content && content !== '_Listening..._' && content !== '';
+    const shouldPersist = persist !== null 
+      ? persist 
+      : (isStreamingMessage ? hasCompleteContent : true);
 
-    // IMPORTANT: Assign timestamp ONCE at message creation time
-    const timestamp = Date.now();
+    // Auto-determine event name if not specified
+    const autoEventName = eventName || (isStreamingMessage
+      ? (role === 'user' ? 'realtime:create-live-user-message' : 'realtime:create-live-assistant-message')
+      : 'realtime:add-message');
 
-    // Create message data structure
-    const messageData = {
-      role: role,
-      content: content,
-      source: 'audio',
-      streamType: 'realtime',
-      sequence: this.messageSequence,
-      timestamp: timestamp,  // Use single timestamp
-      item_id: item_id
-    };
-
-    // Always dispatch event for workspace integration
-    const eventName = role === 'user' ? 'realtime:create-live-user-message' : 'realtime:create-live-assistant-message';
-    this.dispatchMessageEvent(eventName, messageData);
-
-    // Optionally render UI widget
-    if (this.messagesUI !== false) {
-      const widget = await this.renderMessage(messageData);
-      this.chatMessages.set(item_id, widget);
-      this.log(`[item_id] Created widget for ${item_id} (${role})`);
+    // Generate timestamp
+    const msgTimestamp = Date.now();
+    
+    // Track timestamp by item_id for streaming messages
+    if (item_id && !this.messageTimestamps.has(item_id)) {
+      this.messageTimestamps.set(item_id, msgTimestamp);
     }
 
-    // Persist to database if requested (skip during replay)
-    if (persist && initialContent && this.canWriteToDatabase()) {
-      const message = {
+    // Build message data
+    const messageData = {
+      role,
+      content,
+      metadata,
+      source: 'audio',
+      timestamp: msgTimestamp,
+      ...(item_id && { item_id }),
+      ...(metadata.type && { type: metadata.type }),
+      ...(isStreamingMessage && { streamType: 'realtime' })
+    };
+
+    // Log creation
+    this.log(`[realtime] createRealtimeMessage: ${role}${item_id ? ` (${item_id})` : ''}`);
+
+    // Dispatch event for workspace integration
+    this.dispatchMessageEvent(autoEventName, messageData);
+
+    // Render UI widget (appending logic now handled by base class renderChatMessage)
+    let widget = null;
+    if (this.messagesUI !== false) {
+      widget = await this.renderMessage(messageData);
+      
+      if (isStreamingMessage && item_id) {
+        this.chatMessages.set(item_id, widget);
+        this.log(`[item_id] Created widget for ${item_id} (${role})`);
+      }
+    }
+
+    // Persist to database
+    if (shouldPersist && content && this.canWriteToDatabase()) {
+      const dbMessage = {
         role,
-        content: initialContent,
-        sequence: this.messageSequence++,
-        timestamp: timestamp  // Reuse same timestamp
+        content,
+        metadata,
+        timestamp: msgTimestamp,
+        ...(item_id && { item_id }),
+        ...(metadata.type && { type: metadata.type })
       };
-      this.conversation.push(message);
-      await this.saveMessageToDb(message);
-      this.log(`[Persistence] Saved ${role} message via createMessage`);
+      this.conversation.push(dbMessage);
+      await this.saveMessageToDb(dbMessage);
+      this.log(`[Persistence] Saved ${role} message${item_id ? ` (${item_id})` : ''}`);
     }
 
     return messageData;
@@ -664,18 +944,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
 
   async updateMessage(item_id, role, content, persist = false) {
-    // IMPORTANT: Assign timestamp ONCE at update time
-    const timestamp = Date.now();
+    // CRITICAL: Retrieve original timestamp from Map
+    // If no timestamp exists, it means createMessage was never called - this is a bug!
+    const timestamp = this.messageTimestamps.get(item_id);
+    if (!timestamp) {
+      throw new Error(`[updateMessage] No timestamp found for ${item_id} - createMessage must be called first`);
+    }
     
-    // Create update message data
-    const widget = this.chatMessages.get(item_id);
     const messageData = {
       role: role,
       content: content,
       source: 'audio',
       streamType: 'realtime',
-      sequence: widget?.message?.sequence || this.messageSequence,
-      timestamp: timestamp,  // Use single timestamp
+      timestamp: timestamp,  // Always use original timestamp from Map
       item_id: item_id  // Include item_id for workspace lookup
     };
 
@@ -684,6 +965,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.dispatchMessageEvent(eventName, messageData);
 
     // Optionally update UI widget if it exists
+    const widget = this.chatMessages.get(item_id);
     if (widget) {
       await widget.setMessage(messageData);
       this.scrollResponsesSoon(10);
@@ -704,8 +986,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       const message = {
         role,
         content,
-        sequence: messageData.sequence || this.messageSequence++,
-        timestamp: timestamp  // Reuse same timestamp
+        timestamp: messageData.timestamp,
+        item_id: item_id
       };
       this.conversation.push(message);
       await this.saveMessageToDb(message);
@@ -717,7 +999,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async renderMessages() {  // Renamed for consistency
     this.log(`[realtime] renderMessages: full redisplay (${this.conversation.length} messages)`);
+    
+    // Clear tool call tracking when re-rendering all messages (session switch, etc.)
+    this.pendingToolCalls.clear();
+    
+    // Populate tracking sets from loaded messages to prevent duplicates
     for (let ea of this.conversation) {
+      if (ea.item_id) {
+        // Track assistant messages to prevent duplicate saves
+        if (ea.role === 'assistant') {
+          this.savedResponseItems.add(ea.item_id);
+        }
+        // Track timestamp for ordering
+        if (ea.timestamp) {
+          this.messageTimestamps.set(ea.item_id, ea.timestamp);
+        }
+      }
+      
       await this.renderMessage(ea);
     }
   }
@@ -743,7 +1041,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role: message.role,
         content: message.content,
         metadata: message.metadata || {},
-        sequence: message.sequence,
+        item_id: message.item_id, // OpenAI Realtime API item ID for deduplication
         // Add format markers for workspace integration
         source: 'audio',
         streamType: 'realtime',
@@ -763,7 +1061,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           content: message.content,
           type: message.type || "message",
           metadata: message.metadata || {},
-          sequence: message.sequence,
           timestamp: message.timestamp || Date.now()
         }
       });
@@ -791,8 +1088,15 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       });
       this.currentConversationId = conversationId;
       this.conversation = [];
+      
+      // Clear tracking maps for new conversation
+      this.chatMessages.clear();
+      this.savedResponseItems.clear();
+      this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
+      this.pendingToolCalls.clear();
+      
       this.get('#messagesContainer').innerHTML = '';
-      this.messageSequence = 0; // Reset sequence counter for new conversation
 
       // Disconnect if currently connected - user can press Start to begin new conversation
       if (this.peerConnection && this.isStreamingActive) {
@@ -825,24 +1129,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         console.error("Conversation not found:", conversationId);
         return;
       }
-      // Sort by sequence for correct ordering (fallback to timestamp for old messages)
+      // Sort by timestamp for correct ordering
       const messages = await this.getMessages(conversationId).toArray();
-      messages.sort((a, b) => {
-        if (a.sequence !== undefined && b.sequence !== undefined) {
-          return a.sequence - b.sequence;
-        }
-        return (a.timestamp || 0) - (b.timestamp || 0);
-      });
+      messages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
       this.conversation = messages;
-
-      const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
-      this.messageSequence = maxSequence + 1;
 
       this.currentConversationId = conversationId;
 
       // Clear event capture buffer when switching conversations
       this.clearEventCapture();
+
+      // Clear tracking maps before rendering new conversation
+      this.chatMessages.clear();
+      this.savedResponseItems.clear();
+      this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
+      this.pendingToolCalls.clear();
 
       this.get('#messagesContainer').innerHTML = '';
       await this.renderMessages();
@@ -1037,6 +1340,26 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const instructions = this.customInstructions ||
       "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way. You have access to several functions that you can call to help the user.";
 
+    // Build turn_detection config based on VAD type
+    const vadType = this.vadType || "server_vad";
+    let turn_detection;
+    
+    if (vadType === "semantic_vad") {
+      turn_detection = {
+        type: "semantic_vad",
+        eagerness: this.vadEagerness || "medium",
+        create_response: true,
+        interrupt_response: true
+      };
+    } else {
+      turn_detection = {
+        type: "server_vad",
+        threshold: this.vadThreshold !== undefined ? this.vadThreshold : 0.85,
+        prefix_padding_ms: 300,
+        silence_duration_ms: 700
+      };
+    }
+
     const sessionConfig = {
       type: "session.update",
       session: {
@@ -1045,12 +1368,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         input_audio_transcription: {
           model: "whisper-1"
         },
-        turn_detection: {
-          type: "server_vad",
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500
-        },
+        turn_detection: turn_detection,
         tools: this.getFunctionDefinitions(),
         tool_choice: "auto"
       }
@@ -1075,55 +1393,63 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const messagesToSend = this.conversation.filter(msg =>
       msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
     );
+    
     if (messagesToSend.length === 0) {
       this.log("No messages in history");
       return;
     }
     this.log(`Sending ${messagesToSend.length} historical messages (including tool calls) to API`);
 
+    
     // Send each message as a conversation item
     for (const msg of messagesToSend) {
+      let event = {
+        type: "conversation.item.create"
+      }
       if (msg.role === 'tool') {
-        // Handle tool messages based on their type
-        if (msg.type === 'function_call' || msg.metadata?.type === 'function_call') {
-          // Function call - send as function_call item
-          const item = {
-            type: "conversation.item.create",
-            item: {
+        if (msg.type === 'function_call' ) {
+          event.item = {    
               type: "function_call",
               name: msg.metadata.functionName,
               call_id: msg.metadata.call_id,
               arguments: JSON.stringify(msg.metadata.arguments)
             }
-          };
-          this.sendDataChannelMessage(item, { warnOnClosed: false });
-        } else if (msg.type === 'function_call_output' || msg.metadata?.type === 'function_call_output') {
-          // Function call output - send as function_call_output item
-          const item = {
-            type: "conversation.item.create",
-            item: {
+        } else if (msg.type === 'function_call_output' ) {
+          event.item = {
               type: "function_call_output",
               call_id: msg.metadata.call_id,
               output: JSON.stringify(msg.metadata.output)
             }
-          };
-          this.sendDataChannelMessage(item, { warnOnClosed: false });
         }
+      } else if (msg.role === 'user') {
+          event.item = {
+              type: "message",
+              role: msg.role,
+              content: [{
+                type: "input_text",
+                text: msg.content
+              }]
+            }
+          
+      } else if (msg.role === 'assistant') {
+           event.item = {
+              type: "message",
+              role: msg.role,
+              content: [{
+                type: "text",
+                text: msg.content
+              }]
+            }
       } else {
-        // User or assistant message
-        const item = {
-          type: "conversation.item.create",
-          item: {
-            type: "message",
-            role: msg.role,
-            content: [{
-              type: "input_text",
-              text: msg.content
-            }]
-          }
-        };
-        this.sendDataChannelMessage(item, { warnOnClosed: false });
+         throw new Error("replay not supported")
       }
+      
+      // Include item_id if available to preserve OpenAI message IDs
+      if (msg.item_id && event.item) {
+        event.item.id = msg.item_id;
+      }
+      
+      this.sendDataChannelMessage(event, { warnOnClosed: false });
     }
     lively.notify("History Loaded", `${messagesToSend.length} messages sent to context`);
   }
@@ -1138,6 +1464,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Reconnect with new voice (conversation history is preserved in this.conversation)
     await this.connectRealtimeWebRTC();
     lively.success("Voice changed", `Now using ${this.realtimeVoice}`);
+  }
+
+  async updateVadSettings() {
+    const vadType = this.vadType || "server_vad";
+    const displayName = vadType === "semantic_vad" 
+      ? `Semantic VAD (${this.vadEagerness})`
+      : "Server VAD";
+    
+    this.log('[VAD Settings] VAD type changed to:', displayName);
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+      lively.success("VAD updated", displayName);
+    } else {
+      lively.notify("VAD will be applied", `${displayName} on next connection`);
+    }
   }
 
   // #important
@@ -1289,7 +1632,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           const hasAudioContent = message.item.content?.some(c => c.type === 'input_audio');
           const shouldPersist = initialContent && role === 'user' && !hasAudioContent;
 
-          await this.createMessage(item_id, role, initialContent, shouldPersist);
+          const content = initialContent || (role === 'user' ? '_Listening..._' : '');
+          await this.createRealtimeMessage(role, content, { item_id, persist: shouldPersist });
         }
         break;
       case "conversation.item.input_audio_transcription.delta":
@@ -1426,12 +1770,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.currentConversationId = replayConversationId;
     this.conversation = [];
     this.get('#messagesContainer').innerHTML = '';
-    this.messageSequence = 0;
 
     // Clear tracking maps to allow replay to create new widgets
     this.chatMessages.clear();
     this.savedResponseItems.clear();
     this.accumulatedTranscripts.clear();
+    this.messageTimestamps.clear();
 
     // Ensure we're not connected to WebRTC during replay
     if (this.peerConnection && this.isStreamingActive) {
@@ -1455,6 +1799,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.chatMessages.clear();
       this.savedResponseItems.clear();
       this.accumulatedTranscripts.clear();
+      this.messageTimestamps.clear();
     }
   }
 
@@ -1518,11 +1863,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Add tool call message to chat
     const argsPreview = JSON.stringify(functionArgs).length > 50 ? JSON.stringify(functionArgs).substring(0, 47) + "..." : JSON.stringify(functionArgs);
-    await this.addMessage("tool", `🔧 Calling **${functionName}**(${argsPreview})`, {
-      type: "function_call",
-      functionName: functionName,
-      call_id: callId,
-      arguments: functionArgs
+    await this.createRealtimeMessage("tool", `🔧 Calling **${functionName}**(${argsPreview})`, {
+      metadata: {
+        type: "function_call",
+        functionName: functionName,
+        call_id: callId,
+        arguments: functionArgs
+      }
     });
     try {
       // Execute the function
@@ -1549,10 +1896,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         resultText = JSON.stringify(result);
       }
 
-      await this.addMessage("tool", `↩️ Result: ${resultText}`, {
-        type: "function_call_output",
-        call_id: callId,
-        output: result
+      await this.createRealtimeMessage("tool", `↩️ Result: ${resultText}`, {
+        metadata: {
+          type: "function_call_output",
+          call_id: callId,
+          output: result
+        }
       });
 
       // Send the result back to the realtime API
@@ -1573,12 +1922,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       lively.notify("Function Error", error.message);
 
       // Add error message to chat
-      await this.addMessage("tool", `❌ Error: ${error.message}`, {
-        type: "function_call_output",
-        call_id: callId,
-        output: {
-          success: false,
-          error: error.message
+      await this.createRealtimeMessage("tool", `❌ Error: ${error.message}`, {
+        metadata: {
+          type: "function_call_output",
+          call_id: callId,
+          output: {
+            success: false,
+            error: error.message
+          }
         }
       });
 
@@ -1625,8 +1976,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           content: msg.content,
           type: msg.type,
           metadata: msg.metadata,
-          timestamp: msg.timestamp,
-          sequence: msg.sequence
+          timestamp: msg.timestamp
         })).join('\n');
         navigator.clipboard.writeText(jsonlText);
         lively.notify("Copied as JSONL", `${this.conversation.length} messages copied`);
@@ -1789,6 +2139,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.savedResponseItems = other.savedResponseItems || new Set();
     // Note: chatMessages migration handled by base class
     this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
+    this.messageTimestamps = other.messageTimestamps || new Map();
 
     this.get("#voiceBox").value = other.get("#voiceBox").value
     this.get("#modelBox").value = other.get("#modelBox").value
@@ -1817,6 +2168,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Clear conversation data
     this.conversation = [];
+    
+    // Clear timestamp tracking (important for replay rewind)
+    if (this.messageTimestamps) {
+      this.messageTimestamps.clear();
+    }
   }
 
   livelyPrepareSave() {
