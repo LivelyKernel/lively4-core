@@ -77,8 +77,32 @@ export class Point {
     return new Point(this.x, this.y - dy);
   }
 
+  divPt(p) {
+    return new Point(this.x / p.x, this.y / p.y);
+  }
+
+  divXY(dx, dy) {
+    return new Point(this.x / dx, this.y / dy);
+  }
+
+  divX(dx) {
+    return new Point(this.x / dx, this.y);
+  }
+
+  divY(dy) {
+    return new Point(this.x, this.y / dy);
+  }
+
   midPt(p) {
     return new Point((this.x + p.x) / 2, (this.y + p.y) / 2);
+  }
+
+  half() {
+    return new Point(this.x / 2, this.y / 2);
+  }
+
+  double() {
+    return new Point(this.x * 2, this.y * 2);
   }
 
   /*MD ## transforming MD*/
@@ -217,6 +241,14 @@ export class Point {
         y21 = p2.y - y1,
         t = (((this.y - y1) / x21) + ((this.x - x1) / y21)) / ((x21 / y21) + (y21 / x21));
     return pt(x1 + (t * x21), y1 + (t * y21));
+  }
+  
+  shorterDimension() {
+    return Math.min(Math.abs(this.x), Math.abs(this.y))
+  }
+  
+  longerDimension() {
+    return Math.max(Math.abs(this.x), Math.abs(this.y))
   }
 
   /*MD ## vector math MD*/
@@ -392,6 +424,7 @@ export class Rectangle {
   getY() { return this.y; }
   getWidth() { return this.width; }
   getHeight() { return this.height; }
+  toXYWidthHeight() { return [this.x, this.y, this.width, this.height]; }
 
   /*MD ## instance creation MD*/
   copy() {
@@ -753,6 +786,14 @@ export class Rectangle {
   }
 
   /*MD ## properties MD*/
+  minX() {
+    return this.x;
+  }
+
+  minY() {
+    return this.y;
+  }
+
   maxX() {
     return this.x + this.width;
   }
