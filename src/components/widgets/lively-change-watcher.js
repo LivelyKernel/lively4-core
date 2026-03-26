@@ -324,16 +324,11 @@ The file watcher now properly handles connection lifecycle with the component's 
     
     // Find matching containers
     containers.forEach(container => {
-      try {
-        const containerPath = container.getPath && container.getPath();
-        if (containerPath === expectedUrl) {
-          matchingContainers.push(container);
-        }
-      } catch (error) {
-        console.warn('Error checking container:', error);
+      if (container.getBaseURL() === expectedUrl) {
+        matchingContainers.push(container);
       }
     });
-    
+
     if (matchingContainers.length === 0) {
       // No open containers 
       this.markChangeAsUnopened(change);

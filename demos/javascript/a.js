@@ -22,4 +22,4 @@ class Foo {
 
 lively.notify("loaded a!!!")
 
-lively.notify("💫 Watcher test #7 - Keep testing a.js changes!")
+lively.notify("🚀 Second modification complete! The file watcher is working great!")
