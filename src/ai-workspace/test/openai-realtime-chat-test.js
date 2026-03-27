@@ -829,5 +829,75 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const partsContainer = messageComponent.get('#partsContainer');
       expect(partsContainer.children.length).to.be.greaterThan(0);
     });
+    
+    it('should render read_file_voice results with syntax highlighting', async () => {
+      const msg = {
+        role: 'tool',
+        source: 'audio',
+        metadata: {
+          type: 'function_call_output',
+          call_id: 'test-call-456',
+          output: {
+            success: true,
+            tool: 'read_file_voice',
+            path: 'test/example.js',
+            content: '1: // test file\n2: const x = 42;',
+            metadata: {
+              fileName: 'example.js',
+              fileExt: 'js',
+              totalLines: 2,
+              shownLines: [1, 2]
+            }
+          }
+        }
+      };
+
+      await messageComponent.setMessage(msg);
+
+      // Check that VoxReadFileTool renderer was used
+      const partsContainer = messageComponent.get('#partsContainer');
+      const details = partsContainer.querySelector('details');
+      expect(details).to.not.be.null;
+      
+      // Check compact-tool-call class
+      expect(details.classList.contains('compact-tool-call')).to.be.true;
+      
+      // Check summary with file icon and name
+      const summary = details.querySelector('summary');
+      expect(summary).to.not.be.null;
+      expect(summary.textContent).to.include('📖');
+      expect(summary.textContent).to.include('example.js');
+      
+      // Check that content is in a code block (lively-markdown element)
+      const markdown = details.querySelector('lively-markdown');
+      expect(markdown).to.not.be.null;
+    });
+    
+    it('should fall back to generic renderer for unknown tools', async () => {
+      const msg = {
+        role: 'tool',
+        source: 'audio',
+        metadata: {
+          type: 'function_call_output',
+          call_id: 'test-call-789',
+          functionName: 'some_unknown_tool',
+          output: {
+            success: true,
+            result: 'Test result'
+          }
+        }
+      };
+
+      await messageComponent.setMessage(msg);
+
+      // Check that generic Vox renderer was used (should have details)
+      const partsContainer = messageComponent.get('#partsContainer');
+      const details = partsContainer.querySelector('details');
+      expect(details).to.not.be.null;
+      
+      // Generic renderer should show JSON output
+      const markdown = details.querySelector('lively-markdown');
+      expect(markdown).to.not.be.null;
+    });
   });
 });
