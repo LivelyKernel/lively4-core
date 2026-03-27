@@ -175,6 +175,9 @@ mcp__lively4__inspect-test-results(
 - ✅ Grep filtering across all tests
 - ✅ Minimal output mode to save tokens
 
+**Known Issues:**
+- ⚠️ **TODO: Test count reporting incomplete**: The MCP test runner reports only a subset of tests executed (e.g., 8 tests when file contains 31). Tests still run and pass/fail correctly, but the summary doesn't reflect all tests. This needs to be fixed in the MCP test runner implementation.
+
 **Prerequisites:**
 - `lively-mcp` component must be running in browser
 - Open via: `lively.openComponentInWindow('lively-mcp')` or Right-click → Tools → MCP

@@ -6,7 +6,7 @@
 
 For Human/Agent team:
 
-
+- [ ] **Fix MCP test runner reporting**: Reports only subset of tests (e.g., 8 out of 31 tests in openai-realtime-chat-test.js). Tests execute correctly but count is wrong. Need to investigate test result collection in lively-mcp component or MCP server test handler.
 - [X] fix test running tool "run-tests tool failed: Error: Failed to run tests: Cannot read properties of null (reading 'length')"
 - [X] in opencode get rid of "No messages yet. Start the conversation!" after first message
 - [X] find out how permissions work in opencode server mode and if wee need to implement something

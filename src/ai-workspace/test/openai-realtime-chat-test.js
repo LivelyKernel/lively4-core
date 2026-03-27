@@ -588,22 +588,55 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
     it('should load tool permissions from preferences', async () => {
       // Set preferences before component creation
-      lively.preferences.set("openai-realtime-chat-tool-permissions", {
+      const testPermissions = {
         allowCodeEvaluation: false,
         allowOpenCodeTasks: true,
-        allowMessageInspection: false
-      });
+        allowMessageInspection: false,
+        allowVoiceFileTools: true
+      };
+      lively.preferences.set("openai-realtime-chat-tool-permissions", testPermissions);
 
       // Create new component to load preferences
       const newComponent = await lively.create('openai-realtime-chat');
       newComponent.messagesUI = false;
       await newComponent.initialize();
 
-      expect(newComponent.toolPermissions).to.deep.equal({
+      // Verify all permissions are loaded correctly
+      expect(newComponent.toolPermissions).to.deep.equal(testPermissions);
+      
+      // Also verify each permission individually for clarity if test fails
+      expect(newComponent.toolPermissions.allowCodeEvaluation).to.equal(false);
+      expect(newComponent.toolPermissions.allowOpenCodeTasks).to.equal(true);
+      expect(newComponent.toolPermissions.allowMessageInspection).to.equal(false);
+      expect(newComponent.toolPermissions.allowVoiceFileTools).to.equal(true);
+
+      newComponent.remove();
+    });
+
+    it('should merge partial permissions with defaults (future-proof)', async () => {
+      // Simulate old saved preferences missing new permission fields
+      // This ensures the test remains robust when new permissions are added
+      lively.preferences.set("openai-realtime-chat-tool-permissions", {
         allowCodeEvaluation: false,
-        allowOpenCodeTasks: true,
-        allowMessageInspection: false
+        allowOpenCodeTasks: true
+        // Missing: allowMessageInspection, allowVoiceFileTools
       });
+
+      const newComponent = await lively.create('openai-realtime-chat');
+      newComponent.messagesUI = false;
+      await newComponent.initialize();
+
+      // Verify saved permissions are preserved
+      expect(newComponent.toolPermissions.allowCodeEvaluation).to.equal(false);
+      expect(newComponent.toolPermissions.allowOpenCodeTasks).to.equal(true);
+      
+      // Verify missing permissions default to true
+      expect(newComponent.toolPermissions.allowMessageInspection).to.equal(true);
+      expect(newComponent.toolPermissions.allowVoiceFileTools).to.equal(true);
+      
+      // Verify all known permission fields are present
+      const expectedKeys = ['allowCodeEvaluation', 'allowOpenCodeTasks', 'allowMessageInspection', 'allowVoiceFileTools'];
+      expect(Object.keys(newComponent.toolPermissions).sort()).to.deep.equal(expectedKeys.sort());
 
       newComponent.remove();
     });
@@ -660,7 +693,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       component.toolPermissions = {
         allowCodeEvaluation: false,
         allowOpenCodeTasks: true,
-        allowMessageInspection: false
+        allowMessageInspection: false,
+        allowVoiceFileTools: true
       };
 
       // Simulate saving
@@ -670,7 +704,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(saved).to.deep.equal({
         allowCodeEvaluation: false,
         allowOpenCodeTasks: true,
-        allowMessageInspection: false
+        allowMessageInspection: false,
+        allowVoiceFileTools: true
       });
     });
 
