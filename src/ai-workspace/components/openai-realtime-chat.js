@@ -525,7 +525,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     if (allowVoiceFileTools) {
       const voiceToolset = new VoiceToolset(this);
       toolsets.push(voiceToolset);
-      allowedToolNames.push('read_file_voice', 'list_recent_files');
+      allowedToolNames.push('read_file_voice', 'list_files_voice', 'list_recent_files');
     }
 
     // Use CompositeToolset if we have multiple toolsets, otherwise just the basic one

@@ -380,4 +380,220 @@ describe('openai-realtime-chat-tools', () => {
       }
     });
   });
+
+  describe('list_files_voice tool', () => {
+    let basicToolset;
+
+    beforeEach(() => {
+      basicToolset = new BasicToolset();
+    });
+
+    it('should be defined in BasicToolset', () => {
+      const definitions = basicToolset.getDefinitions();
+      const listFilesTool = definitions.find(d => d.name === 'list_files_voice');
+      
+      expect(listFilesTool).to.exist;
+      expect(listFilesTool.description).to.be.a('string');
+      expect(listFilesTool.parameters.properties.path).to.exist;
+    });
+
+    it('should list files in a directory (non-recursive)', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components/tool-renderers',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.tool).to.equal('list_files_voice');
+      expect(result.path).to.equal('src/ai-workspace/components/tool-renderers');
+      expect(result.files).to.be.an('array');
+      expect(result.files.length).to.be.greaterThan(0);
+      
+      // Should have vox-base-tool.js
+      const voxBaseTool = result.files.find(f => f.name === 'vox-base-tool.js');
+      expect(voxBaseTool).to.exist;
+      expect(voxBaseTool.type).to.equal('file');
+      expect(voxBaseTool.relativePath).to.equal('vox-base-tool.js');
+    });
+
+    it('should list files recursively', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components',
+        recursive: true,
+        maxDepth: 2
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.metadata.recursive).to.be.true;
+      expect(result.files).to.be.an('array');
+      
+      // Should include files from subdirectories
+      const hasSubdirFiles = result.files.some(f => f.relativePath.includes('/'));
+      expect(hasSubdirFiles).to.be.true;
+      
+      // Should have metadata
+      expect(result.metadata.totalFiles).to.be.greaterThan(0);
+      expect(result.metadata.totalDirs).to.be.greaterThan(0);
+    });
+
+    it('should filter files by pattern', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components/tool-renderers',
+        filter: 'vox-*.js',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.metadata.filter).to.equal('vox-*.js');
+      
+      // All files should match the pattern
+      const allMatchPattern = result.files
+        .filter(f => f.type === 'file')
+        .every(f => f.name.startsWith('vox-') && f.name.endsWith('.js'));
+      expect(allMatchPattern).to.be.true;
+    });
+
+    it('should exclude hidden files by default', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: '.',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      
+      // Should not include files starting with '.'
+      const hasHiddenFiles = result.files.some(f => f.name.startsWith('.'));
+      expect(hasHiddenFiles).to.be.false;
+    });
+
+    it('should include hidden files when requested', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: '.',
+        recursive: false,
+        includeHidden: true
+      });
+
+      expect(result.success).to.be.true;
+      
+      // Should include files starting with '.' (like .git, .gitignore, etc.)
+      const hasHiddenFiles = result.files.some(f => f.name.startsWith('.'));
+      expect(hasHiddenFiles).to.be.true;
+    });
+
+    it('should return empty list for nonexistent directories', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'nonexistent-directory-12345',
+        recursive: false
+      });
+
+      // lively4-server returns empty list for nonexistent dirs (not an error)
+      expect(result.success).to.be.true;
+      expect(result.files).to.be.an('array');
+      expect(result.files.length).to.equal(0);
+      expect(result.metadata.totalFiles).to.equal(0);
+    });
+
+    it('should respect maxDepth in recursive mode', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src',
+        recursive: true,
+        maxDepth: 1
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.metadata.maxDepth).to.equal(1);
+      
+      // Should not have files more than 1 level deep
+      const maxSlashes = Math.max(...result.files.map(f => 
+        (f.relativePath.match(/\//g) || []).length
+      ));
+      expect(maxSlashes).to.be.lessThan(2);
+    });
+
+    it('should support brace expansion in patterns', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components',
+        filter: '*.{js,html}',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.files.length).to.be.greaterThan(0);
+      
+      // All files should end with .js or .html
+      const allMatchPattern = result.files
+        .filter(f => f.type === 'file')
+        .every(f => f.name.endsWith('.js') || f.name.endsWith('.html'));
+      expect(allMatchPattern).to.be.true;
+    });
+
+    it('should exclude directories when filter is specified', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components',
+        filter: '*.js',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.metadata.totalDirs).to.equal(0);
+      
+      // Should only have files, no directories
+      const hasDirectories = result.files.some(f => f.type === 'directory');
+      expect(hasDirectories).to.be.false;
+    });
+
+    it('should include directories when no filter is specified', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/components',
+        recursive: false
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.metadata.totalDirs).to.be.greaterThan(0);
+      
+      // Should have directories
+      const hasDirectories = result.files.some(f => f.type === 'directory');
+      expect(hasDirectories).to.be.true;
+    });
+
+    it('should support recursive glob patterns with **', async function() {
+      this.timeout(5000);
+      
+      const result = await basicToolset.execute('list_files_voice', {
+        path: 'src/ai-workspace/test',
+        filter: '**/*-test.js',
+        recursive: true,
+        maxDepth: 2
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.files.length).to.be.greaterThan(0);
+      
+      // All files should end with -test.js
+      const allMatchPattern = result.files
+        .filter(f => f.type === 'file')
+        .every(f => f.name.endsWith('-test.js'));
+      expect(allMatchPattern).to.be.true;
+    });
+  });
 });

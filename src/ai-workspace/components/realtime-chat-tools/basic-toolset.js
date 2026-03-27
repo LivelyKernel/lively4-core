@@ -136,6 +136,187 @@ export class BasicToolset {
           }
         }
       },
+      list_files_voice: {
+        definition: {
+          type: "function",
+          name: "list_files_voice",
+          description: "List files and directories at a given path. Supports recursive listing and filtering. Use this to explore directory contents, find files, or understand project structure.",
+          parameters: {
+            type: "object",
+            properties: {
+              path: {
+                type: "string",
+                description: "Directory path to list (relative or absolute). Use '.' for current directory."
+              },
+              recursive: {
+                type: "boolean",
+                description: "If true, recursively list subdirectories. Default: false"
+              },
+              filter: {
+                type: "string",
+                description: "Optional glob pattern to filter results (e.g., '*.js', '**/*.md')"
+              },
+              maxDepth: {
+                type: "number",
+                description: "Maximum recursion depth when recursive is true. Default: 3"
+              },
+              includeHidden: {
+                type: "boolean",
+                description: "Include hidden files (starting with '.'). Default: false"
+              }
+            },
+            required: ["path"]
+          }
+        },
+        execute: async (args) => {
+          const path = args.path || '.';
+          const recursive = args.recursive || false;
+          const filter = args.filter || null;
+          const maxDepth = args.maxDepth || 3;
+          const includeHidden = args.includeHidden || false;
+
+          try {
+            // Helper to match glob patterns with brace expansion support
+            const matchesFilter = (name, pattern) => {
+              if (!pattern) return true;
+              
+              // Expand brace patterns: *.{png,jpg} -> [*.png, *.jpg]
+              const expandBraces = (pattern) => {
+                const braceMatch = pattern.match(/\{([^}]+)\}/);
+                if (!braceMatch) return [pattern];
+                
+                const options = braceMatch[1].split(',').map(s => s.trim());
+                const prefix = pattern.slice(0, braceMatch.index);
+                const suffix = pattern.slice(braceMatch.index + braceMatch[0].length);
+                
+                return options.flatMap(opt => expandBraces(prefix + opt + suffix));
+              };
+              
+              const patterns = expandBraces(pattern);
+              
+              // Convert glob to regex for each expanded pattern
+              return patterns.some(pat => {
+                // Strip leading **/ (we handle recursion separately)
+                pat = pat.replace(/^\*\*\//, '');
+                
+                // Convert glob wildcards to regex
+                const regexPattern = pat
+                  .replace(/\./g, '\\.')
+                  .replace(/\*\*/g, '.*')  // ** matches anything
+                  .replace(/\*/g, '[^/]*')  // * matches anything except /
+                  .replace(/\?/g, '.');     // ? matches single char
+                
+                return new RegExp(`^${regexPattern}$`).test(name);
+              });
+            };
+
+            // Helper to fetch directory listing
+            const fetchDirectory = async (dirPath) => {
+              const url = dirPath.startsWith('http') ? dirPath : lively4url + '/' + dirPath.replace(/^\//, '');
+              const response = await fetch(url, {
+                method: 'OPTIONS'
+              });
+
+              if (!response.ok) {
+                throw new Error(`Failed to list directory: ${response.statusText}`);
+              }
+
+              const data = await response.json();
+              return data.contents || [];
+            };
+
+            // Recursive file listing
+            const listFiles = async (dirPath, currentDepth = 0) => {
+              if (recursive && currentDepth >= maxDepth) {
+                return { files: [], truncated: true };
+              }
+
+              const entries = await fetchDirectory(dirPath);
+              const files = [];
+              let truncated = false;
+
+              for (const entry of entries) {
+                const name = entry.name;
+                const isDir = entry.type === 'directory';
+
+                // Filter hidden files
+                if (!includeHidden && name.startsWith('.')) {
+                  continue;
+                }
+
+                // Build relative path
+                // For non-recursive, use just the name. For recursive, build full path.
+                const relativePath = currentDepth === 0 && !recursive ? name : 
+                  (dirPath === '.' ? name : `${dirPath}/${name}`);
+                
+                // Build full path for directory traversal
+                const fullPath = dirPath === '.' ? name : `${dirPath}/${name}`;
+
+                if (isDir) {
+                  // Only add directory entry if no filter is specified
+                  // When filtering for specific files, we don't want to show empty directories
+                  if (!filter) {
+                    files.push({
+                      name,
+                      type: 'directory',
+                      relativePath,
+                      size: null
+                    });
+                  }
+
+                  // Recurse into subdirectory if needed
+                  if (recursive) {
+                    const subResult = await listFiles(fullPath, currentDepth + 1);
+                    files.push(...subResult.files);
+                    if (subResult.truncated) truncated = true;
+                  }
+                } else {
+                  // Add file entry if it matches filter
+                  if (matchesFilter(name, filter)) {
+                    files.push({
+                      name,
+                      type: 'file',
+                      relativePath,
+                      size: entry.size || null
+                    });
+                  }
+                }
+              }
+
+              return { files, truncated };
+            };
+
+            const result = await listFiles(path);
+
+            // Count totals
+            const totalFiles = result.files.filter(f => f.type === 'file').length;
+            const totalDirs = result.files.filter(f => f.type === 'directory').length;
+
+            return {
+              success: true,
+              tool: 'list_files_voice',
+              path,
+              files: result.files,
+              metadata: {
+                totalFiles,
+                totalDirs,
+                recursive,
+                filter: filter || null,
+                maxDepth: recursive ? maxDepth : null,
+                truncated: result.truncated
+              }
+            };
+          } catch (error) {
+            const errorMessage = error.message || String(error);
+            return {
+              success: false,
+              tool: 'list_files_voice',
+              error: `Failed to list files: ${errorMessage}`,
+              path
+            };
+          }
+        }
+      },
     };
   }
 

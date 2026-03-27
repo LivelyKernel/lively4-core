@@ -37,6 +37,7 @@ import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 // Vox (voice agent) tool renderers
 import { VoxEvaluateCodeTool } from './tool-renderers/vox-evaluate-code-tool.js';
 import { VoxReadFileTool } from './tool-renderers/vox-read-file-tool.js';
+import { VoxListFilesTool } from './tool-renderers/vox-list-files-tool.js';
 import { VoxGenericTool } from './tool-renderers/vox-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -87,6 +88,7 @@ export default class LivelyChatMessage extends Morph {
     // Order matters - more specific renderers first, generic last
     this.voxToolRenderers = this.voxToolRenderers || [
       new VoxReadFileTool(),
+      new VoxListFilesTool(),
       new VoxEvaluateCodeTool(),
       new VoxGenericTool(), // Fallback - always last
     ];
