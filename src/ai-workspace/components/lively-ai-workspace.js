@@ -1391,15 +1391,61 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await this.renderSessionsList();
   }
 
+  /**
+   * Batch-load audio message counts for all workspace sessions.
+   * Single database query instead of per-session queries.
+   * @returns {Map<string, number>} Map of conversationId -> message count
+   */
+  async batchLoadAudioMessageCounts() {
+    try {
+      const workspaces = await LivelyAiWorkspace.historydb.workspaces.toArray();
+      const conversationIds = workspaces
+        .map(w => w.conversationId)
+        .filter(Boolean);
+
+      if (conversationIds.length === 0) {
+        return new Map();
+      }
+
+      const allMessages = await OpenaiRealtimeChat.conversationdb.messages
+        .where('conversationId')
+        .anyOf(conversationIds)
+        .toArray();
+
+      // Count messages per conversation
+      const countMap = new Map();
+      for (const msg of allMessages) {
+        const count = countMap.get(msg.conversationId) || 0;
+        countMap.set(msg.conversationId, count + 1);
+      }
+
+      return countMap;
+    } catch (error) {
+      this.log('[workspace] Failed to batch-load audio message counts:', error);
+      return new Map();
+    }
+  }
+
   async renderSessionsList() {
     if (!this.sessionsComponent) return;
 
     const sessions = await this.listWorkspaceSessions();
 
-    // Get message counts and first user message for each session
+    let opencodeSessionsMap = new Map();
+    if (this.opencodeComponent) {
+      const opencodeSessionsData = await this.opencodeComponent.getSessionsWithMetadata();
+      opencodeSessionsMap = new Map(opencodeSessionsData.map(s => [s.id, s]));
+    }
+
+    const audioCountMap = await this.batchLoadAudioMessageCounts();
+
     const sessionsWithData = await Promise.all(sessions.map(async session => {
-      const audioCount = await this.getMessageCount(session.id, 'audio');
-      const codeCount = await this.getMessageCount(session.id, 'code');
+      const opencodeData = opencodeSessionsMap.get(session.opencodeSessionId);
+      const codeCount = opencodeData?.messageCount || 0;
+
+      const audioCount = audioCountMap.get(session.conversationId) || 0;
+
+      // Get first user message for title (still needs individual query - can optimize later)
       const firstMessage = await this.getFirstUserAudioMessage(session.id);
 
       const createdDate = new Date(session.timestamp);
@@ -1427,7 +1473,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       };
     }));
 
-    // Update component
     this.sessionsComponent.sessions = sessionsWithData;
     this.sessionsComponent.activeSessionId = this.workspaceId;
   }

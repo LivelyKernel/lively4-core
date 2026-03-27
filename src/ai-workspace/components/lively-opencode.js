@@ -1686,14 +1686,14 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  async updateSessionList() {
-    const sessionsComponent = this.get('#sessionsComponent');
-    if (!sessionsComponent) return;
-
-    // Load cached metadata for all sessions
+  /**
+   * Get sessions enriched with cached metadata (message counts, costs, etc.)
+   * Used by both OpenCode's own UI and AI Workspace's merged session list.
+   * @returns {Array} Array of session objects with cached metadata
+   */
+  async getSessionsWithMetadata() {
     const metadataMap = await this.loadAllSessionMetadata();
 
-    // Map sessions to component format with cached message counts and costs
     const sessionsData = this.sessions.map(session => {
       const metadata = metadataMap.get(session.id);
 
@@ -1715,8 +1715,17 @@ export default class LivelyOpencode extends LivelyChat {
       };
     });
 
-    // Update component (subagent sessions sorted below their parent)
-    sessionsComponent.sessions = this.sortSessionsWithSubagents(sessionsData);
+    // Sort subagent sessions below their parents
+    return this.sortSessionsWithSubagents(sessionsData);
+  }
+
+  async updateSessionList() {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
+
+    const sessionsData = await this.getSessionsWithMetadata();
+
+    sessionsComponent.sessions = sessionsData;
     sessionsComponent.activeSessionId = this.currentSession?.id;
     sessionsComponent.showDebug = this.showDebug;
   }
