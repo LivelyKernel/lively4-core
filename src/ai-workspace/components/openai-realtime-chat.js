@@ -3,6 +3,7 @@ import LivelyChat from './lively-chat.js';
 import { BasicToolset } from "./realtime-chat-tools/basic-toolset.js";
 import { WorkspaceToolset } from "./realtime-chat-tools/workspace-toolset.js";
 import { MessageToolset } from "./realtime-chat-tools/message-toolset.js";
+import { VoiceToolset } from "./realtime-chat-tools/voice-toolset.js";
 import { CompositeToolset } from "./realtime-chat-tools/composite-toolset.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
@@ -402,6 +403,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const allowCodeEval = this.get("#allowCodeEvaluation");
     const allowOpenCode = this.get("#allowOpenCodeTasks");
     const allowMessageInspection = this.get("#allowMessageInspection");
+    const allowVoiceFileTools = this.get("#allowVoiceFileTools");
 
     if (allowCodeEval) {
       allowCodeEval.checked = this.toolPermissions.allowCodeEvaluation;
@@ -411,6 +413,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
     if (allowMessageInspection) {
       allowMessageInspection.checked = this.toolPermissions.allowMessageInspection;
+    }
+    if (allowVoiceFileTools) {
+      allowVoiceFileTools.checked = this.toolPermissions.allowVoiceFileTools;
     }
 
     // Show modal
@@ -435,14 +440,16 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.toolPermissions = {
         allowCodeEvaluation: savedPermissions.allowCodeEvaluation !== false,
         allowOpenCodeTasks: savedPermissions.allowOpenCodeTasks !== false,
-        allowMessageInspection: savedPermissions.allowMessageInspection !== false
+        allowMessageInspection: savedPermissions.allowMessageInspection !== false,
+        allowVoiceFileTools: savedPermissions.allowVoiceFileTools !== false
       };
     } else {
       // Defaults: all enabled
       this.toolPermissions = {
         allowCodeEvaluation: true,
         allowOpenCodeTasks: true,
-        allowMessageInspection: true
+        allowMessageInspection: true,
+        allowVoiceFileTools: true
       };
     }
 
@@ -454,11 +461,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const allowCodeEval = this.get("#allowCodeEvaluation");
     const allowOpenCode = this.get("#allowOpenCodeTasks");
     const allowMessageInspection = this.get("#allowMessageInspection");
+    const allowVoiceFileTools = this.get("#allowVoiceFileTools");
 
     this.toolPermissions = {
       allowCodeEvaluation: allowCodeEval?.checked !== false,
       allowOpenCodeTasks: allowOpenCode?.checked !== false,
-      allowMessageInspection: allowMessageInspection?.checked !== false
+      allowMessageInspection: allowMessageInspection?.checked !== false,
+      allowVoiceFileTools: allowVoiceFileTools?.checked !== false
     };
 
     // Save to preferences
@@ -479,7 +488,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   updateToolset() {
-    const { allowCodeEvaluation, allowOpenCodeTasks, allowMessageInspection } = this.toolPermissions;
+    const { allowCodeEvaluation, allowOpenCodeTasks, allowMessageInspection, allowVoiceFileTools } = this.toolPermissions;
 
     // Get workspace reference if available (for WorkspaceToolset and MessageToolset)
     // Try stored reference first, then query DOM
@@ -510,6 +519,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       const messageToolset = new MessageToolset(workspace);
       toolsets.push(messageToolset);
       allowedToolNames.push('get_recent_messages', 'search_messages', 'get_message_by_id');
+    }
+
+    // Add VoiceToolset if voice file tools are allowed
+    if (allowVoiceFileTools) {
+      const voiceToolset = new VoiceToolset(this);
+      toolsets.push(voiceToolset);
+      allowedToolNames.push('read_file_voice', 'list_recent_files');
     }
 
     // Use CompositeToolset if we have multiple toolsets, otherwise just the basic one
