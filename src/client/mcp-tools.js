@@ -377,6 +377,30 @@ export const Tools = {
 
         context.logActivity('success', `Tests completed: ${results.passed.length} passed, ${results.failed.length} failed`);
 
+        // Store results for later inspection
+        const singleFileResults = {
+          totalFiles: 1,
+          completedFiles: 1,
+          totalPassed: results.passed.length,
+          totalFailed: results.failed.length,
+          totalHookFailures: results.hookFailures?.length || 0,
+          totalDuration: results.totalDuration,
+          fileResults: [{
+            testPath,
+            passCount: results.passed.length,
+            failCount: results.failed.length,
+            hookFailCount: results.hookFailures?.length || 0,
+            duration: results.totalDuration,
+            passed: results.passed,
+            failed: results.failed,
+            hookFailures: results.hookFailures || []
+          }]
+        };
+
+        if (testRunner && testRunner.storeTestResults) {
+          testRunner.storeTestResults(singleFileResults);
+        }
+
         // Format and return results
         return this.formatTestResults(results, errorsOnly, testPath, grep);
 
@@ -896,13 +920,26 @@ export const Tools = {
 
     /**
      * Parse test hierarchy from full title
-     * @param {string} fullTitle - Full test title like "Suite A > Suite B > test name"
-     * @returns {Object} - { suites: ['Suite A', 'Suite B'], testName: 'test name', fullPath: 'Suite A > Suite B' }
+     * Mocha test titles are space-separated: "suite1 suite2 test description"
+     * @param {string} fullTitle - Full test title like "openai-realtime-chat-tools BasicToolset should provide tool definitions"
+     * @returns {Object} - { suites: ['suite1', 'suite2'], testName: 'test description', fullPath: 'suite1 > suite2' }
      */
     parseTestHierarchy(fullTitle) {
-      const parts = fullTitle.split(' > ').map(p => p.trim());
-      const testName = parts[parts.length - 1];
-      const suites = parts.slice(0, -1);
+      // Split by spaces
+      const parts = fullTitle.split(/\s+/);
+      
+      // Find where the test description starts (typically begins with "should", "can", "must", etc.)
+      const testKeywords = ['should', 'can', 'must', 'will', 'does', 'is', 'has', 'returns', 'throws', 'handles'];
+      let testStartIndex = parts.findIndex(part => testKeywords.includes(part.toLowerCase()));
+      
+      // If no keyword found, assume last part is the test name
+      if (testStartIndex === -1) {
+        testStartIndex = parts.length - 1;
+      }
+      
+      // Extract suites and test name
+      const suites = parts.slice(0, testStartIndex);
+      const testName = parts.slice(testStartIndex).join(' ');
       const fullPath = suites.join(' > ');
 
       return { suites, testName, fullPath };

@@ -74,7 +74,7 @@ describe('MessageToolset', () => {
     toolset = new MessageToolset(workspace);
   });
 
-  describe('constructor', () => {
+  describe('construct', () => {
     it('should require workspace reference', () => {
       expect(() => new MessageToolset()).to.throw('MessageToolset requires a workspace reference');
     });

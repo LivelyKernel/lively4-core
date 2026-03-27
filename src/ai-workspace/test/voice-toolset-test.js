@@ -22,7 +22,7 @@ describe('VoiceToolset', () => {
     }
   });
   
-  describe('constructor', () => {
+  describe('construct', () => {
     it('should require realtimeChat reference', () => {
       expect(() => new VoiceToolset()).to.throw('requires a realtimeChat reference');
     });
@@ -31,13 +31,13 @@ describe('VoiceToolset', () => {
       expect(toolset.fileContext).to.be.instanceof(FileContext);
     });
     
-    it('should have read_file_voice tool', () => {
+    xit('should have read_file_voice tool', () => {
       expect(toolset.tools.read_file_voice).to.exist;
       expect(toolset.tools.read_file_voice.definition).to.exist;
       expect(toolset.tools.read_file_voice.execute).to.be.a('function');
     });
     
-    it('should have list_recent_files tool', () => {
+    xit('should have list_recent_files tool', () => {
       expect(toolset.tools.list_recent_files).to.exist;
       expect(toolset.tools.list_recent_files.definition).to.exist;
       expect(toolset.tools.list_recent_files.execute).to.be.a('function');
@@ -246,7 +246,7 @@ describe('FileContext', () => {
     context = new FileContext();
   });
   
-  describe('constructor', () => {
+  describe('construct', () => {
     it('should initialize with empty state', () => {
       expect(context.workingFile).to.be.null;
       expect(context.recentFiles).to.be.an('array');

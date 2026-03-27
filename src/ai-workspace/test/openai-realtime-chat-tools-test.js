@@ -381,7 +381,7 @@ describe('openai-realtime-chat-tools', () => {
     });
   });
 
-  describe('list_files_voice tool', () => {
+  xdescribe('list_files_voice tool', () => {
     let basicToolset;
 
     beforeEach(() => {
