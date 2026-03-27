@@ -171,6 +171,7 @@
 
 .session-item-info {
   flex: 1;
+  width: 220px;
   min-width: 0;
 }
 
@@ -188,44 +189,6 @@
   font-size: 11px;
   color: #6c757d;
   line-height: 1.3;
-}
-
-.session-item-actions {
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.session-item:hover .session-item-actions {
-  opacity: 1;
-}
-
-.session-item-actions button {
-  padding: 4px 6px;
-  border: 1px solid #dee2e6;
-  background: white;
-  cursor: pointer;
-  border-radius: 3px;
-  font-size: 11px;
-  color: #6c757d;
-  transition: all 0.15s;
-}
-
-.session-item-actions button:hover {
-  background: #f8f9fa;
-  color: #495057;
-  border-color: #adb5bd;
-}
-
-.session-item-actions button.delete {
-  color: #dc3545;
-  border-color: #dc3545;
-}
-
-.session-item-actions button.delete:hover {
-  background: #dc3545;
-  color: white;
 }
 
 .empty-state {

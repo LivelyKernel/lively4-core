@@ -16,7 +16,6 @@ export default class LivelyChatSessions extends Morph {
     // Configuration
     this._enableMultiSelect = true;
     this._showNewButton = true;
-    this._showDeleteButtons = true;
     this._headerTitle = "Sessions";
 
     // DOM references
@@ -101,15 +100,6 @@ export default class LivelyChatSessions extends Morph {
   set showNewButton(value) {
     this._showNewButton = !!value;
     this.updateNewButtonVisibility();
-  }
-
-  get showDeleteButtons() {
-    return this._showDeleteButtons;
-  }
-
-  set showDeleteButtons(value) {
-    this._showDeleteButtons = !!value;
-    this.render();
   }
 
   get headerTitle() {
@@ -213,11 +203,6 @@ export default class LivelyChatSessions extends Morph {
     // Format metadata
     const meta = this.formatSessionMeta(session);
 
-    // Delete button
-    const deleteButton = this._showDeleteButtons
-      ? `<button class="delete" data-action="delete" title="Delete">🗑️</button>`
-      : '';
-
     const classes = [
       'session-item',
       isActive ? 'active' : '',
@@ -237,9 +222,6 @@ export default class LivelyChatSessions extends Morph {
           <div class="session-item-info">
             <div class="session-item-title">${subagentPrefix}${this.escapeHtml(title)}</div>
             <div class="session-item-meta">${meta}</div>
-          </div>
-          <div class="session-item-actions">
-            ${deleteButton}
           </div>
         </div>
       </div>
@@ -313,14 +295,6 @@ export default class LivelyChatSessions extends Morph {
 
     const sessionId = sessionItem.dataset.sessionId;
     const index = parseInt(sessionItem.dataset.index);
-
-    // Check if delete button was clicked
-    const deleteButton = evt.target.closest('[data-action="delete"]');
-    if (deleteButton) {
-      evt.stopPropagation();
-      this.deleteSingleSession(sessionId);
-      return;
-    }
 
     // Handle selection based on modifier keys
     if (this._enableMultiSelect && (evt.ctrlKey || evt.metaKey)) {

@@ -66,7 +66,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 250px;
   min-width: 80px;
   overflow: hidden;
   flex-shrink: 0;
@@ -78,6 +78,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 200px;
 }
 
 .messages-container {
@@ -217,16 +218,12 @@
   align-self: flex-end;
 }
 
-/* Right Panel - Debug Log and Board Tabs
- * Structure: .logging-panel (fixed 600px) contains .panel-tabs (fixed)
- * and .panel-content (scrollable). Each .panel-content has overflow: auto
- * so tabs stay visible while content scrolls.
- */
 .logging-panel {
-  flex: 0 0 600px;
+  flex: 0 1 600px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 80px;
 }
 
 .panel-tabs {
@@ -642,7 +639,7 @@
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>
 
-    <lively-separator id="sidebar-separator"></lively-separator>
+    <lively-separator></lively-separator>
 
     <div class="chat-panel">
       <div class="messages-container" id="messagesContainer">
@@ -661,7 +658,7 @@
       </div>
     </div>
 
-    <lively-separator id="log-separator"></lively-separator>
+    <lively-separator reverse=true></lively-separator>
 
     <div class="logging-panel" id="loggingPanel">
       <div class="panel-tabs">
