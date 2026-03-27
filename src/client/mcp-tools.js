@@ -319,6 +319,7 @@ export const Tools = {
         const results = {
           passed: [],
           failed: [],
+          hookFailures: [],
           startTime: Date.now()
         };
 
@@ -333,7 +334,7 @@ export const Tools = {
             });
 
             runner.on('fail', (test, error) => {
-              results.failed.push({
+              const failureData = {
                 title: test.fullTitle(),
                 duration: test.duration,
                 error: {
@@ -341,7 +342,14 @@ export const Tools = {
                   message: error.message || String(error),
                   stack: error.stack || null
                 }
-              });
+              };
+              
+              // Distinguish between test failures and hook failures
+              if (test.type === 'hook') {
+                results.hookFailures.push(failureData);
+              } else {
+                results.failed.push(failureData);
+              }
             });
           });
         }
@@ -413,19 +421,45 @@ export const Tools = {
      * Format test results for MCP response
      */
     formatTestResults(results, errorsOnly, testPath, grep) {
-      const { passed, failed, totalDuration } = results;
+      const { passed, failed, hookFailures = [], totalDuration } = results;
       const totalTests = passed.length + failed.length;
 
       let output = [];
 
+      // Hook failures prevent tests from running - show them prominently
+      if (hookFailures.length > 0) {
+        output.push(`⚠️  **${hookFailures.length} hook failure${hookFailures.length > 1 ? 's' : ''} prevented tests from running**`);
+        output.push('');
+        
+        hookFailures.forEach((hook, index) => {
+          output.push(`**Hook Failure ${index + 1}:** ${hook.title}`);
+          output.push(`   ${hook.error.name}: ${hook.error.message}`);
+          
+          if (hook.error.stack) {
+            const stackLines = hook.error.stack.split('\n').slice(1, 4);
+            if (stackLines.length > 0) {
+              output.push('   ```');
+              stackLines.forEach(line => output.push(`   ${line.trim()}`));
+              output.push('   ```');
+            }
+          }
+          output.push('');
+        });
+        
+        output.push(`**Tests run before hook failure:** ${passed.length} passed, ${failed.length} failed`);
+        output.push('');
+        output.push('💡 Fix the hook failures to run all tests');
+        output.push('');
+      }
+
       if (errorsOnly) {
         // Minimal output mode - only show failures
-        if (failed.length === 0) {
+        if (failed.length === 0 && hookFailures.length === 0) {
           output.push(`✅ All ${totalTests} tests passed in ${testPath}`);
           if (grep) {
             output.push(`   Filtered by: ${grep}`);
           }
-        } else {
+        } else if (failed.length > 0) {
           output.push(`❌ ${failed.length} test${failed.length > 1 ? 's' : ''} failed out of ${totalTests} total`);
           if (grep) {
             output.push(`   Filtered by: ${grep}`);
@@ -450,18 +484,21 @@ export const Tools = {
         }
       } else {
         // Full output mode
-        output.push(`# Test Results: ${testPath}`);
-        if (grep) {
-          output.push(`Filtered by: \`${grep}\``);
+        if (hookFailures.length === 0) {
+          output.push(`# Test Results: ${testPath}`);
+          if (grep) {
+            output.push(`Filtered by: \`${grep}\``);
+          }
+          output.push('');
         }
-        output.push('');
+        
         output.push(`✅ ${passed.length} test${passed.length !== 1 ? 's' : ''} passed`);
         output.push(`❌ ${failed.length} test${failed.length !== 1 ? 's' : ''} failed`);
         output.push(`⏱️  Total time: ${totalDuration}ms`);
         output.push('');
 
         if (failed.length > 0) {
-          output.push('## Failures');
+          output.push('## Test Failures');
           output.push('');
 
           failed.forEach((test, index) => {
@@ -480,7 +517,7 @@ export const Tools = {
           });
         }
 
-        if (passed.length > 0 && failed.length === 0) {
+        if (passed.length > 0 && failed.length === 0 && hookFailures.length === 0) {
           output.push('## All Tests Passed');
           output.push('');
           passed.forEach((test, index) => {
@@ -520,6 +557,7 @@ export const Tools = {
           completedFiles: 0,
           totalPassed: 0,
           totalFailed: 0,
+          totalHookFailures: 0,
           fileResults: [],
           startTime: Date.now()
         };
@@ -535,18 +573,24 @@ export const Tools = {
             aggregatedResults.completedFiles++;
             aggregatedResults.totalPassed += fileResults.passed.length;
             aggregatedResults.totalFailed += fileResults.failed.length;
+            aggregatedResults.totalHookFailures += (fileResults.hookFailures?.length || 0);
             aggregatedResults.fileResults.push({
               testPath,
               passCount: fileResults.passed.length,
               failCount: fileResults.failed.length,
+              hookFailCount: fileResults.hookFailures?.length || 0,
               duration: fileResults.totalDuration,
               passed: fileResults.passed,
-              failed: fileResults.failed
+              failed: fileResults.failed,
+              hookFailures: fileResults.hookFailures || []
             });
 
+            const hookMsg = fileResults.hookFailures?.length > 0 
+              ? `, ${fileResults.hookFailures.length} hook failures` 
+              : '';
             context.logActivity('success',
               `${aggregatedResults.completedFiles}/${testFiles.length}: ${testPath} - ` +
-              `${fileResults.passed.length} passed, ${fileResults.failed.length} failed`
+              `${fileResults.passed.length} passed, ${fileResults.failed.length} failed${hookMsg}`
             );
 
           } catch (error) {
@@ -642,6 +686,7 @@ export const Tools = {
       const results = {
         passed: [],
         failed: [],
+        hookFailures: [],
         startTime: Date.now()
       };
 
@@ -656,7 +701,7 @@ export const Tools = {
           });
 
           runner.on('fail', (test, error) => {
-            results.failed.push({
+            const failureData = {
               title: test.fullTitle(),
               duration: test.duration,
               error: {
@@ -664,7 +709,14 @@ export const Tools = {
                 message: error.message || String(error),
                 stack: error.stack || null
               }
-            });
+            };
+            
+            // Distinguish between test failures and hook failures
+            if (test.type === 'hook') {
+              results.hookFailures.push(failureData);
+            } else {
+              results.failed.push(failureData);
+            }
           });
         });
       }
@@ -695,16 +747,36 @@ export const Tools = {
      * Format aggregated test results with minimal output
      */
     formatAggregatedResults(results) {
-      const { totalFiles, completedFiles, totalPassed, totalFailed, totalDuration, fileResults } = results;
+      const { totalFiles, completedFiles, totalPassed, totalFailed, totalHookFailures = 0, totalDuration, fileResults } = results;
 
       let output = [];
 
-      if (totalFailed === 0) {
+      // Show hook failures prominently if any
+      if (totalHookFailures > 0) {
+        const filesWithHooks = fileResults.filter(f => f.hookFailCount > 0);
+        output.push(`⚠️  **${totalHookFailures} hook failure${totalHookFailures > 1 ? 's' : ''} in ${filesWithHooks.length} file${filesWithHooks.length > 1 ? 's' : ''}**`);
+        output.push('');
+        
+        filesWithHooks.forEach(file => {
+          output.push(`  **${file.testPath}** (${file.hookFailCount} hook${file.hookFailCount > 1 ? 's' : ''} failed)`);
+          if (file.hookFailures && file.hookFailures.length > 0) {
+            file.hookFailures.forEach(hook => {
+              output.push(`    • ${hook.title}: ${hook.error.message}`);
+            });
+          }
+        });
+        
+        output.push('');
+        output.push(`**Tests run before hook failures:** ${totalPassed} passed, ${totalFailed} failed`);
+        output.push('');
+      }
+
+      if (totalFailed === 0 && totalHookFailures === 0) {
         // All green!
         output.push(`✅ **All green!** ${totalPassed} tests passed across ${completedFiles} files`);
         output.push(`   Total time: ${(totalDuration / 1000).toFixed(1)}s`);
-      } else {
-        // Some failures
+      } else if (totalFailed > 0) {
+        // Some test failures
         output.push(`❌ **${totalFailed} test${totalFailed > 1 ? 's' : ''} failed** (${totalPassed} passed) across ${completedFiles} files`);
         output.push(`   Total time: ${(totalDuration / 1000).toFixed(1)}s`);
         output.push('');

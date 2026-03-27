@@ -174,9 +174,14 @@ mcp__lively4__inspect-test-results(
 - ✅ Persistent result storage for inspection
 - ✅ Grep filtering across all tests
 - ✅ Minimal output mode to save tokens
+- ✅ Distinguishes between test failures and hook failures (beforeEach/afterEach timeouts)
 
-**Known Issues:**
-- ⚠️ **TODO: Test count reporting incomplete**: The MCP test runner reports only a subset of tests executed (e.g., 8 tests when file contains 31). Tests still run and pass/fail correctly, but the summary doesn't reflect all tests. This needs to be fixed in the MCP test runner implementation.
+**Hook Failure Handling:**
+When `beforeEach` or `afterEach` hooks fail (e.g., timeout, async errors), they prevent tests from running. The MCP test runner clearly reports:
+- Hook failures separately from test failures
+- Which tests ran before the hook failed
+- Guidance to fix hook failures to run all tests
+- Example: `⚠️ 1 hook failure prevented tests from running` instead of incorrectly showing `0 passed, 1 failed`
 
 **Prerequisites:**
 - `lively-mcp` component must be running in browser

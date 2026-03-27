@@ -6,33 +6,33 @@
 
 For Human/Agent team:
 
-- [ ] **Fix MCP test runner reporting**: Reports only subset of tests (e.g., 8 out of 31 tests in openai-realtime-chat-test.js). Tests execute correctly but count is wrong. Need to investigate test result collection in lively-mcp component or MCP server test handler.
-- [X] fix test running tool "run-tests tool failed: Error: Failed to run tests: Cannot read properties of null (reading 'length')"
-- [X] in opencode get rid of "No messages yet. Start the conversation!" after first message
-- [X] find out how permissions work in opencode server mode and if wee need to implement something
+- [x] **Fix MCP test runner reporting**: Reports only subset of tests (e.g., 8 out of 31 tests in openai-realtime-chat-test.js). Tests execute correctly but count is wrong. Need to investigate test result collection in lively-mcp component or MCP server test handler.
+- [x] fix test running tool "run-tests tool failed: Error: Failed to run tests: Cannot read properties of null (reading 'length')"
+- [x] in opencode get rid of "No messages yet. Start the conversation!" after first message
+- [x] find out how permissions work in opencode server mode and if wee need to implement something
 - [ ] continue work on [AI/Workspace](doc/ai-workspace-tasks.md)
 - [ ] follow up on [ideas](doc/ideas.md)
 - [ ] Fix ESC behavior: should interrupt tool calls and halt at correct position (not halting at right position currently)
-- [X] normalize links in lively agent board
-- [X] don't show the URL Project Focus in the board anyway
-- [X] tally tool usages and files written/read
-- [X] rendering in agent-board: components/lively-chat-sessions.js [object Object]
-- [X] when writing in opencode, always show details
-- [X] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
-- [X] in lively-opencode: start server, should check if server is actually running.... 
+- [x] normalize links in lively agent board
+- [ ] don't show the URL Project Focus in the board anyway
+- [x] tally tool usages and files written/read
+- [x] rendering in agent-board: components/lively-chat-sessions.js [object Object]
+- [x] when writing in opencode, always show details
+- [x] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
+- [x] in lively-opencode: start server, should check if server is actually running....
 - [ ] auto-commit current agent changes and provides points to jump back
-- [X] implement auto session naming again.... 
-- [X] the diff view in file edit tool calls don't show the whitespace at the moment
-- [ ] render startTask 
-  ```
+- [x] implement auto session naming again....
+- [x] the diff view in file edit tool calls don't show the whitespace at the moment
+- [ ] render startTask
+  
+  ``` 
   types step-start, reasoning, tool, step-finish
   ▶️ step-start
   💭 Thinking...
   📖 openai-realtime-chat.js (from line 1524)
   ⏹️ step-finish
   ```
-- preview one line of details in    💭 Thinking... 
-
+- preview one line of details in 💭 Thinking...
 
 ## Refactoring & Bug Fixes
 
