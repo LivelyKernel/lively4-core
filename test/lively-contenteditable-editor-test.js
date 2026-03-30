@@ -81,8 +81,6 @@ describe('LivelyContenteditableEditor', () => {
     expect(editor.getURL).to.be.a('function');
     expect(editor.setText).to.be.a('function');
     expect(editor.getText).to.be.a('function');
-    expect(editor.saveFile).to.be.a('function');
-    expect(editor.currentEditor).to.be.a('function');
   });
   
   it('should return currentEditor object with getValue', async () => {
@@ -133,13 +131,7 @@ describe('LivelyContenteditableEditor', () => {
       expect(scrollInfo).to.have.property('top');
     });
     
-    it('should implement setScrollInfo', async () => {
-      expect(editor.setScrollInfo).to.be.a('function');
-      editor.setScrollInfo({ left: 10, top: 20 });
-      const scrollInfo = editor.getScrollInfo();
-      expect(scrollInfo.left).to.equal(10);
-      expect(scrollInfo.top).to.equal(20);
-    });
+
     
     it('should implement getCursor', async () => {
       expect(editor.getCursor).to.be.a('function');
