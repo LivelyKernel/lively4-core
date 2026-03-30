@@ -186,6 +186,19 @@ class PrinterBuilder extends Callable {
  */
 export default class Lively {
 
+
+  static shouldExcludeFromModuleLoading(element) {
+    if (!element || !element.tagName) return false;
+    
+    const lowerTagName = element.tagName.toLowerCase();
+    
+    if (lowerTagName.startsWith('grammarly-')) {
+      return true;
+    }
+    
+    return false;
+  }
+
   static get location() {
     return window.location;
   }
@@ -1451,6 +1464,10 @@ export default class Lively {
       const allElements = lively.allElements(true)
       
       for(let ea of allElements) {
+        // Exclude Grammarly components from module loading/migration
+        if (lively.shouldExcludeFromModuleLoading(ea)) {
+          continue;
+        }
         if (condition(ea)) {
           filteredElements.push(ea)
         }

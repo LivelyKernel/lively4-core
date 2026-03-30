@@ -318,6 +318,55 @@ describe('unloadModule', function() {
   });
 })
 
+describe('Module Loading Exclusion', function() {
+  
+  it('should identify grammarly components for exclusion', () => {
+    const grammarlyElement = document.createElement('grammarly-editor-plugin');
+    expect(lively.shouldExcludeFromModuleLoading(grammarlyElement)).to.be.true;
+  });
+  
+  it('should not identify script elements for exclusion', () => {
+    const scriptElement = document.createElement('script');
+    expect(lively.shouldExcludeFromModuleLoading(scriptElement)).to.be.false;
+  });
+  
+  it('should not identify lively-preferences for exclusion', () => {
+    const preferencesElement = document.createElement('lively-preferences');
+    expect(lively.shouldExcludeFromModuleLoading(preferencesElement)).to.be.false;
+  });
+  
+  it('should not identify regular lively components for exclusion', () => {
+    const containerElement = document.createElement('lively-container');
+    expect(lively.shouldExcludeFromModuleLoading(containerElement)).to.be.false;
+  });
+  
+  it('should not identify regular elements for exclusion', () => {
+    const divElement = document.createElement('div');
+    expect(lively.shouldExcludeFromModuleLoading(divElement)).to.be.false;
+  });
+  
+  it('should handle null and undefined gracefully', () => {
+    expect(lively.shouldExcludeFromModuleLoading(null)).to.be.false;
+    expect(lively.shouldExcludeFromModuleLoading(undefined)).to.be.false;
+  });
+  
+  it('allElements should include grammarly components (generic collection)', () => {
+    const testContainer = document.createElement('div');
+    const grammarlyElement = document.createElement('grammarly-extension');
+    const regularDiv = document.createElement('div');
+    
+    testContainer.appendChild(grammarlyElement);
+    testContainer.appendChild(regularDiv);
+    
+    const allElements = lively.allElements(false, testContainer);
+    
+    // allElements is generic and should include everything
+    expect(Array.from(allElements).includes(grammarlyElement)).to.be.true;
+    expect(Array.from(allElements).includes(regularDiv)).to.be.true;
+    expect(Array.from(allElements).includes(testContainer)).to.be.true;
+  });
+})
+
 
 
   

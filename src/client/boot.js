@@ -564,6 +564,7 @@ async function intializeLively() {
 
     // wait on all components to intialize their content.... e.g. the container loading a file
     var componentWithContent = Array.from(lively.allElements(document.body))
+        .filter(ea => !lively.shouldExcludeFromModuleLoading(ea))
         .filter(ea => ea.livelyContentLoaded && ea.livelyContentLoaded.then)  
     window.lively4debugBootComponentWithContent = componentWithContent
     

@@ -218,8 +218,12 @@ export default class ComponentLoader {
       unresolved = unresolved.concat(deepUnresolved);
     }
 
+    // Filter out Grammarly components from module loading
+    unresolved = unresolved.filter(el => {
+      return !lively.shouldExcludeFromModuleLoading(el);
+    });
 
-    // helper set to filter for unique tags
+    // helper set for filter for unique tags
     var unique = new Set();
     var __debugOpenPromisedComponents = new Set()
     
