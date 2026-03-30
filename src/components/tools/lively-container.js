@@ -612,7 +612,7 @@ export default class Container extends Morph {
   
   currentLivelyEditor() {
     var container = this.get('#container-editor');
-    return container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
+    return container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor, lively-contenteditable-editor");
   }
   
   
@@ -2232,6 +2232,10 @@ export default class Container extends Morph {
 
     if (urlString.match(/((shadama))$/i)) {
       editorType = "lively-shadama-editor"
+    }
+    
+    if (urlString.match(/\.txt$/i)) {
+      editorType = "lively-contenteditable-editor"
     }
     
     var isdir = urlString.match(/.\/$/);
