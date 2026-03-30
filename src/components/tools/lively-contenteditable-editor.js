@@ -4,39 +4,12 @@ export default class LivelyContenteditableEditor extends Morph {
   
   async initialize() {
     this.windowTitle = "Contenteditable Editor";
-    
-    // Ensure editor element exists in light DOM (for Grammarly compatibility)
-    if (!this.querySelector('[slot="editor"]')) {
-      const editor = document.createElement('div');
-      editor.id = 'editor';
-      editor.contentEditable = 'true';
-      editor.slot = 'editor';
-      editor.setAttribute('tabindex', '0'); // Make focusable for Grammarly
-      // Note: Don't set spellcheck=false - it breaks Grammarly
-      
-      // Apply styles directly (::slotted has limited styling capabilities)
-      editor.style.cssText = `
-        display: block;
-        min-height: 100%;
-        outline: none;
-        white-space: pre-wrap;
-        font-family: monospace;
-        font-size: 14px;
-        line-height: 1.5;
-        position: relative;
-      `;
-      
-      this.appendChild(editor);
-    }
-    
-    // Get editor from light DOM (not shadow root)
-    this.editorElement = this.querySelector('#editor');
+
     this.changeIndicator = this.get("#changeIndicator");
     
     // Ensure Grammarly-compatible attributes
     this.editorElement.setAttribute('tabindex', '0');
-    this.editorElement.removeAttribute('spellcheck'); // Allow browser/Grammarly spellcheck
-    
+   
     // Setup event listeners
     lively.addEventListener("editor-input", this.editorElement, "input", () => this.onInput());
     lively.addEventListener("editor-paste", this.editorElement, "paste", (evt) => this.onPaste(evt));
@@ -50,6 +23,41 @@ export default class LivelyContenteditableEditor extends Morph {
       this.setURL(url);
     }
   }
+
+  connectedCallback()  {
+    this.ensureEditor()
+  }
+  
+  ensureEditor() {
+    if (this.editorElement) return this.editorElement;
+    const editor = document.createElement('div');
+      editor.textContent = this.lastText
+      editor.id = 'editor';
+      editor.contentEditable = 'true';
+      editor.setAttribute('tabindex', '0'); 
+    
+    editor.style.cssText = `
+        outline: none;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 1.5;
+      `;
+      
+    // lively.setClientPosition(editor, lively.getClientPosition(this))
+    this.appendChild(editor);
+    lively.setClientPosition(editor, lively.getClientPosition(this))
+    lively.setExtent(editor, lively.pt(800,1000))
+    this.editorElement  = editor
+  }
+  
+  disconnectedCallback()  {
+    if(this.editorElement) this.editorElement.remove()
+  }
+  
+  // get editorElement() {
+  //   return this.querySelector('#editor');
+  // }
   
   // === Core Editor API ===
   
@@ -62,10 +70,7 @@ export default class LivelyContenteditableEditor extends Morph {
   }
   
   setText(text, preserveView) {
-    if (!this.editorElement) {
-      console.warn("setText called before editor element ready");
-      return;
-    }
+    lively.notify("set text" , text)
     
     text = text.replace(/\r\n/g, "\n"); // normalize line endings
     this.lastText = text;
