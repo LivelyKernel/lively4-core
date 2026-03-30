@@ -5,8 +5,37 @@ export default class LivelyContenteditableEditor extends Morph {
   async initialize() {
     this.windowTitle = "Contenteditable Editor";
     
-    this.editorElement = this.get("#editor");
+    // Ensure editor element exists in light DOM (for Grammarly compatibility)
+    if (!this.querySelector('[slot="editor"]')) {
+      const editor = document.createElement('div');
+      editor.id = 'editor';
+      editor.contentEditable = 'true';
+      editor.slot = 'editor';
+      editor.setAttribute('tabindex', '0'); // Make focusable for Grammarly
+      // Note: Don't set spellcheck=false - it breaks Grammarly
+      
+      // Apply styles directly (::slotted has limited styling capabilities)
+      editor.style.cssText = `
+        display: block;
+        min-height: 100%;
+        outline: none;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        position: relative;
+      `;
+      
+      this.appendChild(editor);
+    }
+    
+    // Get editor from light DOM (not shadow root)
+    this.editorElement = this.querySelector('#editor');
     this.changeIndicator = this.get("#changeIndicator");
+    
+    // Ensure Grammarly-compatible attributes
+    this.editorElement.setAttribute('tabindex', '0');
+    this.editorElement.removeAttribute('spellcheck'); // Allow browser/Grammarly spellcheck
     
     // Setup event listeners
     lively.addEventListener("editor-input", this.editorElement, "input", () => this.onInput());
@@ -33,6 +62,11 @@ export default class LivelyContenteditableEditor extends Morph {
   }
   
   setText(text, preserveView) {
+    if (!this.editorElement) {
+      console.warn("setText called before editor element ready");
+      return;
+    }
+    
     text = text.replace(/\r\n/g, "\n"); // normalize line endings
     this.lastText = text;
     
@@ -77,9 +111,15 @@ export default class LivelyContenteditableEditor extends Morph {
     return text;
   }
   
-  async awaitEditor() {
-    // Already ready after initialize()
-    return this;
+  // Toolbar API compatibility (this editor has no toolbar)
+  hideToolbar() {
+    // No-op: this editor doesn't have a toolbar
+    this.setAttribute("toolbar", "hidden");
+  }
+  
+  showToolbar() {
+    // No-op: this editor doesn't have a toolbar
+    this.setAttribute("toolbar", "visible");
   }
   
   // === Content Conversion ===
@@ -213,7 +253,12 @@ export default class LivelyContenteditableEditor extends Morph {
   livelyMigrate(other) {
     this._url = other._url;
     this.lastText = other.lastText;
-    this.editorElement.innerHTML = other.editorElement.innerHTML;
+    
+    // Preserve editor content from old instance
+    const oldEditor = other.querySelector('#editor');
+    if (oldEditor && this.editorElement) {
+      this.editorElement.innerHTML = oldEditor.innerHTML;
+    }
   }
   
   async livelyExample() {

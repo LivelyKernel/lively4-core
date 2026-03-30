@@ -14,10 +14,11 @@
       overflow: auto;
       padding: 10px;
       box-sizing: border-box;
-      background: white;
+      background: transparent;
     }
     
-    #editor {
+    ::slotted([slot="editor"]) {
+      display: block;
       min-height: 100%;
       outline: none;
       white-space: pre-wrap;
@@ -39,7 +40,8 @@
   </style>
   
   <div id="editor-container">
-    <div id="editor" contenteditable="true"></div>
+    <!-- Slot for light DOM contenteditable (created in JS for Grammarly compatibility) -->
+    <slot name="editor"></slot>
   </div>
   <div id="changeIndicator"></div>
 </template>

@@ -83,7 +83,6 @@ describe('LivelyContenteditableEditor', () => {
     expect(editor.getText).to.be.a('function');
     expect(editor.saveFile).to.be.a('function');
     expect(editor.currentEditor).to.be.a('function');
-    expect(editor.awaitEditor).to.be.a('function');
   });
   
   it('should return currentEditor object with getValue', async () => {
@@ -148,6 +147,38 @@ describe('LivelyContenteditableEditor', () => {
       // getCursor may return null if no selection
       const cursor = editor.getCursor();
       // Just verify it doesn't throw
+    });
+  });
+  
+  describe('Toolbar API', () => {
+    
+    it('should implement hideToolbar', async () => {
+      expect(editor.hideToolbar).to.be.a('function');
+      editor.hideToolbar();
+      expect(editor.getAttribute("toolbar")).to.equal("hidden");
+    });
+    
+    it('should implement showToolbar', async () => {
+      expect(editor.showToolbar).to.be.a('function');
+      editor.showToolbar();
+      expect(editor.getAttribute("toolbar")).to.equal("visible");
+    });
+  });
+  
+  describe('Initialization', () => {
+    
+    it('should be ready after lively.create', async () => {
+      expect(editor.editorElement).to.exist;
+      expect(editor.editorElement.getAttribute('contenteditable')).to.equal('true');
+    });
+    
+    it('should display content on first load', async () => {
+      // Simulate what container does (lively.create already completed)
+      editor.setURL("file:///test.txt");
+      editor.setText("Initial content");
+      
+      expect(editor.getText()).to.equal("Initial content");
+      expect(editor.editorElement.textContent).to.include("Initial content");
     });
   });
 });
