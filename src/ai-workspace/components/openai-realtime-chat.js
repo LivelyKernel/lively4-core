@@ -1873,7 +1873,37 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // item contains: name, call_id, arguments (as JSON string)
     const functionName = item.name;
     const callId = item.call_id;
-    const functionArgs = JSON.parse(item.arguments);
+    
+    // Parse function arguments with error handling for malformed JSON
+    let functionArgs;
+    try {
+      functionArgs = JSON.parse(item.arguments);
+    } catch (error) {
+      console.error("Failed to parse function arguments:", error);
+      console.error("Raw arguments string:", item.arguments);
+      console.error("Arguments length:", item.arguments?.length);
+      console.error("Full item:", JSON.stringify(item, null, 2));
+      
+      lively.error("Function Call Error", `Failed to parse arguments for ${functionName}: ${error.message}`);
+      
+      // Send error back to API
+      const errorOutput = {
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: JSON.stringify({
+            success: false,
+            error: `Failed to parse function arguments: ${error.message}. Raw arguments: ${item.arguments?.substring(0, 200)}`
+          })
+        }
+      };
+      if (this.sendDataChannelMessage(errorOutput)) {
+        this.requestAssistantResponse();
+      }
+      return;
+    }
+    
     this.log(`Realtime API function call: ${functionName}`, functionArgs);
     lively.notify("Function Called", `Executing ${functionName}`);
 
