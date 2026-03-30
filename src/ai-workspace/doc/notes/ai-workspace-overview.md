@@ -198,7 +198,7 @@ getSharedContext()
 
 **Current Implementation:**
 - System prompt loaded from `src/config/prompts/ai-workspace-audio-chat.txt`
-- Simple forwarding approach: sends all requests to code agent via `send_user_task` tool
+- Simple forwarding approach: sends all requests to code agent via `send_opencode_task` tool
 - Limited exception handling for meta-requests (e.g., "read")
 
 **Current Issues:**

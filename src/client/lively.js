@@ -191,12 +191,9 @@ export default class Lively {
     if (!element || !element.tagName) return false;
     
     const lowerTagName = element.tagName.toLowerCase();
+    const ignorePrefixList = ["grammarly-", "superhuman-"];
     
-    if (lowerTagName.startsWith('grammarly-')) {
-      return true;
-    }
-    
-    return false;
+    return ignorePrefixList.some(prefix => lowerTagName.startsWith(prefix));
   }
 
   static get location() {

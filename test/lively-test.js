@@ -325,6 +325,11 @@ describe('Module Loading Exclusion', function() {
     expect(lively.shouldExcludeFromModuleLoading(grammarlyElement)).to.be.true;
   });
   
+  it('should identify superhuman components for exclusion', () => {
+    const superhumanElement = document.createElement('superhuman-go-underlines');
+    expect(lively.shouldExcludeFromModuleLoading(superhumanElement)).to.be.true;
+  });
+  
   it('should not identify script elements for exclusion', () => {
     const scriptElement = document.createElement('script');
     expect(lively.shouldExcludeFromModuleLoading(scriptElement)).to.be.false;
