@@ -134,8 +134,18 @@ export class VoiceToolset {
         };
       }
       
-      // Load file content
-      const content = await lively.files.loadFile(resolvedPath);
+      // Load file content - check response status first
+      const response = await lively.files.loadFileResponse(resolvedPath);
+      
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `File not found: ${resolvedPath}`,
+          voiceResponse: `Sorry, I couldn't find the file ${lively.files.name(resolvedPath)}. It doesn't exist at that path.`
+        };
+      }
+      
+      const content = await response.text();
       const allLines = content.split('\n');
       const totalLines = allLines.length;
       

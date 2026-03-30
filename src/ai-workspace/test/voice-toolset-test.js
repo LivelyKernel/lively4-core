@@ -149,6 +149,24 @@ describe('VoiceToolset', () => {
         expect(result.error).to.be.a('string');
       }
     });
+    
+    it('should return proper error for non-existent files', async () => {
+      // Test with a path that definitely doesn't exist
+      const nonExistentPath = '/this/path/definitely/does/not/exist/file.js';
+      const result = await toolset.execute('read_file_voice', {
+        path: nonExistentPath
+      });
+      
+      // Should fail with proper error message
+      expect(result.success).to.be.false;
+      expect(result.error).to.include('File not found');
+      expect(result.voiceResponse).to.include('couldn\'t find');
+      expect(result.voiceResponse).to.include('file.js');
+      
+      // Should NOT have content or metadata (bug would show "File not found!" as content)
+      expect(result.content).to.be.undefined;
+      expect(result.metadata).to.be.undefined;
+    });
   });
   
   describe('list_recent_files', () => {
