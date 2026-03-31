@@ -1,4 +1,16 @@
 <template id="my-test" >
+  <style>
+    #static {
+       background: lightgray;
+      height: 50%;
+      width: 100%;
+      overflow: auto; 
+    }
+  </style>
+<div id="static" contenteditable="true">
+It actuallz is a test.
+  </div>
+-------
 <div id="content">
 	<slot></slot>
 </div>

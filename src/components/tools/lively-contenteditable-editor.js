@@ -7,14 +7,11 @@ export default class LivelyContenteditableEditor extends Morph {
 
     this.changeIndicator = this.get("#changeIndicator");
     
-    // Ensure Grammarly-compatible attributes
     this.editorElement.setAttribute('tabindex', '0');
    
-    // Setup event listeners
     lively.addEventListener("editor-input", this.editorElement, "input", () => this.onInput());
     lively.addEventListener("editor-paste", this.editorElement, "paste", (evt) => this.onPaste(evt));
     
-    // Keyboard shortcuts
     lively.html.registerKeys(this);
     
     // Load initial URL if provided
@@ -24,43 +21,10 @@ export default class LivelyContenteditableEditor extends Morph {
     }
   }
 
-  connectedCallback()  {
-    this.ensureEditor()
+  get editorElement() {
+    return this.get('#editor');
   }
   
-  ensureEditor() {
-    if (this.editorElement) return this.editorElement;
-    const editor = document.createElement('div');
-      editor.textContent = this.lastText
-      editor.id = 'editor';
-      editor.contentEditable = 'true';
-      editor.setAttribute('tabindex', '0'); 
-    
-    editor.style.cssText = `
-        outline: none;
-        white-space: pre-wrap;
-        font-family: monospace;
-        font-size: 14px;
-        line-height: 1.5;
-      `;
-      
-    // lively.setClientPosition(editor, lively.getClientPosition(this))
-    this.appendChild(editor);
-    lively.setClientPosition(editor, lively.getClientPosition(this))
-    lively.setExtent(editor, lively.pt(800,1000))
-    this.editorElement  = editor
-  }
-  
-  disconnectedCallback()  {
-    if(this.editorElement) this.editorElement.remove()
-  }
-  
-  
-  // get editorElement() {
-  //   return this.querySelector('#editor');
-  // }
-  
-  // === Core Editor API ===
   
   setURL(url) {
     this._url = url;
@@ -71,26 +35,13 @@ export default class LivelyContenteditableEditor extends Morph {
   }
   
   setText(text, preserveView) {
-    lively.notify("set text" , text)
     
     text = text.replace(/\r\n/g, "\n"); // normalize line endings
     this.lastText = text;
-    
-    // Save cursor position if preserving view
-    let selection = null;
-    if (preserveView && document.activeElement === this.editorElement) {
-      selection = this.saveSelection();
-    }
-    
-    // Convert plain text to HTML (escape special chars, preserve whitespace)
+     
     const htmlContent = this.textToHtml(text);
     this.editorElement.innerHTML = htmlContent;
-    
-    // Restore cursor position if preserving view
-    if (selection) {
-      this.restoreSelection(selection);
-    }
-    
+
     this.updateChangeIndicator();
   }
   
@@ -140,19 +91,12 @@ export default class LivelyContenteditableEditor extends Morph {
   }
   
   htmlToText(html) {
-    // Create temporary element for parsing
     const temp = document.createElement('div');
     temp.innerHTML = html;
-    
-    // Convert <br> to newlines
     const brs = temp.querySelectorAll('br');
     brs.forEach(br => br.replaceWith('\n'));
-    
-    // Get text content (automatically unescapes entities)
     return temp.textContent || '';
   }
-  
-  // === Selection Management ===
   
   saveSelection() {
     const sel = window.getSelection();
@@ -179,12 +123,9 @@ export default class LivelyContenteditableEditor extends Morph {
       sel.removeAllRanges();
       sel.addRange(range);
     } catch (e) {
-      // Selection restoration failed (content changed too much)
       console.warn("Could not restore selection:", e);
     }
   }
-  
-  // === Container API (scroll and cursor) ===
   
   getScrollInfo() {
     const container = this.get("#editor-container");
@@ -215,8 +156,6 @@ export default class LivelyContenteditableEditor extends Morph {
     };
   }
   
-  // === Event Handlers ===
-  
   onInput() {
     this.updateChangeIndicator();
   }
@@ -239,8 +178,6 @@ export default class LivelyContenteditableEditor extends Morph {
     }
   }
   
-  // === Change Tracking ===
-  
   updateChangeIndicator() {
     if (!this.lastText) return;
     
@@ -254,8 +191,6 @@ export default class LivelyContenteditableEditor extends Morph {
     }
   }
   
-  // === Live Development ===
-  
   livelyMigrate(other) {
     this._url = other._url;
     this.lastText = other.lastText;
@@ -268,6 +203,11 @@ export default class LivelyContenteditableEditor extends Morph {
   }
   
   async livelyExample() {
-    this.setText("Hello from contenteditable editor!\n\nThis editor supports:\n- Grammarly\n- Other browser extensions\n- Plain text editing\n\nTry editing this text!");
+    this.setText(`Hello from contenteditable editor!
+This editor supports:
+- Grammarly
+- Other browser extensions
+- Plain text editing
+Try editing this text!`);
   }
 }
