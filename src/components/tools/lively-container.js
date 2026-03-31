@@ -729,7 +729,8 @@ export default class Container extends Morph {
   }
   
   isEditing() {
-    return this.getAttribute("mode") == "edit";
+    const mode = this.getAttribute("mode");
+    return mode == "edit" || mode == "grammarly";
   }
   
   contentIsTemplate(sourceCode) {
@@ -1328,6 +1329,12 @@ export default class Container extends Morph {
     this.editFile();
   }
 
+  onGrammarly() {
+    this.setAttribute("mode", "grammarly");
+    this.showCancelAndSave();
+    this.editFile();
+  }
+
   async onArchitecture(evt) {
     const viewer = await lively.openComponentInWindow('lively-architecture-viewer');
     await lively.sleep(0)
@@ -1662,6 +1669,10 @@ export default class Container extends Morph {
       menuItems.push(["beautify code", (evt, item) => {
         this.onBeautify(evt)
       }, 'auto-formatting', <i class="fa fa-paint-brush"></i>]);
+      
+      menuItems.push(["grammarly mode", (evt, item) => {
+        this.onGrammarly(evt)
+      }, 'edit with Grammarly support', <i class="fa fa-pencil-square-o" aria-hidden="true"></i>]);
     }
     if (editMode  && isHTML) {
       menuItems.push(["open in iframe", (evt, item) => {
@@ -2179,7 +2190,10 @@ export default class Container extends Morph {
       // the editor might be reused
     }
     
-    this.setAttribute("mode","edit"); // make it persistent
+    // Only set mode to "edit" if not already in grammarly mode
+    if (this.getAttribute("mode") !== "grammarly") {
+      this.setAttribute("mode","edit"); // make it persistent
+    }
     
     
     if (!path) path = this.getPath()
@@ -2210,6 +2224,11 @@ export default class Container extends Morph {
     // ... demos\/
     var editorType = urlString.match(/babylonian-programming-editor\/demos\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
+    // Check if grammarly mode is enabled - force contenteditable editor
+    if (this.getAttribute("mode") === "grammarly") {
+      editorType = "lively-contenteditable-editor";
+    }
+
     if (urlString.match(/\.js$/i) && lively.preferences.get("BabylonianProgramming")) {
       editorType = "babylonian-programming-editor"
     }
@@ -2234,10 +2253,6 @@ export default class Container extends Morph {
       editorType = "lively-shadama-editor"
     }
     
-    if (urlString.match(/\.txt$/i)) {
-      editorType = "lively-contenteditable-editor"
-    }
-    
     var isdir = urlString.match(/.\/$/);
     var options
     try { 
@@ -2260,6 +2275,12 @@ export default class Container extends Morph {
     
     var oldLivelyEditor = this.currentLivelyEditor()
     
+    // Preserve unsaved text when switching editors
+    var preservedText = null;
+    if (oldLivelyEditor && oldLivelyEditor.getText) {
+      preservedText = oldLivelyEditor.getText();
+    }
+    
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
     
@@ -2277,6 +2298,11 @@ export default class Container extends Morph {
         codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
       }
     }
+    
+    // Use preserved text if switching editors, otherwise use sourceContent
+    var textToSet = (preservedText !== null && oldLivelyEditor !== livelyEditor) 
+      ? preservedText 
+      : this.sourceContent;
 
     var url = this.getURL();
     livelyEditor.setURL(url);
@@ -2296,7 +2322,7 @@ export default class Container extends Morph {
         this.sourceContent  = await fetch(urlString).then(r => r.text())
       }
       
-      livelyEditor.setText(this.sourceContent); // directly setting the source we got
+      livelyEditor.setText(textToSet); // use preserved text if switching editors
       if (livelyEditor.checkAndLoadAnnotations) {
         await livelyEditor.checkAndLoadAnnotations()
       }
@@ -2311,7 +2337,7 @@ export default class Container extends Morph {
       }
     } else {
       if (livelyEditor.setText) {
-         livelyEditor.setText(this.sourceContent, keepEditor);
+         livelyEditor.setText(textToSet, keepEditor);
       }
     }
 

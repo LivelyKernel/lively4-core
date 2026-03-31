@@ -177,7 +177,8 @@
       visibility: hidden;
     }
 
-    :host([mode="edit"]) #container-navigation .edit {
+    :host([mode="edit"]) #container-navigation .edit,
+    :host([mode="grammarly"]) #container-navigation .edit {
       display: inline;
       visibility: visible;
     }
@@ -188,11 +189,13 @@
       visibility: visible;
     }
 
-    :host([mode="edit"]) #container-navigation .edit.optional {
+    :host([mode="edit"]) #container-navigation .edit.optional,
+    :host([mode="grammarly"]) #container-navigation .edit.optional {
       display: none;
       visibility: hidden;
     }
-    :host([mode="edit"].show-options) #container-navigation .edit {
+    :host([mode="edit"].show-options) #container-navigation .edit,
+    :host([mode="grammarly"].show-options) #container-navigation .edit {
       display: inline;
       visibility: visible;
     }
