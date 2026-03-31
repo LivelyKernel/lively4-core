@@ -172,6 +172,7 @@ export default class LivelyContenteditableEditor extends Morph {
     // Ctrl+S to save
     if (evt.ctrlKey && evt.key === 's') {
       evt.preventDefault();
+      evt.stopPropagation(); // Prevent container from also handling save
       this.saveFile().then(() => {
         lively.notify("Saved " + this.getURL());
       });
