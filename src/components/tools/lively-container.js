@@ -2485,11 +2485,12 @@ export default class Container extends Morph {
   /*MD ## Focus / Scroll / Navigation MD*/
   
   focus() {
-    const livelyCodeMirror = this.getLivelyCodeMirror();
-    if (livelyCodeMirror) { 
-      livelyCodeMirror.focus(); 
-    } else {
-      this.get("lively-container-navbar").focus()  
+    var editor = this.get("#editor");
+    const focusableElement = this.getLivelyCodeMirror() 
+            || (editor && editor.editorElement) 
+            || this.get("lively-container-navbar")
+    if (focusableElement) { 
+      focusableElement.focus(); 
     }
   }
   

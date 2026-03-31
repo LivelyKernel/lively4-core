@@ -55,6 +55,7 @@ export default class LivelyContenteditableEditor extends Morph {
     if(this.editorElement) this.editorElement.remove()
   }
   
+  
   // get editorElement() {
   //   return this.querySelector('#editor');
   // }
