@@ -811,6 +811,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
         // Set workspace reference for tool integration
         this.realtimeComponent.workspaceReference = this;
         
+        // Hide debug log when embedded in workspace
+        this.realtimeComponent.hideDebugLog();
+        
         // Load tool permissions first, then update toolset
         this.realtimeComponent.loadToolPermissions();
         this.realtimeComponent.updateToolset();

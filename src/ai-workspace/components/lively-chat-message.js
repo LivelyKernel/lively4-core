@@ -380,12 +380,19 @@ export default class LivelyChatMessage extends Morph {
     const info = opencodeMessage.info || {};
     const parts = opencodeMessage.parts || [];
 
+    // Get timestamp - prefer localTimestamp (numeric) over info.time.created (ISO string)
+    const timestamp = opencodeMessage.localTimestamp || info.time?.created;
+    const timestampHtml = timestamp 
+      ? `<span class="debug-item"><span class="debug-label">timestamp</span> ${this.formatTimestamp(timestamp)}</span>`
+      : '';
+
     this.debugHeader.innerHTML = [
       `<span class="debug-item"><span class="debug-label">id</span> ${info.id || 'unknown'}</span>`,
       `<span class="debug-item"><span class="debug-label">role</span> ${info.role || 'unknown'}</span>`,
+      timestampHtml,
       `<span class="debug-item"><span class="debug-label">parts</span> ${parts.length}</span>`,
       `<span class="debug-item"><span class="debug-label">types</span> ${parts.map(p => p.type).join(', ')}</span>`
-    ].join(' | ');
+    ].filter(s => s).join(' | ');
 
     // Render usage statistics panel (only for assistant messages with token data)
     if (usageStats) {

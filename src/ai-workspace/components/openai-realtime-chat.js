@@ -1852,6 +1852,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
   }
 
+  hideDebugLog() {
+    this.loggingUI = false;
+    this.log('[Audio Chat] Debug log hidden (embedded in workspace)');
+  }
+
   // #important
   async callFunction(functionName, args) {
     this.log(`Calling function ${functionName} with args:`, args);

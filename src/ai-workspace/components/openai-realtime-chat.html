@@ -266,6 +266,11 @@
       display: none;
     }
 
+    /* Hide logging panel when logging-ui is explicitly set to false */
+    :host([logging-ui="false"]) .logging-panel {
+      display: none;
+    }
+
     /* Tool Settings Modal */
     #toolSettingsModal {
       display: none;
