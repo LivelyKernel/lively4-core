@@ -12,9 +12,8 @@ For Human/Agent team:
 - [x] find out how permissions work in opencode server mode and if wee need to implement something
 - [ ] continue work on [AI/Workspace](doc/ai-workspace-tasks.md)
 - [ ] follow up on [ideas](doc/ideas.md)
-- [ ] Fix ESC behavior: should interrupt tool calls and halt at correct position (not halting at right position currently)
+- [X] Fix ESC behavior: should interrupt tool calls and halt at correct position (not halting at right position currently)
 - [x] normalize links in lively agent board
-- [ ] don't show the URL Project Focus in the board anyway
 - [x] tally tool usages and files written/read
 - [x] rendering in agent-board: components/lively-chat-sessions.js [object Object]
 - [x] when writing in opencode, always show details

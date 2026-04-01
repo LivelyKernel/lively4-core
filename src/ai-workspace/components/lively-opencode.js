@@ -312,12 +312,6 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    if (!this.isGenerating) {
-      this.showEscIndicator('first-press', 'ℹ️', 'No active generation', 'AI is idle');
-      setTimeout(() => this.hideEscIndicator(), 1500);
-      return;
-    }
-
     try {
       this.log(`Aborting session ${this.currentSession.id}...`);
       this.showEscIndicator('aborting', '⏹️', 'Sending abort request...', '');
