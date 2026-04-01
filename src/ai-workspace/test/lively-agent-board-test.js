@@ -105,6 +105,46 @@ describe("Lively Agent Board", function() {
     });
   });
 
+  describe("Cost Display", () => {
+    it("should display session cost when set", () => {
+      board.updateCost(0.0432);
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.include('Session Cost');
+      expect(content.textContent).to.include('$0.0432');
+    });
+
+    it("should not display cost section when cost is null", () => {
+      board.updateCost(null);
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.not.include('Session Cost');
+    });
+
+    it("should format cost to 4 decimal places", () => {
+      board.updateCost(0.123456789);
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.include('$0.1235');
+    });
+
+    it("should handle zero cost", () => {
+      board.updateCost(0);
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.include('Session Cost');
+      expect(content.textContent).to.include('$0.0000');
+    });
+
+    it("should clear cost when clearAll is called", () => {
+      board.updateCost(0.0432);
+      board.clearAll();
+      
+      const content = board.get('#content');
+      expect(content.textContent).to.not.include('Session Cost');
+    });
+  });
+
   describe("Example", () => {
     it("should provide livelyExample", () => {
       board.livelyExample();
@@ -112,6 +152,7 @@ describe("Lively Agent Board", function() {
       const content = board.get('#content');
       expect(content.textContent).to.include('In Progress');
       expect(content.textContent).to.include('Implement feature X');
+      expect(content.textContent).to.include('Session Cost');
     });
   });
 

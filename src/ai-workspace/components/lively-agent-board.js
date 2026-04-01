@@ -72,10 +72,16 @@ export default class LivelyAgentBoard extends Morph {
     this.projectPath = null;
     this.urlBase = null;
     this.currentProject = null; // Store full project object
+    this.sessionCost = null; // Session cost in USD
   }
 
   updateTodos(todos) {
     this.todos = todos || [];
+    this.render();
+  }
+
+  updateCost(cost) {
+    this.sessionCost = cost;
     this.render();
   }
 
@@ -218,6 +224,7 @@ export default class LivelyAgentBoard extends Morph {
     this.fileReadCounts.clear();
     this.fileWriteCounts.clear();
     this.toolUsages.clear();
+    this.sessionCost = null;
     this.render();
   }
 
@@ -259,6 +266,10 @@ export default class LivelyAgentBoard extends Morph {
     } else {
       this.links.projectFocus = null;
     }
+    
+    // Pull and update session cost
+    const cost = opencodeComponent.getTotalSessionCost(session.id);
+    this.updateCost(cost);
     
     // Pull messages and scan for file operations
     const messages = opencodeComponent.messages.get(session.id);
@@ -341,6 +352,12 @@ export default class LivelyAgentBoard extends Morph {
     // Clear existing content
     content.innerHTML = '';
 
+    // Render Cost section (at the top for visibility)
+    const costSection = this.renderCostSection();
+    if (costSection) {
+      content.appendChild(costSection);
+    }
+
     // Render Session Links section
     const linksSection = this.renderLinksSection();
     if (linksSection) {
@@ -360,9 +377,26 @@ export default class LivelyAgentBoard extends Morph {
     }
 
     // Show empty message if no content
-    if (!statsSection && !linksSection && !todosSection) {
+    if (!costSection && !statsSection && !linksSection && !todosSection) {
       content.appendChild(<div class="empty-message">No data to display</div>);
     }
+  }
+
+  /**
+   * Render the cost section showing session cost
+   */
+  renderCostSection() {
+    if (this.sessionCost == null) return null;
+
+    const section = <div class="board-section cost-section">
+      <div class="board-section-title">Session Cost</div>
+      <div class="cost-display">
+        <div class="cost-amount">${this.sessionCost.toFixed(4)}</div>
+        <div class="cost-label">Total API Cost (USD)</div>
+      </div>
+    </div>;
+
+    return section;
   }
 
   /**
@@ -614,6 +648,9 @@ export default class LivelyAgentBoard extends Morph {
       isFile: false,
       indexContent: '# AI Workspace\n\nExample project...'
     });
+    
+    // Set example cost (simulating ~100k input tokens and ~20k output tokens at Sonnet 4.5 pricing)
+    this.updateCost(0.0432);
     
     // Add some tool usages (simulating AI agent activity)
     this.addToolUsage('mcp_read');

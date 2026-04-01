@@ -579,6 +579,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
     board.updateTodos(todos);
   }
 
+  /**
+   * Update the workspace board with session cost from OpenCode.
+   * Called when messages are updated to reflect cost changes.
+   */
+  updateWorkspaceBoardCost() {
+    const board = this.get('#agentBoard');
+    if (!board || !this.opencodeComponent) return;
+    
+    const session = this.opencodeComponent.currentSession;
+    if (!session) return;
+    
+    const cost = this.opencodeComponent.getTotalSessionCost(session.id);
+    board.updateCost(cost);
+  }
+
 
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
@@ -905,6 +920,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.createOpenCodeMessage(message);
         // Update board with file operations from this new message
         this.updateWorkspaceBoardFromMessage(message);
+        // Update cost display (cost changes with new messages)
+        this.updateWorkspaceBoardCost();
       } else {
         this.log('[workspace] message-added event has no message object');
       }
@@ -916,6 +933,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.updateOpenCodeMessage(message);
         // Update board with file operations from this message
         this.updateWorkspaceBoardFromMessage(message);
+        // Update cost display (cost changes with message updates)
+        this.updateWorkspaceBoardCost();
       } else {
         this.log('[workspace] message-updated event has no message object');
       }
