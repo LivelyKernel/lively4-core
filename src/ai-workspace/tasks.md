@@ -11,7 +11,6 @@ For Human/Agent team:
 - [x] in opencode get rid of "No messages yet. Start the conversation!" after first message
 - [x] find out how permissions work in opencode server mode and if wee need to implement something
 - [ ] continue work on [AI/Workspace](doc/ai-workspace-tasks.md)
-- [ ] follow up on [ideas](doc/ideas.md)
 - [X] Fix ESC behavior: should interrupt tool calls and halt at correct position (not halting at right position currently)
 - [x] normalize links in lively agent board
 - [x] tally tool usages and files written/read
@@ -19,10 +18,10 @@ For Human/Agent team:
 - [x] when writing in opencode, always show details
 - [x] Tom's suggestion: use positive examples instead of negative ones, e.g. "don't use git revert"
 - [x] in lively-opencode: start server, should check if server is actually running....
-- [ ] auto-commit current agent changes and provides points to jump back
+- [x] auto-commit current agent changes and provides points to jump back
 - [x] implement auto session naming again....
 - [x] the diff view in file edit tool calls don't show the whitespace at the moment
-- [ ] render startTask
+- [X] render startTask
   
   ``` 
   types step-start, reasoning, tool, step-finish
@@ -38,11 +37,11 @@ For Human/Agent team:
 See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and architecture improvements.
 
 **Current open refactoring tasks:**
-- [ ] Message rendering duplication (#6, #7 in refactoring.md)
-- [ ] Auto-scroll message container (#16 in refactoring.md)
-- [ ] Session metadata sync (#17 in refactoring.md)
-- [ ] Method render double bug (#18 in refactoring.md)
-- [ ] Voice chat timestamp issues (#19 in refactoring.md)
+- [X] Message rendering duplication (#6, #7 in refactoring.md)
+- [X] Auto-scroll message container (#16 in refactoring.md)
+- [X] Session metadata sync (#17 in refactoring.md)
+- [X] Method render double bug (#18 in refactoring.md)
+- [X] Voice chat timestamp issues (#19 in refactoring.md)
 
 
 - [] Issue with lots of "Bye" etc... in chat: Overly Sensitive VAD (Voice Activity Detection) 
