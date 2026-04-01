@@ -13,8 +13,8 @@ import OpenaiRealtimeChat from './openai-realtime-chat.js';
 ```
 lively-ai-workspace (coordinator/blackboard)
 ├── openai-realtime-chat (eventSource: 'realtime')
-│   ├── captureEvent() → _eventCapture[]
-│   └── creates/updates via: createRealtimeMessage(), updateRealtimeMessage()
+│   ├── Delegates message creation to child component
+│   └── Child handles both creation AND updates (no workspace intervention)
 ├── lively-opencode (eventSource: 'opencode')
 │   ├── captureEvent() → _eventCapture[]
 │   └── creates/updates via: createOpenCodeMessage(), updateOpenCodeMessage()
@@ -23,9 +23,14 @@ lively-ai-workspace (coordinator/blackboard)
     └── saveMessagesToStorage() - triggered by update methods
 ```
 
-**Live Updates (NOT re-render everything):**
-- `createOpenCodeMessage()` / `updateOpenCodeMessage()` - create/update individual widgets
-- `createRealtimeMessage()` / `updateRealtimeMessage()` - create/update individual widgets
+**Message Rendering Pattern:**
+
+**Realtime (Vox) - Full Delegation:**
+- `createRealtimeMessage()` → delegates to `realtimeComponent.renderMessage(msg, workspace.container)`
+- Updates: realtime component handles directly (no workspace code needed)
+
+**OpenCode (Scribe) - Workspace Coordination:**
+- `createOpenCodeMessage()` / `updateOpenCodeMessage()` - workspace manages widgets
 - Update methods trigger `_saveMessagesDebounced()` for backup
 
 See [doc/architecture/ai-workspace.md](browse://src/ai-workspace/doc/architecture/ai-workspace.md) and
@@ -430,17 +435,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
 
   setupRealtimeEvents() {
+    // DELEGATION: Only listen to create events - realtime component handles its own updates
     this.realtimeComponent.addEventListener('realtime:create-live-user-message', (evt) => {
       this.createRealtimeMessage('user', evt.detail);
     });
-    this.realtimeComponent.addEventListener('realtime:update-live-user-message', (evt) => {
-      this.updateRealtimeMessage('user', evt.detail);
-    });
     this.realtimeComponent.addEventListener('realtime:create-live-assistant-message', (evt) => {
       this.createRealtimeMessage('assistant', evt.detail);
-    });
-    this.realtimeComponent.addEventListener('realtime:update-live-assistant-message', (evt) => {
-      this.updateRealtimeMessage('assistant', evt.detail);
     });
     // Listen for tool messages (function calls and results)
     this.realtimeComponent.addEventListener('realtime:add-message', (evt) => {
@@ -601,8 +601,17 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     if (!this.messagesContainer || !this.workspaceId) return;
 
+    // Clear widget tracking in child components (they manage their own widgets)
     this.chatMessages.clear();
-    this.pendingToolCalls.clear(); // Clear tool call tracking when switching sessions
+    this.pendingToolCalls.clear();
+    if (this.realtimeComponent) {
+      this.realtimeComponent.chatMessages.clear();
+      this.realtimeComponent.pendingToolCalls.clear();
+    }
+    if (this.opencodeComponent) {
+      this.opencodeComponent.chatMessages.clear();
+      this.opencodeComponent.pendingToolCalls.clear();
+    }
 
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)
@@ -664,11 +673,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const item_id = messageData.item_id || messageData.id;
     this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
 
-    // Use base class method (simple mode - no buffering needed for realtime)
-    await this.renderChatMessage(messageData, item_id, {
-      container: this.messagesContainer,
-      enableBuffering: false  // Realtime messages don't have race conditions like OpenCode
-    });
+    // DELEGATION: Let realtime component handle rendering with its own logic
+    // (duplicate checking, widget tracking, etc. all in one place)
+    if (this.realtimeComponent) {
+      return await this.realtimeComponent.renderMessage(messageData, this.messagesContainer);
+    }
   }
 
   // #important
@@ -684,27 +693,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
   }
 
-  // #important
-  async updateRealtimeMessage(role, messageData) {
-    const item_id = messageData.item_id;
-    // this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
 
-    // Look up widget by item_id
-    const widget = this.chatMessages.get(item_id);
-    if (!widget) {
-      // this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
-      return;
-    }
-
-    // Update widget - pass the FULL message object, don't create partial copies
-    await widget.setMessage(messageData);
-    this.scrollToBottom(this.messagesContainer);
-
-    // Trigger debounced save for message stream backup
-    if (this.isEventStorageEnabled) {
-      this._saveMessagesDebounced();
-    }
-  }
 
   /*MD ## Message Query Methods MD*/
 

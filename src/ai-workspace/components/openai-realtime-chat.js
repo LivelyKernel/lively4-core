@@ -241,7 +241,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.setupModelSelecton();
     await this.setupToolSettings();
     this.setupUI();
-    await this.renderMessages();
+    
+    // Only render messages on init if UI is enabled (otherwise parent will handle rendering)
+    if (this.messagesUI !== false) {
+      await this.renderMessages();
+    }
     lively.ensureID(this);
 
     // Don't auto-connect - wait for user to click "Start"
@@ -842,8 +846,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Conversation Messages MD*/
   // #important
-  async renderMessage(message) {
-    if (!this.messagesUI) return; 
+  async renderMessage(message, targetContainer = null) {
+    // If no explicit target provided, use own container (but only if UI enabled)
+    if (!targetContainer && !this.messagesUI) return;
+    
+    const container = targetContainer || this.get('#messagesContainer');
 
     this.log(`[realtime] renderMessage: ${message.role}`);
     
@@ -855,7 +862,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     
     // Use base class method which handles tool call appending automatically
     const chatMessage = await this.renderChatMessage(message, message.item_id, {
-      container: this.get('#messagesContainer'),
+      container: container,
       enableBuffering: false
     });
     
@@ -865,7 +872,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.log(`[item_id] Tracked rendered message: ${message.item_id}`);
     }
     
-    this.scrollResponsesSoon();
+    // Only scroll own container (let caller handle scrolling for delegated rendering)
+    if (!targetContainer) {
+      this.scrollResponsesSoon();
+    }
     return chatMessage
   }
 
@@ -1163,8 +1173,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.messageTimestamps.clear();
       this.pendingToolCalls.clear();
 
-      this.get('#messagesContainer').innerHTML = '';
-      await this.renderMessages();
+      // Only render messages if UI is enabled (otherwise parent will handle rendering)
+      if (this.messagesUI) {
+        this.get('#messagesContainer').innerHTML = '';
+        await this.renderMessages();
+      }
 
       // Disconnect if currently connected - user can press Start to reconnect with this conversation
       if (this.peerConnection && this.isStreamingActive) {

@@ -755,6 +755,7 @@ export default class LivelyChatMessage extends Morph {
   }
 
   async renderContent(messageObj) {
+    debugger
     let content = messageObj.content || '';
 
     // Check if this is a special system message from voice agent
