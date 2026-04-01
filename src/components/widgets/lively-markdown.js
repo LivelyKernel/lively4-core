@@ -427,6 +427,16 @@ export default class LivelyMarkdown extends Morph {
       } catch (err) {
         lively.error(`[lively-markdown] Mermaid render error for block ${i}:`, err);
         
+        // CRITICAL: Clean up leaked DOM elements from failed Mermaid render
+        // Mermaid v11 creates a <div id="d{id}"> in document.body during rendering
+        // and doesn't remove it when parsing fails, leaving an orphaned SVG
+        const mermaidLeakedDiv = document.getElementById('d' + id + '-svg');
+        debugger
+        if (mermaidLeakedDiv && mermaidLeakedDiv.parentElement === document.body) {
+          console.log(`[lively-markdown] Cleaning up leaked Mermaid div: d${id}-svg`);
+          mermaidLeakedDiv.remove();
+        }
+        
         // Keep original block but style it to show error
         targetElement.style.border = '2px dashed red';
         targetElement.style.opacity = '1';
