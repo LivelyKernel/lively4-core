@@ -142,7 +142,23 @@ export default class Files {
    return fetch(lively4serverurl + "/_curl/?target=" + url) 
   }
 
-  
+  static postURL(url, data) {
+    var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+    return fetch(lively4serverurl + "/_curl/?target=" + url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    })
+  }
+
+  static putURL(url, data) {
+    var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+    return fetch(lively4serverurl + "/_curl/?target=" + url, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    })
+  }
   
   static async copyURLtoURL(fromURL, toURL) {
     try {

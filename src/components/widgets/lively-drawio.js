@@ -462,55 +462,77 @@ export default class LivelyDrawio extends Morph {
   async exportAsPDF() {
     var targetURL = this.src.replace(/\.[^.]+$/,"") + ".pdf" // #Warning override without asking... yeah we need sharp tools!
     if (await lively.confirm("save as " + targetURL)) {
-      var dataURL = await this.getPDFDataURL()
-      // or maybe we should ask ...
-      await lively.files.copyURLtoURL(dataURL, targetURL)
-      lively.notify("finisihed exporting pdf")
+      var pdfBlob = await this.getPDFBlob()
+      
+      // Write blob directly to target URL
+      var resp = await fetch(targetURL, {
+        method: 'PUT',
+        body: pdfBlob
+      })
+      
+      if (!resp.ok) {
+        throw new Error(`Failed to save PDF: ${resp.status} ${resp.statusText}`)
+      }
+      
+      lively.notify("finished exporting pdf")
       
       var container = lively.query(this, "lively-container")
       if (container) container.navbar().update()
     }
   }
   
-  async getPDFDataURL() {
-    // var form =  new FormData();
+  async getPDFBlob() {
     var source = await fetch(this.src).then(r => r.text())
     var filename = this.src.replace(/.*\//,"")
     
-    var xform = ""
-    var config = {
+    // Build form data - xml parameter should NOT be double-encoded
+    var formData = new URLSearchParams({
       format: "pdf",
-      bg: "#ffffff",
-      base64: 1,
-      embedXml: 0,
-      xml: encodeURIComponent(source),
-      filename: filename
-    }
-    xform = Object.keys(config).map(key => {
-      return key + "=" + config[key] 
-    }).join("&")
-        
-    // old: https://exp.draw.io/ImageExport4/export
-    var convertToPDFRequest = fetch("https://convert.diagrams.net/node/export", {
+      bg: "#ffffff",  // URLSearchParams will handle encoding
+      base64: 0,  // Return binary PDF (curl service handles binary correctly)
+      embedXml: 1,
+      xml: source,  // URLSearchParams will handle encoding
+      filename: filename,
+      scale: 1,
+      pageMargin: 27,
+      crop: 0,
+      fit: 0,
+      shadows: 0,
+      sheetsAcross: 1,
+      sheetsDown: 1,
+      extras: JSON.stringify({
+        globalVars: {
+          filename: filename,
+          pagecount: 1,
+          page: "Page-1",
+          pagenumber: 1
+        }
+      })
+    }).toString()
+    
+    // Use curl proxy with x-header- pattern to spoof Origin/Referer
+    var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+    var targetURL = "https://convert.diagrams.net/node/export"
+    
+    var curlURL = lively4serverurl + "/_curl/?target=" + encodeURIComponent(targetURL) +
+      "&x-header-Origin=" + encodeURIComponent("https://app.diagrams.net") +
+      "&x-header-Referer=" + encodeURIComponent("https://app.diagrams.net/")
+    
+    var resp = await fetch(curlURL, {
       method: "POST",
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: xform,
+      body: formData
     })
-    var resp = await convertToPDFRequest
     
-    var text = await resp.text()
-    var dataURL = "data:application/pdf;base64,"+text
-    return dataURL
-  
-  // fetch("data:application/pdf;base64,"+text).then(r => r.blob()).then(blob => {
-  //   fetch("https://lively-kernel.org/lively4/lively4-jens/doc/figures/test.pdf", 
-  //     {
-  //       method: "PUT",
-  //       body: blob
-  //   })  
-  // })
+    if (!resp.ok) {
+      var errorText = await resp.text()
+      throw new Error(`PDF export failed: ${resp.status} ${resp.statusText}\n${errorText}`)
+    }
+    
+    // Response is binary PDF - convert directly to blob
+    return await resp.blob()
   }
   
   async livelyExample() {
