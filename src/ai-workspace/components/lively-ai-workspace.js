@@ -123,6 +123,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
 
+    // Update fullscreen icon whenever fullscreen state changes
+    this._onFullscreenChange = () => this.updateFullscreenIcon();
+    document.addEventListener('fullscreenchange', this._onFullscreenChange);
+
     // Optional message stream backup (for debugging/replay)
     this._saveMessagesDebounced = (() => this.saveMessagesToStorage()).debounce(2000);
 
@@ -1350,6 +1354,30 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
+  /*MD ## Fullscreen MD*/
+
+  async onFullscreenButton() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+    } else {
+      await this.requestFullscreen();
+    }
+  }
+
+  updateFullscreenIcon() {
+    const btn = this.get('#fullscreenButton');
+    if (!btn) return;
+    const icon = btn.querySelector('i');
+    if (!icon) return;
+    if (document.fullscreenElement) {
+      icon.className = 'fa fa-compress';
+      btn.title = 'Exit fullscreen';
+    } else {
+      icon.className = 'fa fa-expand';
+      btn.title = 'Toggle fullscreen';
+    }
+  }
+
   updateRealtimeStatus(text, connected) {
     const statusEl = this.get('#realtimeStatus');
     const dotEl = this.get('#realtimeDot');
@@ -1913,12 +1941,17 @@ export default class LivelyAiWorkspace extends LivelyChat {
     return items;
   }
   
-   /*MD ## Lifecycle Methods MD*/
+  /*MD ## Lifecycle Methods MD*/
   livelyMigrate(other) {
-    super.livelyMigrate(other)
-    this.blackboard = other.blackboard
+    super.livelyMigrate(other);
+    this.blackboard = other.blackboard;
     this.workspaceId = other.workspaceId || null;
     // Note: chatMessages migration handled by base class
+
+    // Clean up old fullscreen listener from previous instance
+    if (other._onFullscreenChange) {
+      document.removeEventListener('fullscreenchange', other._onFullscreenChange);
+    }
   }
 
 }

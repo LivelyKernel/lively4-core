@@ -359,6 +359,28 @@
     display: none;
 }
 
+:host(:fullscreen) {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0;
+  border: none;
+}
+
+.fullscreen-button {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.fullscreen-button:hover {
+  background: rgba(255,255,255,0.2);
+}
 
 </style>
 
@@ -379,6 +401,9 @@
   </div>
   <div id="replayControlsPlaceholder"></div>
   <div class="controls">
+    <button id="fullscreenButton" class="fullscreen-button" title="Toggle fullscreen">
+      <i class="fa fa-expand"></i>
+    </button>
   </div>
 </div>
 
