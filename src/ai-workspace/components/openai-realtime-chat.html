@@ -258,8 +258,9 @@
 
     /* Component-specific logging panel sizing - use width not flex-basis so lively-separator can resize it */
     .logging-panel {
+      flex: 0 1 auto;
       width: 600px;
-      flex-shrink: 0;
+      min-width: 80px;
     }
 
     :host([hide-debug-log="true"]) .logging-panel {
