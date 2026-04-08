@@ -1668,6 +1668,15 @@ export default class LivelyOpencode extends LivelyChat {
       }
     }
 
+    // Update the local agent board cost in real-time
+    const board = this.get('#agentBoard');
+    if (board && board.updateCost) {
+      board.updateCost(cost);
+    }
+
+    // Dispatch event so workspace/board can update cost display in real-time
+    this.dispatchMessageEvent('opencode:cost-updated', { sessionId, cost });
+
     // Update the cost in the sessions sidebar and re-render
     const sessionsComponent = this.get('#sessionsComponent');
     if (!sessionsComponent) return;

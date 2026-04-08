@@ -941,6 +941,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // Note: Connection status is now handled by opencode:connection-status event
     });
 
+    // Listen for real-time cost updates from OpenCode (token data arrives incrementally)
+    this.opencodeComponent.addEventListener('opencode:cost-updated', () => {
+      this.updateWorkspaceBoardCost();
+    });
+
     // Listen for TODO updates from OpenCode (incremental update - just TODOs)
     this.opencodeComponent.addEventListener('opencode:todos-updated', (evt) => {
       const { todos } = evt.detail;
