@@ -565,12 +565,24 @@ export default class ObjectEditor extends Morph {
     }
   }
 
+  decodeHTMLEntities(text) {
+    // Decode HTML entities for display in editor
+    const entities = {
+      '&lt;': '<',
+      '&gt;': '>',
+      '&amp;': '&',
+      '&quot;': '"',
+      '&#39;': "'"
+    };
+    return text.replace(/&(lt|gt|amp|quot|#39);/g, (match) => entities[match] || match);
+  }
+
   loadScript(scriptName) {
     if (typeof this.targetElement.__scripts__ === 'undefined' ||
       typeof this.targetElement.__scripts__[scriptName] === 'undefined') {
       return;
     }
-    this.editor.value = this.targetElement.__scripts__[scriptName];
+    this.editor.value = this.decodeHTMLEntities(this.targetElement.__scripts__[scriptName]);
   }
 
   updateList() {

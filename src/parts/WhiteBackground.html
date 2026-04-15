@@ -1,0 +1,29 @@
+<div class="lively-content" style="width: 1280px; height: 720px; border: 1px solid black; background-color: rgb(255, 255, 255); position: absolute; left: -1145.12px; top: -1269.66px;" id="WhiteBackground"><div id="ShowParentExtent" style="width: 225px; position: absolute; left: 3px; top: -22px; height: 16px;" class="lively-text lively-content"><div id="ShowParentExtentLabel">w: 1280 h: 720</div><div class="lively-content" style="width: 800px; height: max-content; position: absolute; left: 0px; top: 0px;"></div><script type="lively4script" data-name="onStep">function onStep() {
+  var pos = lively.getExtent(this.parentElement)
+  var label = this.querySelector("#ShowParentExtentLabel")
+  if (label) {
+    label.textContent = "w: " + pos.x + " h: " + pos.y
+  }
+}</script><script type="lively4script" data-name="livelyLoad">async function livelyLoad() {
+  const ContextMenu = await System.import("src/client/contextmenu.js")
+  
+  if (this._resizeObserver) this._resizeObserver.disconnect()
+  this._resizeObserver = new ResizeObserver(() =&gt; this.onStep())
+  this._resizeObserver.observe(this.parentElement)
+  
+  lively.removeEventListener("contextmenu", this)
+  lively.addEventListener("contextmenu", this, "contextmenu", (evt) =&gt; {
+    evt.preventDefault()
+    evt.stopPropagation()
+    
+    let menuItems = [
+      ['500 x 500', () =&gt; lively.setExtent(this.parentElement, lively.pt(500, 500))],
+      ['1000 x 100', () =&gt; lively.setExtent(this.parentElement, lively.pt(1000, 100))],
+      ['HD (1280 x 720)', () =&gt; lively.setExtent(this.parentElement, lively.pt(1280, 720))],
+      ['FullHD (1920 x 1080)', () =&gt; lively.setExtent(this.parentElement, lively.pt(1920, 1080))]
+    ]
+    
+    const menu = new ContextMenu.default(this, menuItems)
+    menu.openIn(document.body, evt, this)
+  })
+}</script></div></div>

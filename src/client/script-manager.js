@@ -1,11 +1,26 @@
 import _ from 'src/external/lodash/lodash.js'
 
+function decodeHTMLEntities(text) {
+  // Decode HTML entities that may appear in script content from copy/paste
+  // This fixes arrow functions: () =&gt; becoming () =>
+  const entities = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&',
+    '&quot;': '"',
+    '&#39;': "'"
+  };
+  return text.replace(/&(lt|gt|amp|quot|#39);/g, (match) => entities[match] || match);
+}
+
 export function functionFromString(funcOrString) {
   if (typeof funcOrString === 'function') {
     return funcOrString;
   }
+  // Decode HTML entities before eval (fixes copy/paste issues with arrow functions)
+  const decodedString = decodeHTMLEntities(funcOrString.toString());
   // this makes sure we always create a function
-  return eval('(' + funcOrString.toString() + ')');
+  return eval('(' + decodedString + ')');
 }
 
 function isLively4Script(object) {
@@ -92,7 +107,7 @@ export default class ScriptManager {
 
         } catch (e) {
           lively.notify('Error adding function: ' + scriptName + ' to object: ' + parent,
-            "" + e, 20, () => lively.openWorkspace("" + e + "Source: " + child.textContent));
+            "" + e + "\n" + child.textContent, 20, () => lively.openWorkspace("" + e + "Source: " + child.textContent));
           console.error('Error while adding function ' + scriptName + ' to object:');
           console.error(parent);
           console.error(e);

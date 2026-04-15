@@ -46,6 +46,20 @@ export const Tools = {
       }
     },
 
+    /**
+     * JSON replacer that converts DOM elements to readable HTML strings
+     */
+    jsonReplacer(key, value) {
+      if (value instanceof Element) {
+        const attrs = Array.from(value.attributes)
+          .map(attr => `${attr.name}="${attr.value}"`)
+          .join(' ');
+        const attrStr = attrs ? ` ${attrs}` : '';
+        return `<${value.tagName.toLowerCase()}${attrStr}>`;
+      }
+      return value;
+    },
+
     async execute(args, context) {
       const { code } = args;
       context.logActivity('request', `Evaluating: ${code.substring(0, 50)}${code.length > 50 ? '...' : ''}`);
@@ -140,9 +154,13 @@ export const Tools = {
         
         // Convert result to string for display
         let resultString;
-        if (typeof result === 'object') {
+        if (result instanceof Element) {
+          // Format DOM elements specially using the replacer
+          resultString = this.jsonReplacer(null, result);
+        } else if (typeof result === 'object') {
           try {
-            resultString = JSON.stringify(result, null, 2);
+            // Use jsonReplacer to handle nested DOM elements
+            resultString = JSON.stringify(result, this.jsonReplacer, 2);
           } catch (jsonError) {
             resultString = String(result);
           }

@@ -9,6 +9,20 @@ MD*/
 
 export class BasicToolset {
   /**
+   * JSON replacer that converts DOM elements to readable HTML strings
+   */
+  static jsonReplacer(key, value) {
+    if (value instanceof Element) {
+      const attrs = Array.from(value.attributes)
+        .map(attr => `${attr.name}="${attr.value}"`)
+        .join(' ');
+      const attrStr = attrs ? ` ${attrs}` : '';
+      return `<${value.tagName.toLowerCase()}${attrStr}>`;
+    }
+    return value;
+  }
+
+  /**
    * Parse lively4_evaluate_code structured output
    * Extracts result and console output from formatted tool response
    */
@@ -107,9 +121,13 @@ export class BasicToolset {
             }
 
             let resultString;
-            if (typeof result === 'object') {
+            if (result instanceof Element) {
+              // Format DOM elements specially using the replacer
+              resultString = BasicToolset.jsonReplacer(null, result);
+            } else if (typeof result === 'object') {
               try {
-                resultString = JSON.stringify(result, null, 2);
+                // Use jsonReplacer to handle nested DOM elements
+                resultString = JSON.stringify(result, BasicToolset.jsonReplacer, 2);
               } catch (jsonError) {
                 resultString = String(result);
               }

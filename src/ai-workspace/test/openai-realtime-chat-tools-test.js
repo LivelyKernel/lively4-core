@@ -302,6 +302,33 @@ describe('openai-realtime-chat-tools', () => {
       expect(result.result).to.equal('undefined');
     });
 
+    it('should format DOM elements as readable HTML', async () => {
+      const result = await toolset.execute('evaluate_code', {
+        code: 'document.createElement("div")'
+      });
+      expect(result.success).to.be.true;
+      expect(result.result).to.match(/^<div/);
+      expect(result.result).to.include('>');
+    });
+
+    it('should format DOM elements in arrays', async () => {
+      const result = await toolset.execute('evaluate_code', {
+        code: '[document.createElement("button"), document.createElement("span")]'
+      });
+      expect(result.success).to.be.true;
+      expect(result.result).to.include('<button');
+      expect(result.result).to.include('<span');
+    });
+
+    it('should format DOM elements in objects', async () => {
+      const result = await toolset.execute('evaluate_code', {
+        code: '({ el: document.createElement("p"), name: "test" })'
+      });
+      expect(result.success).to.be.true;
+      expect(result.result).to.include('<p');
+      expect(result.result).to.include('"name": "test"');
+    });
+
     it('should throw error for unknown tool', async () => {
       try {
         await toolset.execute('nonexistent_tool', {});
