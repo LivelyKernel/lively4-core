@@ -63,7 +63,7 @@ export default class LivelyArchitectureViewer extends Morph {
       listenOn: this,
       minZoom: 0.1,
       maxZoom: 10.0,
-      zoomStep: 0.4
+      zoomStep: 0.1
     });
   }
   
