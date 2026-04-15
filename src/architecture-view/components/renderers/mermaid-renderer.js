@@ -107,6 +107,22 @@ classDiagram\n${this.diagram._mermaidSource.join('\n')}`;
   async render(target) {
     const source = this.getMermaidSource();
     
+    // Validate source before attempting render - prevents Mermaid errors with empty content
+    if (!source || source.trim().length === 0) {
+      target.innerHTML = '<div style="padding: 20px; color: #666;">No classes to display</div>';
+      return;
+    }
+    
+    // Check if source has actual content after classDiagram declaration
+    const classDiagramMatch = source.match(/classDiagram\n([\s\S]*)/);
+    if (classDiagramMatch) {
+      const contentAfterHeader = classDiagramMatch[1].trim();
+      if (contentAfterHeader.length === 0) {
+        target.innerHTML = '<div style="padding: 20px; color: #666;">No classes to display</div>';
+        return;
+      }
+    }
+    
     try {
       // Show loading message
       target.innerHTML = '<div style="padding: 20px;">Loading Mermaid...</div>';
