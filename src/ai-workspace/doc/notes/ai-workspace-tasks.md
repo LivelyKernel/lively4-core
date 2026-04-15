@@ -197,6 +197,16 @@ This document tracks tasks related to implementing task division between the voi
   - Check: Server-side processing delays?
   - Test: Simple write operation end-to-end
 
+- [ ] **Missing feature: Voice agent cannot interrupt or message code agent**
+  - Currently: No capability to interrupt code agent while running
+  - Currently: No capability to send messages from voice agent to code agent during execution
+  - Impact: User cannot provide additional context or corrections mid-execution
+  - Possible approaches:
+    - Add interrupt mechanism (abort ongoing code agent task)
+    - Add message queue (send additional context to running task)
+    - Add streaming communication channel between agents
+  - Related: Task coordination and multi-agent collaboration
+
 ### Medium Priority 🟡
 - [ ] Verify consistency between voice and code agent results
   - Test same queries with both agents
@@ -386,6 +396,7 @@ Most architecture improvements have been completed:
    - Progressive disclosure vs. upfront explanation?
 
 ---
+
 
 ## Related Documents
 

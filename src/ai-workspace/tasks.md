@@ -32,6 +32,40 @@ For Human/Agent team:
   ```
 - preview one line of details in 💭 Thinking...
 
+
+
+## API Development
+
+### lively.search Implementation
+
+**Goal:** Create unified search API following lively.files conventions
+
+#### lively.search.files - Filename Search
+- [ ] Implement `lively.search.files(pattern, options)` for searching filenames
+  - **Focus:** Filename search only (NOT content search)
+  - **Default behavior:** Search in `lively4url` (current working directory)
+  - **Options:**
+    - `paths` - array of root directories to search (default: `[lively4url]`)
+    - `recursive` - search subdirectories (default: `true`)
+    - `type` - filter by 'file', 'directory', or 'both'
+    - Pattern matching: support glob patterns and regex
+  - **Conventions:** Follow lively-index-search patterns
+    - Sensible defaults for ordering (alphabetical or by modification time)
+    - Automatic filtering of common excludes (e.g., `_marker/`, `_trash/`)
+    - Support for `ExtraSearchRoots` preference
+    - Return `ResultSet` for composability
+  - **Integration:** Use `lively.files.walkDir()` for filesystem traversal
+  - **Naming:** Follow lively.files conventions (no redundant prefixes)
+
+#### Future: Content and Structure Search
+- [ ] `lively.search.content(query, options)` - Search file contents
+- [ ] `lively.search.classes(query, options)` - Search class definitions
+- [ ] `lively.search.methods(query, options)` - Search methods
+- [ ] `lively.search.functions(query, options)` - Search functions
+
+---
+
+
 ## Refactoring & Bug Fixes
 
 See [doc/refactoring.md](doc/refactoring.md) for detailed refactoring tasks and architecture improvements.
