@@ -86,6 +86,123 @@ export default class Search {
     return roots;
   }
   
+
+  
+  /**
+   * Search for class definitions by name pattern
+   * 
+   * @param {string} pattern - Search pattern (regex supported)
+   * @param {Object} options - Search options
+   * @param {Array<string>} options.paths - Root directories to search (default: [lively4url])
+   * @param {number} options.limit - Maximum number of results (default: 50)
+   * @returns {Promise<Array<Object>>} - Array of class objects with name, url, line, etc.
+   */
+  static async classes(pattern, options = {}) {
+    const {
+      paths,
+      limit = 50
+    } = options;
+    
+    // Get search roots
+    const searchRoots = this.getSearchRoots(paths);
+    
+    // Create regex from pattern
+    const searchRegex = new RegExp(pattern, 'i');
+    
+    // Query FileIndex for classes
+    const allClasses = [];
+    await FileIndex.current().db.classes.each(classInfo => {
+      // Check if class is in search roots
+      const inSearchRoot = searchRoots.find(root => classInfo.url.startsWith(root));
+      if (!inSearchRoot) return;
+      
+      // Match pattern against class name
+      if (!classInfo.name.match(searchRegex)) return;
+      
+      // Add to results
+      allClasses.push({
+        name: classInfo.name,
+        superClass: classInfo.superClassName || null,
+        url: classInfo.url,
+        line: classInfo.start ? this.getLineNumber(classInfo.start) : null,
+        isExported: classInfo.exported || false
+      });
+      
+      // Stop if we have enough results
+      if (allClasses.length >= limit) return false; // Break iteration
+    });
+    
+    return allClasses;
+  }
+  
+  /**
+   * Convert byte position to approximate line number
+   * @private
+   */
+  static getLineNumber(position) {
+    // FileIndex stores byte positions, not line numbers
+    // This is an approximation - actual line would require parsing
+    return Math.floor(position / 40) + 1; // ~40 chars per line average
+  }
+  
+  /**
+   * Search for method definitions by name pattern
+   * 
+   * @param {string} pattern - Search pattern (regex supported)
+   * @param {Object} options - Search options
+   * @param {Array<string>} options.paths - Root directories to search (default: [lively4url])
+   * @param {string} options.className - Filter by class name (optional)
+   * @param {number} options.limit - Maximum number of results (default: 50)
+   * @returns {Promise<Array<Object>>} - Array of method objects with name, className, url, line, etc.
+   */
+  static async methods(pattern, options = {}) {
+    const {
+      paths,
+      className,
+      limit = 50
+    } = options;
+    
+    // Get search roots
+    const searchRoots = this.getSearchRoots(paths);
+    
+    // Create regex from pattern
+    const searchRegex = new RegExp(pattern, 'i');
+    
+    // Query FileIndex for classes and their methods
+    const allMethods = [];
+    await FileIndex.current().db.classes.each(classInfo => {
+      // Check if class is in search roots
+      const inSearchRoot = searchRoots.find(root => classInfo.url.startsWith(root));
+      if (!inSearchRoot) return;
+      
+      // Filter by className if specified
+      if (className && classInfo.name !== className) return;
+      
+      // Check if class has methods
+      if (!classInfo.methods || classInfo.methods.length === 0) return;
+      
+      // Search through methods
+      for (const method of classInfo.methods) {
+        // Match pattern against method name
+        if (!method.name.match(searchRegex)) continue;
+        
+        allMethods.push({
+          name: method.name,
+          className: classInfo.name,
+          url: classInfo.url,
+          line: method.start ? this.getLineNumber(method.start) : null,
+          static: method.static || false,
+          kind: method.kind || 'method'
+        });
+        
+        // Stop if we have enough results
+        if (allMethods.length >= limit) return false; // Break iteration
+      }
+    });
+    
+    return allMethods;
+  }
+  
   static async search(pattern, rootdirs = "lively4-jens", ) {
     if (!pattern) throw new Error("Argument missing: not pattern")
     var root = this.getRoot()

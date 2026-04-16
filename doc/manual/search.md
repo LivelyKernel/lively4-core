@@ -92,6 +92,120 @@ The search API uses [FileIndex](browse://src/client/fileindex.js) for efficient 
 - [lively-generic-search](browse://src/components/tools/lively-generic-search.js) - UI component using search API
 - Press `F8` to open the generic search widget
 
+## Class Search
+
+Search for class definitions by name using `lively.search.classes()`.
+
+### Basic Usage
+
+```javascript
+// Find classes matching "Search"
+const results = await lively.search.classes("Search");
+
+// Results: [
+//   {
+//     name: "Search",
+//     superClass: null,
+//     url: "http://localhost:9005/lively4-core/src/client/search.js",
+//     line: 8,
+//     isExported: true
+//   },
+//   {
+//     name: "SearchRoots",
+//     superClass: null,
+//     url: "http://localhost:9005/lively4-core/src/client/search-roots.js",
+//     line: 6,
+//     isExported: true
+//   }
+// ]
+```
+
+### Search Options
+
+```javascript
+const results = await lively.search.classes(pattern, options);
+```
+
+**Parameters:**
+- `pattern` (string) - Search pattern (regex supported)
+- `options` (object) - Optional configuration:
+  - `paths` (Array<string>) - Root directories to search (default: `lively4url` + `ExtraSearchRoots`)
+  - `limit` (number) - Maximum results (default: `50`)
+
+### Examples
+
+**Search in specific directory:**
+```javascript
+const components = await lively.search.classes("Morph", { 
+  paths: [lively4url + "/src/components"] 
+});
+```
+
+**Regex pattern:**
+```javascript
+// Find all classes ending with "Editor"
+const editors = await lively.search.classes(".*Editor$", { limit: 10 });
+```
+
+## Method Search
+
+Search for method and function definitions using `lively.search.methods()`.
+
+### Basic Usage
+
+```javascript
+// Find methods matching "initialize"
+const results = await lively.search.methods("initialize");
+
+// Results: [
+//   {
+//     name: "initialize",
+//     className: "LivelyChat",
+//     url: "http://localhost:9005/lively4-core/src/ai-workspace/components/lively-chat.js",
+//     line: 15,
+//     static: false,
+//     kind: "method"
+//   },
+//   ...
+// ]
+```
+
+### Search Options
+
+```javascript
+const results = await lively.search.methods(pattern, options);
+```
+
+**Parameters:**
+- `pattern` (string) - Search pattern (regex supported)
+- `options` (object) - Optional configuration:
+  - `paths` (Array<string>) - Root directories to search (default: `lively4url` + `ExtraSearchRoots`)
+  - `className` (string) - Filter by class name (optional)
+  - `limit` (number) - Maximum results (default: `50`)
+
+### Examples
+
+**Search in specific class:**
+```javascript
+const methods = await lively.search.methods(".*", { 
+  className: "Search",
+  limit: 20 
+});
+```
+
+**Find all constructors:**
+```javascript
+const constructors = await lively.search.methods("constructor", { limit: 20 });
+```
+
+**Method kinds:**
+Methods are returned with a `kind` property that can be:
+- `"method"` - Regular class method
+- `"constructor"` - Constructor
+- `"get"` - Getter
+- `"set"` - Setter
+- `"function"` - Top-level function (not in a class)
+
 ## Future Extensions
 
 The following search methods are planned for future implementation:
@@ -99,9 +213,4 @@ The following search methods are planned for future implementation:
 ```javascript
 // Content search (planned)
 await lively.search.content(query, options);
-
-// Code structure search (planned)
-await lively.search.classes(query, options);
-await lively.search.methods(query, options);
-await lively.search.functions(query, options);
 ```
