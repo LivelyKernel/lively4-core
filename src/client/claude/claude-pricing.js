@@ -16,10 +16,17 @@
 
 import { PRICING_DATA } from './claude-pricing-data.js';
 
+// OpenAI pricing used by OpenCode model usage/cost displays.
+// Prices are USD per million tokens ($/MTok).
+const OPENAI_PRICING_DATA = [
+  { displayName: 'GPT-5', baseInput: 2.5, cacheHit: 0.25, output: 15 }
+];
+
 // --- Internal: normalize a name to a lookup key ---
 // "Claude Sonnet 4.5" -> "claude-sonnet-4-5"
 function normalizeName(name) {
-  return name
+  if (name == null) return '';
+  return String(name)
     .toLowerCase()
     .replace(/\s*\(.*?\)\s*/g, '')
     .trim()
@@ -27,8 +34,40 @@ function normalizeName(name) {
     .replace(/\./g, '-');
 }
 
+function normalizeModelLookupKey(nameOrId) {
+  return normalizeName(nameOrId)
+    .replace(/-\d{8}$/, '')
+    .replace(/-\d{4}-\d{2}-\d{2}$/, '');
+}
+
+function stripProviderPrefix(key) {
+  return key.replace(/^(openai|anthropic)[:/\-]/, '');
+}
+
 // Attach normalized id to each entry once at module load
 const pricing = PRICING_DATA.map(m => ({ ...m, id: normalizeName(m.displayName) }));
+const openAIPricing = OPENAI_PRICING_DATA.map(m => ({ ...m, id: normalizeName(m.displayName) }));
+
+function findInPricingTable(models, key) {
+  const providerStrippedKey = stripProviderPrefix(key);
+  return models.find(m => {
+    const idKey = normalizeModelLookupKey(m.id || m.displayName);
+    const nameKey = normalizeModelLookupKey(m.displayName);
+    return key === idKey ||
+      key === nameKey ||
+      providerStrippedKey === idKey ||
+      providerStrippedKey === nameKey;
+  }) || null;
+}
+
+function findOpenAIFallbackModel(key) {
+  const providerStrippedKey = stripProviderPrefix(key);
+  // Map OpenCode/OpenAI variants like gpt-5.3-codex to GPT-5 pricing.
+  if (/^gpt-5($|[-:].*)/.test(providerStrippedKey)) {
+    return findInPricingTable(openAIPricing, 'gpt-5');
+  }
+  return null;
+}
 
 // --- Public API ---
 
@@ -52,8 +91,10 @@ export function allModels() {
  * @returns {Object|null}
  */
 export function forModel(nameOrId) {
-  const key = normalizeName(nameOrId);
-  return pricing.find(m => m.id === key || normalizeName(m.displayName) === key) || null;
+  const key = normalizeModelLookupKey(nameOrId);
+  return findInPricingTable(pricing, key) ||
+    findInPricingTable(openAIPricing, key) ||
+    findOpenAIFallbackModel(key);
 }
 
 /**

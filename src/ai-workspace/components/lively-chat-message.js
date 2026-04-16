@@ -396,13 +396,62 @@ export default class LivelyChatMessage extends Morph {
 
     // Render usage statistics panel (only for assistant messages with token data)
     if (usageStats) {
-      this.renderUsageStats(usageStats, info);
+      this.renderUsageStats(usageStats, info, parts);
     }
   }
 
-  renderUsageStats(el, info) {
-    const tokens = info.tokens;
-    const cost = info.cost;
+  normalizeUsageModelKey(modelID) {
+    return (modelID || '')
+      .replace(/-\d{8}$/, '')
+      .replace(/-\d{4}-\d{2}-\d{2}$/, '');
+  }
+
+  hasUsageTokenFields(tokens) {
+    return Boolean(
+      tokens && (
+        tokens.input !== undefined ||
+        tokens.output !== undefined ||
+        tokens.cache?.read !== undefined ||
+        tokens.cache?.write !== undefined
+      )
+    );
+  }
+
+  usageTokensFromStepFinishParts(parts = []) {
+    const totals = {
+      input: 0,
+      output: 0,
+      reasoning: 0,
+      cache: { read: 0, write: 0 }
+    };
+    let hasStepFinishTokens = false;
+
+    for (const part of parts) {
+      if (part?.type !== 'step-finish' || !this.hasUsageTokenFields(part.tokens)) continue;
+      hasStepFinishTokens = true;
+      totals.input += part.tokens.input || 0;
+      totals.output += part.tokens.output || 0;
+      totals.reasoning += part.tokens.reasoning || 0;
+      totals.cache.read += part.tokens.cache?.read || 0;
+      totals.cache.write += part.tokens.cache?.write || 0;
+    }
+
+    return hasStepFinishTokens ? totals : null;
+  }
+
+  buildCostUsage(tokens) {
+    const usage = {};
+    if (tokens?.input !== undefined) usage.baseInput = tokens.input;
+    if (tokens?.output !== undefined) usage.output = tokens.output;
+    if (tokens?.cache?.read !== undefined) usage.cacheHit = tokens.cache.read;
+    if (tokens?.cache?.write !== undefined) usage.cacheWrite5m = tokens.cache.write;
+    return usage;
+  }
+
+  renderUsageStats(el, info, parts = []) {
+    const tokens = this.hasUsageTokenFields(info.tokens)
+      ? info.tokens
+      : this.usageTokensFromStepFinishParts(parts);
     const time = info.time;
 
     // Only show if there's at least role info (i.e. it's a real message)
@@ -417,7 +466,9 @@ export default class LivelyChatMessage extends Morph {
 
     // Model (short form)
     if (info.modelID) {
-      const shortModel = info.modelID.replace('claude-', '').replace(/-2025\d*/, '');
+      const shortModel = this.normalizeUsageModelKey(info.modelID)
+        .replace(/^openai[/:-]/, '')
+        .replace(/^claude-/, '');
       rows.push(`<div class="stat-row"><span class="stat-label">model</span><span class="stat-value">${shortModel}</span></div>`);
     }
 
@@ -462,13 +513,8 @@ export default class LivelyChatMessage extends Morph {
     // Cost: compute from token usage via claude-pricing.js (info.cost from OpenCode is often 0)
     // Rendered as a prominent second row at the bottom of the panel
     if (tokens && info.modelID) {
-      // Strip date suffix from modelID: "claude-sonnet-4-5-20250929" -> "claude-sonnet-4-5"
-      const modelKey = info.modelID.replace(/-\d{8}$/, '');
-      const usage = {};
-      if (tokens.input !== undefined) usage.baseInput = tokens.input;
-      if (tokens.output !== undefined) usage.output = tokens.output;
-      if (tokens.cache?.read !== undefined) usage.cacheHit = tokens.cache.read;
-      if (tokens.cache?.write !== undefined) usage.cacheWrite5m = tokens.cache.write;
+      const modelKey = this.normalizeUsageModelKey(info.modelID);
+      const usage = this.buildCostUsage(tokens);
       const computed = computeCost(modelKey, usage);
       if (computed !== null) {
         rows.push(`<div class="cost-display">$${computed.toFixed(4)}</div>`);
@@ -508,7 +554,7 @@ export default class LivelyChatMessage extends Morph {
     return null;
   }
 
-  renderStepEvent(part) {
+  renderStepEvent(part, info = {}) {
     if (!this.showDebug) {
       return null;
     }
@@ -546,8 +592,15 @@ export default class LivelyChatMessage extends Morph {
         parts.push(`${tokens.cache.read.toLocaleString()} cached`);
       }
       
-      if (part.cost && part.cost > 0) {
-        parts.push(`$${part.cost.toFixed(4)}`);
+      let stepCost = part.cost;
+      if ((!stepCost || stepCost <= 0) && tokens && info.modelID) {
+        const modelKey = this.normalizeUsageModelKey(info.modelID);
+        const usage = this.buildCostUsage(tokens);
+        stepCost = computeCost(modelKey, usage);
+      }
+
+      if (stepCost && stepCost > 0) {
+        parts.push(`$${stepCost.toFixed(4)}`);
       }
       
       const text = parts.length > 0 
@@ -720,7 +773,7 @@ export default class LivelyChatMessage extends Morph {
         if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'step-start' || part.type === 'step-finish') {
         // Step events - render as compact one-liners with key information
-        const el = this.renderStepEvent(part);
+        const el = this.renderStepEvent(part, opencodeMessage.info || {});
         if (el) this.partsContainer.appendChild(el);
       } else {
         // Unknown part type - show as JSON (only in debug mode)

@@ -338,6 +338,171 @@ describe('OpenCode Chat Event Replay', () => {
     });
   });
 
+  describe('Token Accumulation and Cost Calculation', () => {
+    it('should compute GPT-5 cost from message-level tokens', () => {
+      const messages = [
+        {
+          info: {
+            id: 'msg_1',
+            role: 'assistant',
+            modelID: 'gpt-5-2025-08-07',
+            tokens: {
+              input: 1_000_000,
+              output: 1_000_000,
+              cache: { read: 1_000_000, write: 0 }
+            }
+          },
+          parts: []
+        }
+      ];
+
+      const accumulated = component.computeAccumulatedTokens(messages);
+      expect(accumulated.gpt-5).to.deep.equal({
+        input: 1_000_000,
+        output: 1_000_000,
+        cacheRead: 1_000_000,
+        cacheWrite: 0
+      });
+
+      const cost = component.computeCostFromAccumulatedTokens(accumulated);
+      expect(cost).to.be.closeTo(17.75, 0.000001);
+    });
+
+    it('should apply GPT-5 pricing to gpt-5.3-codex model IDs', () => {
+      const messages = [
+        {
+          info: {
+            id: 'msg_1',
+            role: 'assistant',
+            modelID: 'gpt-5.3-codex',
+            tokens: {
+              input: 1_000_000,
+              output: 1_000_000,
+              cache: { read: 1_000_000, write: 0 }
+            }
+          },
+          parts: []
+        }
+      ];
+
+      const accumulated = component.computeAccumulatedTokens(messages);
+      expect(accumulated['gpt-5.3-codex']).to.deep.equal({
+        input: 1_000_000,
+        output: 1_000_000,
+        cacheRead: 1_000_000,
+        cacheWrite: 0
+      });
+
+      const cost = component.computeCostFromAccumulatedTokens(accumulated);
+      expect(cost).to.be.closeTo(17.75, 0.000001);
+    });
+
+    it('should fallback to step-finish tokens when info.tokens is missing', () => {
+      const messages = [
+        {
+          info: {
+            id: 'msg_1',
+            role: 'assistant',
+            modelID: 'gpt-5-2025-08-07'
+          },
+          parts: [
+            {
+              type: 'step-finish',
+              tokens: {
+                input: 2_000,
+                output: 300,
+                cache: { read: 500, write: 0 }
+              }
+            }
+          ]
+        }
+      ];
+
+      const accumulated = component.computeAccumulatedTokens(messages);
+      expect(accumulated.gpt-5).to.deep.equal({
+        input: 2_000,
+        output: 300,
+        cacheRead: 500,
+        cacheWrite: 0
+      });
+    });
+
+    it('should prefer message-level tokens over step-finish tokens', () => {
+      const messages = [
+        {
+          info: {
+            id: 'msg_1',
+            role: 'assistant',
+            modelID: 'gpt-5',
+            tokens: {
+              input: 100,
+              output: 20,
+              cache: { read: 10, write: 0 }
+            }
+          },
+          parts: [
+            {
+              type: 'step-finish',
+              tokens: {
+                input: 9_999,
+                output: 9_999,
+                cache: { read: 9_999, write: 0 }
+              }
+            }
+          ]
+        }
+      ];
+
+      const accumulated = component.computeAccumulatedTokens(messages);
+      expect(accumulated.gpt-5).to.deep.equal({
+        input: 100,
+        output: 20,
+        cacheRead: 10,
+        cacheWrite: 0
+      });
+    });
+
+    it('should persist message.updated info changes for existing messages', async () => {
+      const originalPut = component.constructor.messagesdb.messages.put;
+      const originalUpdateSessionCostDisplay = component.updateSessionCostDisplay;
+      const putCalls = [];
+
+      component.constructor.messagesdb.messages.put = async (record) => {
+        putCalls.push(record);
+      };
+      component.updateSessionCostDisplay = async () => {};
+
+      try {
+        component._replayMode = false;
+        component.messages.set('test-session', [{
+          info: { id: 'msg_1', role: 'assistant' },
+          parts: [],
+          localTimestamp: 123,
+          lastModified: 123
+        }]);
+
+        await component.updateOpenCodeMessageFromEvent('test-session', {
+          id: 'msg_1',
+          role: 'assistant',
+          modelID: 'gpt-5',
+          tokens: {
+            input: 42,
+            output: 7,
+            cache: { read: 11, write: 0 }
+          }
+        });
+
+        expect(putCalls).to.have.length(1);
+        expect(putCalls[0].sessionId).to.equal('test-session');
+        expect(putCalls[0].messageId).to.equal('msg_1');
+        expect(putCalls[0].message.info.tokens.input).to.equal(42);
+      } finally {
+        component.constructor.messagesdb.messages.put = originalPut;
+        component.updateSessionCostDisplay = originalUpdateSessionCostDisplay;
+      }
+    });
+  });
+
   describe('Replay Mode Isolation', () => {
     it('should not capture events during replay', async () => {
       const initialCaptureLength = component.getCapturedEvents().length;

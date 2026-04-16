@@ -1586,23 +1586,73 @@ export default class LivelyOpencode extends LivelyChat {
    * Build a per-model accumulated token map from an array of OpenCode messages.
    * Structure: { "claude-sonnet-4-5": { input, output, cacheRead, cacheWrite }, ... }
    * Only models/messages that carry token data are included.
+   * Uses message-level tokens when available; falls back to summing step-finish
+   * part tokens for providers that only report usage at part level.
    * @param {Array} messages
    * @returns {Object} accumulatedTokens map
    */
+  normalizeUsageModelKey(modelID) {
+    return (modelID || '')
+      .replace(/-\d{8}$/, '')
+      .replace(/-\d{4}-\d{2}-\d{2}$/, '');
+  }
+
+  hasUsageTokenFields(tokens) {
+    return Boolean(
+      tokens && (
+        tokens.input !== undefined ||
+        tokens.output !== undefined ||
+        tokens.cache?.read !== undefined ||
+        tokens.cache?.write !== undefined
+      )
+    );
+  }
+
+  usageTokensFromInfo(tokens) {
+    return {
+      input: tokens?.input || 0,
+      output: tokens?.output || 0,
+      cacheRead: tokens?.cache?.read || 0,
+      cacheWrite: tokens?.cache?.write || 0
+    };
+  }
+
+  usageTokensFromStepFinishParts(parts = []) {
+    const totals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    let hasStepFinishTokens = false;
+
+    for (const part of parts) {
+      if (part?.type !== 'step-finish' || !this.hasUsageTokenFields(part.tokens)) continue;
+      hasStepFinishTokens = true;
+      totals.input += part.tokens.input || 0;
+      totals.output += part.tokens.output || 0;
+      totals.cacheRead += part.tokens.cache?.read || 0;
+      totals.cacheWrite += part.tokens.cache?.write || 0;
+    }
+
+    return hasStepFinishTokens ? totals : null;
+  }
+
   computeAccumulatedTokens(messages) {
     const acc = {};
     for (const msg of messages) {
-      const tokens = msg.info?.tokens;
       const modelID = msg.info?.modelID;
-      if (!tokens || !modelID) continue;
-      const modelKey = modelID.replace(/-\d{8}$/, '');
+      if (!modelID) continue;
+
+      const infoTokens = msg.info?.tokens;
+      const usageTokens = this.hasUsageTokenFields(infoTokens)
+        ? this.usageTokensFromInfo(infoTokens)
+        : this.usageTokensFromStepFinishParts(msg.parts);
+      if (!usageTokens) continue;
+
+      const modelKey = this.normalizeUsageModelKey(modelID);
       if (!acc[modelKey]) {
         acc[modelKey] = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
       }
-      acc[modelKey].input     += tokens.input          || 0;
-      acc[modelKey].output    += tokens.output         || 0;
-      acc[modelKey].cacheRead += tokens.cache?.read    || 0;
-      acc[modelKey].cacheWrite += tokens.cache?.write  || 0;
+      acc[modelKey].input += usageTokens.input;
+      acc[modelKey].output += usageTokens.output;
+      acc[modelKey].cacheRead += usageTokens.cacheRead;
+      acc[modelKey].cacheWrite += usageTokens.cacheWrite;
     }
     return acc;
   }
@@ -1856,6 +1906,17 @@ export default class LivelyOpencode extends LivelyChat {
       msg.info = messageInfo;
       // Update lastModified timestamp
       msg.lastModified = Date.now();
+
+      // Persist info/token updates immediately so usage/cost survives reloads
+      if (!this._replayMode) {
+        await LivelyOpencode.messagesdb.messages.put({
+          sessionId: sessionId,
+          messageId: msg.info.id,
+          localTimestamp: msg.localTimestamp,
+          lastModified: msg.lastModified,
+          message: msg
+        });
+      }
 
       // If the event includes parts (final snapshot), update them and re-render
       if (eventParts && eventParts.length > 0) {
