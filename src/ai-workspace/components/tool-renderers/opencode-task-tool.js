@@ -36,6 +36,47 @@ export class OpenCodeTaskTool extends OpenCodeBaseTool {
     return `${statusIcon} task: ${description}`;
   }
 
+  truncate(text, max = 80) {
+    if (!text) return '';
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+  }
+
+  buildRunningSummaryText(state) {
+    const input = state.input || {};
+    const firstPromptLine = input.prompt?.trim().split('\n').find(line => line.trim());
+    const description = this.truncate(state.title || input.description || firstPromptLine || 'task');
+    const subagentType = input.subagent_type ? ` (${input.subagent_type})` : '';
+    const statusLabel = state.status === 'pending' ? 'queued' : 'spawning';
+    return `🔧 task${subagentType} ${statusLabel}: ${description}`;
+  }
+
+  buildInlineSummary(summaryText) {
+    const container = document.createElement('div');
+    container.className = 'compact-tool-inline compact-task-spawn';
+    container.textContent = summaryText;
+    return container;
+  }
+
+  async renderToolStreaming(part, component) {
+    const state = part.state || {};
+    const status = state.status;
+
+    if (status === 'running' || status === 'pending') {
+      const summaryText = this.buildRunningSummaryText(state);
+
+      if (!component.showDebug) {
+        return this.buildInlineSummary(summaryText);
+      }
+
+      const input = state.input || {};
+      const details = await this.buildDetails(part.callID, summaryText, input, true, 'Input');
+      details.appendChild(await this.createMarkdownEl(`**Status:** ${status}`));
+      return details;
+    }
+
+    return super.renderToolStreaming(part, component);
+  }
+
   async renderCompact(part, result, showDebug) {
     const input = part.input || {};
     const toolId = part.id;

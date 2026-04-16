@@ -194,6 +194,36 @@ describe('LivelyChatMessage', () => {
       const details = component.get('details.compact-tool-call');
       expect(details).to.not.exist;
     });
+
+    it('should render running task tool as inline spawn summary', async () => {
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool',
+          tool: 'task',
+          callID: 'call_task_1',
+          state: {
+            title: 'Find todo renderer code',
+            status: 'running',
+            input: {
+              description: 'Find todo renderer code',
+              prompt: 'Explore renderers and return findings',
+              subagent_type: 'explore'
+            }
+          }
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const inline = component.get('.compact-task-spawn');
+      expect(inline).to.exist;
+      expect(inline.textContent).to.include('task (explore) spawning:');
+      expect(inline.textContent).to.include('Find todo renderer code');
+
+      const details = component.get('details.compact-tool-call');
+      expect(details).to.not.exist;
+    });
   });
 
   describe('Project focus context rendering', () => {
