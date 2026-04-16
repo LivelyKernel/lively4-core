@@ -59,8 +59,8 @@ For Human/Agent team:
 
 #### Future: Content and Structure Search
 - [ ] `lively.search.content(query, options)` - Search file contents
-- [ ] `lively.search.classes(query, options)` - Search class definitions
-- [ ] `lively.search.methods(query, options)` - Search methods
+- [X] `lively.search.classes(query, options)` - Search class definitions
+- [X] `lively.search.methods(query, options)` - Search methods
 - [ ] `lively.search.functions(query, options)` - Search functions
 
 ---

@@ -165,6 +165,35 @@ describe('LivelyChatMessage', () => {
 
       expect(renderedText).to.include("OpenCode function response with full text");
     });
+
+    it('should render single-line todowrite inline', async () => {
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool_use',
+          id: 'call_todo_1',
+          name: 'todowrite',
+          input: {
+            todos: [{
+              content: "Answer Jens' question about current model",
+              status: 'completed',
+              priority: 'low'
+            }]
+          }
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const inline = component.get('.compact-tool-inline');
+      expect(inline).to.exist;
+      expect(inline.textContent).to.include('📋 todowrite — ✅');
+      expect(inline.textContent).to.include("Answer Jens' question about current model");
+      expect(inline.textContent).to.include('(low)');
+
+      const details = component.get('details.compact-tool-call');
+      expect(details).to.not.exist;
+    });
   });
 
   describe('Project focus context rendering', () => {
