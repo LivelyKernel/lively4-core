@@ -612,6 +612,11 @@ export default class LivelyChatMessage extends Morph {
     });
 
     for (const part of parts) {
+      // OpenAI encrypted reasoning has no user-visible text and should not be rendered
+      if (part.type === 'reasoning' && this.hasEncryptedOpenAIReasoning(part)) {
+        continue;
+      }
+
       if (part.type === 'text') {
         // Detect injected project focus block in user messages
         // New format: message first, then <system-reminder>...</system-reminder>
@@ -725,6 +730,12 @@ export default class LivelyChatMessage extends Morph {
         }
       }
     }
+  }
+
+  hasEncryptedOpenAIReasoning(part) {
+    const metadataEncrypted = part?.metadata?.openai?.reasoningEncryptedContent;
+    const providerMetadataEncrypted = part?.providerMetadata?.openai?.reasoningEncryptedContent;
+    return Boolean(metadataEncrypted || providerMetadataEncrypted);
   }
 
 

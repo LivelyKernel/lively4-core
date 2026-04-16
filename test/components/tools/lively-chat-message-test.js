@@ -224,6 +224,45 @@ describe('LivelyChatMessage', () => {
       const details = component.get('details.compact-tool-call');
       expect(details).to.not.exist;
     });
+
+    it('should not render OpenAI encrypted reasoning parts', async () => {
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'reasoning',
+          text: '',
+          metadata: {
+            openai: {
+              reasoningEncryptedContent: 'gAAAAABencryptedPayload'
+            }
+          }
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const partsContainer = component.get('#partsContainer');
+      expect(partsContainer).to.exist;
+      expect(partsContainer.childElementCount).to.equal(0);
+      expect(partsContainer.textContent).to.not.include('Thinking...');
+    });
+
+    it('should still render non-encrypted reasoning parts', async () => {
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'reasoning',
+          text: 'I am checking two options\nand comparing tradeoffs.'
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const partsContainer = component.get('#partsContainer');
+      expect(partsContainer).to.exist;
+      expect(partsContainer.textContent).to.include('Thinking...');
+      expect(partsContainer.querySelector('details')).to.exist;
+    });
   });
 
   describe('Project focus context rendering', () => {
