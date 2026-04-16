@@ -65,6 +65,82 @@ Smooth streaming UX without full re-renders:
 - Update existing messages as new parts arrive
 - Prevents flicker during streaming
 
+## Plan: Realtime Control over OpenCode Agent
+
+Goal: allow `openai-realtime-chat` to explicitly **stop**, **continue**, and **inspect current state** of the coding agent (`lively-opencode`) through first-class tools.
+
+### Current Integration Points
+- Tool gateway: `src/ai-workspace/components/realtime-chat-tools/workspace-toolset.js`
+- Realtime function-call execution: `src/ai-workspace/components/openai-realtime-chat.js`
+- Workspace orchestration API: `src/ai-workspace/components/lively-ai-workspace.js`
+- OpenCode execution/abort internals: `src/ai-workspace/components/lively-opencode.js`
+
+### Gaps
+- Only `send_opencode_task` is currently implemented in `WorkspaceToolset`
+- Realtime allowlist only includes `send_opencode_task`
+- No explicit `continue` API; only regular message send exists
+- `getOpenCodeStatus()` exists but is not exposed as a dedicated realtime tool with a stable compact schema
+
+### Planned Semantics
+- **stop**: abort current generation for the active OpenCode session (does not stop server)
+- **continue**: continue in same session by sending follow-up instruction
+- **current state**: structured snapshot of connection/session/generation/request-tracking state
+
+### Implementation Steps
+
+1. Extend workspace toolset
+   - File: `src/ai-workspace/components/realtime-chat-tools/workspace-toolset.js`
+   - Add tools:
+     - `stop_opencode_task`
+     - `continue_opencode_task`
+     - `get_opencode_current_state`
+   - Keep return shape stable: `{ success, ... }`
+
+2. Add workspace-level API methods (single coordination surface)
+   - File: `src/ai-workspace/components/lively-ai-workspace.js`
+   - Add methods:
+     - `stopOpenCodeTask({ requestId? })` (delegates to existing `abortCurrentSession()`)
+     - `continueOpenCodeTask({ instruction?, requestId? })` (delegates to `sendMessageToOpenCode()`)
+     - `getOpenCodeCurrentState({ includeHistory?, includePending? })`
+   - Keep request correlation in blackboard (`pendingRequests`, `completedRequests`)
+
+3. Add explicit OpenCode state snapshot method
+   - File: `src/ai-workspace/components/lively-opencode.js`
+   - Add `getExecutionStateSnapshot()` returning bounded data:
+     - `connected`, `isGenerating`, `currentSessionId`, `generatingSessionIds`
+     - last status/event metadata for diagnostics
+
+4. Expose tools in realtime allowlist
+   - File: `src/ai-workspace/components/openai-realtime-chat.js`
+   - Update `updateToolset()` allowlist to include the three new tool names
+
+5. Keep tool rendering/UI mapping coherent
+   - Files:
+     - `src/ai-workspace/components/lively-chat-message.js`
+     - `src/ai-workspace/components/tool-renderers/vox-generic-tool.js`
+   - Add new function names to local-function classification and icon mapping
+
+6. Tests
+   - `src/ai-workspace/test/openai-realtime-chat-tools-test.js`
+     - verify definitions and delegation for new WorkspaceToolset tools
+   - `src/ai-workspace/test/openai-realtime-chat-test.js`
+     - verify allowlist + permission behavior includes new tools
+   - `src/ai-workspace/test/lively-ai-workspace-test.js`
+     - verify stop/continue/state API behavior and request-state transitions
+
+### Verification Flow (manual)
+1. `send_opencode_task`
+2. `get_opencode_current_state` → expect working
+3. `stop_opencode_task`
+4. `get_opencode_current_state` → expect idle/aborted
+5. `continue_opencode_task`
+6. `get_opencode_current_state` → expect working then idle
+
+### Acceptance Criteria
+- Realtime chat can stop, continue, and inspect coding-agent state without UI-only interactions
+- Workspace remains the mediator between realtime and opencode (no direct cross-component coupling)
+- Tool outputs are deterministic and compact enough for reliable function-call use
+
 ## Configuration
 
 ### System Prompts
@@ -116,4 +192,3 @@ messages: {
 
 ### OpenCode Sessions
 Managed server-side, accessed via REST API.
-
