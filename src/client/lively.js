@@ -22,6 +22,7 @@ import persistence from './persistence.js';
 import html from './html.js';
 import * as reflection from './reflection.js';
 import files from './files.js';
+import search from './search.js';
 import paths from './paths.js';
 import contextmenu from './contextmenu.js';
 import keys from './keys.js';
@@ -59,7 +60,7 @@ var debugLogHightlights = new WeakMap();
 // a) Special shorthands for interactive development
 // b) this is the only reasonable way to use modules in template scripts, due to no shared lexical scope #TODO
 // c) This indirection is also needed to let old events listeners signal to code in current modules
-var exportmodules = ["preferences", "files", "keys", "paths", "html", "reflection", "components", "persistence",
+var exportmodules = ["preferences", "files", "search", "keys", "paths", "html", "reflection", "components", "persistence",
 // "color",
 "debug",
 "focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows", "changes"];

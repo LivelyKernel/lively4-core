@@ -16,6 +16,76 @@ export default class Search {
     return lively4url.replace(/[^\/]*$/,"")
   }
   
+  /**
+   * Search for files by filename pattern
+   * 
+   * @param {string} pattern - Search pattern (glob or regex)
+   * @param {Object} options - Search options
+   * @param {Array<string>} options.paths - Root directories to search (default: [lively4url])
+   * @param {boolean} options.recursive - Search subdirectories (default: true)
+   * @param {string} options.type - Filter by 'file', 'directory', or 'both' (default: 'file')
+   * @param {number} options.limit - Maximum number of results (default: 50)
+   * @returns {Promise<Array<Object>>} - Array of file objects with url, name, etc.
+   */
+  static async files(pattern, options = {}) {
+    const {
+      paths,
+      recursive = true,
+      type = 'file',
+      limit = 50
+    } = options;
+    
+    // Get all files from FileIndex
+    const allFiles = [];
+    await FileIndex.current().db.files.each(file => allFiles.push(file));
+    
+    // Get search roots - only add ExtraSearchRoots if no paths were explicitly provided
+    const searchRoots = this.getSearchRoots(paths);
+    
+    // Create regex from pattern
+    const searchRegex = new RegExp(pattern, 'i');
+    
+    // Filter files
+    const filteredFiles = allFiles.filter(file => {
+      // Check if file is in one of the search roots
+      const inSearchRoot = searchRoots.find(root => file.url.startsWith(root));
+      if (!inSearchRoot) return false;
+      
+      // Extract filename (last part of path)
+      const filename = file.url.replace(/.*\//ig, '');
+      
+      // Match pattern against filename
+      return filename.match(searchRegex);
+    });
+    
+    // Apply limit
+    return filteredFiles.slice(0, limit);
+  }
+  
+  /**
+   * Get search roots including ExtraSearchRoots preference
+   * @private
+   */
+  static getSearchRoots(paths) {
+    // If paths explicitly provided, use only those
+    if (paths !== undefined) {
+      return Array.isArray(paths) ? paths : [paths];
+    }
+    
+    // Otherwise, use default (lively4url) plus ExtraSearchRoots
+    const roots = [lively4url + "/"];
+    
+    // Add ExtraSearchRoots from preferences if available
+    if (lively.preferences) {
+      const extraRoots = lively.preferences.get("ExtraSearchRoots");
+      if (extraRoots && Array.isArray(extraRoots)) {
+        roots.push(...extraRoots);
+      }
+    }
+    
+    return roots;
+  }
+  
   static async search(pattern, rootdirs = "lively4-jens", ) {
     if (!pattern) throw new Error("Argument missing: not pattern")
     var root = this.getRoot()
