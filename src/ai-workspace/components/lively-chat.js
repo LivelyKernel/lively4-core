@@ -561,6 +561,70 @@ export default class LivelyChat extends Morph {
   }
 
   /**
+   * Export chat history formatted as a drama script with roles and dialogue
+   * Extracts content from already-rendered lively-chat-message elements
+   */
+  async exportChatHistoryAsDrama() {
+    // Get the messages container for this component
+    const messagesContainer = this.get('#messagesContainer');
+    if (!messagesContainer) {
+      lively.warn("No messages container found");
+      return;
+    }
+    
+    // Get all rendered chat messages
+    const messageElements = messagesContainer.querySelectorAll('lively-chat-message');
+    if (messageElements.length === 0) {
+      lively.warn("No messages to export");
+      return;
+    }
+    
+    const drama = this._formatRenderedMessagesAsDrama(messageElements);
+    await navigator.clipboard.writeText(drama);
+    lively.success(`Copied ${messageElements.length} messages as drama script`);
+  }
+
+  /**
+   * Format rendered message elements as a drama script
+   * @param {NodeList} messageElements - lively-chat-message elements
+   * @returns {string} Formatted markdown drama script
+   */
+  _formatRenderedMessagesAsDrama(messageElements) {
+    let output = `# Chat Session\n\n`;
+    output += `*${new Date().toLocaleString()}*\n\n`;
+    output += `---\n\n`;
+
+    let lastRole = null;
+
+    for (const messageEl of messageElements) {
+      const role = messageEl.getAttribute('role') || 'unknown';
+      const normalizedRole = role.toUpperCase();
+      
+      // Get text content from the parts container (where rendered content lives)
+      const partsContainer = messageEl.get?.('#partsContainer');
+      let content = '';
+      
+      if (partsContainer) {
+        // Get the text content, but preserve some structure
+        content = partsContainer.textContent || '';
+        content = content.trim();
+      }
+      
+      // Skip empty messages
+      if (!content) continue;
+
+      // Add role header (bold)
+      output += `**${normalizedRole}:**\n\n`;
+      output += `${content}\n\n`;
+      output += `---\n\n`;
+      
+      lastRole = normalizedRole;
+    }
+
+    return output;
+  }
+
+  /**
    * Compact event data by removing verbose instruction fields (mutates in place)
    * Optimized for both realtime and opencode event formats
    * Keeps all messages and meaningful content, just removes system prompts and large configs
@@ -1154,6 +1218,7 @@ export default class LivelyChat extends Morph {
         this.showDebug = !this.showDebug;
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistoryShortened()],
+      ["Copy as Drama Script", () => this.exportChatHistoryAsDrama()],
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Open Replay UI", () => this.openReplayUI()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
