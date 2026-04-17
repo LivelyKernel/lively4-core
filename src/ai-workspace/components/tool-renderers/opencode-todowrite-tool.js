@@ -60,37 +60,9 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
     return parts.join(', ');
   }
 
-  /**
-   * Return an inline todo label when there is exactly one single-line todo.
-   * Example: "✅ Ship fix (high)".
-   */
-  inlineTodoLabel(todos) {
-    if (!Array.isArray(todos) || todos.length !== 1) return '';
-
-    const todo = todos[0] || {};
-    const rawContent = typeof todo.content === 'string' ? todo.content.trim() : '';
-    const isOneLiner = rawContent && rawContent.split('\n').length === 1;
-    if (!isOneLiner) return '';
-
-    const icon = this.statusIcon(todo.status);
-    const content = todo.status === 'cancelled' ? `~~${rawContent}~~` : rawContent;
-    const priority = todo.priority ? ` (${todo.priority})` : '';
-    return `${icon} ${content}${priority}`;
-  }
-
   buildSummaryText(todos) {
-    const inlineTodo = this.inlineTodoLabel(todos);
-    if (inlineTodo) return `📋 todowrite — ${inlineTodo}`;
-
     const summary = this.summarizeTodos(todos);
     return `📋 todowrite${summary ? ` — ${summary}` : ''}`;
-  }
-
-  buildInlineSummary(summaryText) {
-    const container = document.createElement('div');
-    container.className = 'compact-tool-inline';
-    container.textContent = summaryText;
-    return container;
   }
 
   async renderCompact(part, result, showDebug) {

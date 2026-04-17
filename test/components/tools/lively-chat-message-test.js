@@ -200,7 +200,7 @@ describe('LivelyChatMessage', () => {
       expect(content.textContent).to.include('third  line');
     });
 
-    it('should render single-line todowrite inline', async () => {
+    it('should render todowrite as expanded details', async () => {
       const opencodeMessage = {
         info: { role: 'assistant' },
         parts: [{
@@ -219,14 +219,11 @@ describe('LivelyChatMessage', () => {
 
       await component.setOpenCodeMessage(opencodeMessage);
 
-      const inline = component.get('.compact-tool-inline');
-      expect(inline).to.exist;
-      expect(inline.textContent).to.include('📋 todowrite — ✅');
-      expect(inline.textContent).to.include("Answer Jens' question about current model");
-      expect(inline.textContent).to.include('(low)');
-
       const details = component.get('details.compact-tool-call');
-      expect(details).to.not.exist;
+      expect(details).to.exist;
+      expect(details.open).to.be.true;
+      expect(details.querySelector('summary').textContent).to.include('📋 todowrite');
+      expect(details.querySelector('summary').textContent).to.include('1 completed');
     });
 
     it('should render running task tool as inline spawn summary', async () => {
@@ -392,10 +389,7 @@ This is my actual question.`
     it('should render regular text without special formatting', async () => {
       const messageObj = {
         role: "user",
-        parts: [{
-          type: "text",
-          text: "Just a regular message without any special tags."
-        }]
+        content: "Just a regular message without any special tags."
       };
 
       await component.setMessage(messageObj);
@@ -406,9 +400,10 @@ This is my actual question.`
       expect(reminderBlock).to.not.exist;
       expect(contextBlock).to.not.exist;
 
-      // Should have regular markdown content
-      const markdown = component.get('lively-markdown');
-      expect(markdown).to.exist;
+      // Should have plain text content (user messages are rendered as plain text, not markdown)
+      const plainText = component.get('.plain-text-content');
+      expect(plainText).to.exist;
+      expect(plainText.textContent).to.equal('"Just a regular message without any special tags."');
     });
   });
 });

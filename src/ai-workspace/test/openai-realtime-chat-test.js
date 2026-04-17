@@ -938,7 +938,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(details.querySelector('summary').textContent).to.include('patch');
     });
 
-    it('should render todowrite tool calls expanded by default in opencode chat', async () => {
+    it('should render todowrite as expanded details in opencode chat', async () => {
       const msg = {
         info: { role: 'assistant' },
         parts: [{
