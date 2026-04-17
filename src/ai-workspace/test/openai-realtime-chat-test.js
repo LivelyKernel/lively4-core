@@ -916,6 +916,52 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       const markdown = details.querySelector('lively-markdown');
       expect(markdown).to.not.be.null;
     });
+
+    it('should render apply_patch tool calls expanded by default in opencode chat', async () => {
+      const msg = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool_use',
+          id: 'patch-tool-1',
+          name: 'apply_patch',
+          input: {
+            patchText: `*** Begin Patch\n*** Update File: src/example.js\n@@\n-old\n+new\n*** End Patch`
+          }
+        }]
+      };
+
+      await messageComponent.setOpenCodeMessage(msg);
+
+      const details = messageComponent.get('#partsContainer').querySelector('details.compact-tool-call');
+      expect(details).to.not.be.null;
+      expect(details.open).to.be.true;
+      expect(details.querySelector('summary').textContent).to.include('patch');
+    });
+
+    it('should render todowrite tool calls expanded by default in opencode chat', async () => {
+      const msg = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool_use',
+          id: 'todo-tool-1',
+          name: 'todowrite',
+          input: {
+            todos: [{
+              content: 'Keep patch and TODO details expanded',
+              status: 'in_progress',
+              priority: 'high'
+            }]
+          }
+        }]
+      };
+
+      await messageComponent.setOpenCodeMessage(msg);
+
+      const details = messageComponent.get('#partsContainer').querySelector('details.compact-tool-call');
+      expect(details).to.not.be.null;
+      expect(details.open).to.be.true;
+      expect(details.querySelector('summary').textContent).to.include('todowrite');
+    });
     
     it('should fall back to generic renderer for unknown tools', async () => {
       const msg = {

@@ -54,20 +54,51 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     return `🩹 patch — ${parts.join(', ')}`;
   }
 
+  toRelativePath(filePath) {
+    let relativePath = filePath || '';
+    const workingDirectory = localStorage.getItem('opencode.workingDirectory') || '';
+
+    // #TODO Replace this temporary working-directory prefix stripping with proper project path context from the OpenCode UI/session metadata.
+    if (workingDirectory && relativePath.startsWith(workingDirectory)) {
+      relativePath = relativePath.slice(workingDirectory.length);
+    }
+
+    return relativePath.replace(/^\/+/, '');
+  }
+
+  async createPatchedMarkdownEl(markdownText) {
+    const md = await this.createMarkdownEl(markdownText);
+    lively.html.fixLinks([md.shadowRoot], undefined, path => lively.openBrowser(path));
+    return md;
+  }
+
+  formatFileLink(filePath) {
+    const fileName = ToolHelpers.getFileName(filePath);
+    return `[${fileName}](/${this.toRelativePath(filePath)})`;
+  }
+
+  sanitizePatchText(patchText) {
+    const workingDirectory = localStorage.getItem('opencode.workingDirectory') || '';
+    if (!workingDirectory || !patchText) return patchText;
+    return patchText
+      .split(`${workingDirectory}/`).join('')
+      .split(workingDirectory).join('');
+  }
+
   async renderOps(ops) {
     if (!ops.length) return null;
     const rows = ops.map(({ op, path, dest }) => {
       const icon = this.opIcon(op);
-      const name = ToolHelpers.getFileName(path);
-      const detail = dest ? ` → \`${dest}\`` : '';
-      return `| ${icon} | **${name}** \`${path}\`${detail} |`;
+      const source = this.formatFileLink(path);
+      const detail = dest ? ` → ${this.formatFileLink(dest)}` : '';
+      return `- ${icon} ${source}${detail}`;
     }).join('\n');
-    return this.createMarkdownEl(`| | File |\n|---|---|\n${rows}`);
+    return this.createPatchedMarkdownEl(rows);
   }
 
   async buildPatchBlock(patchText) {
     if (!patchText) return null;
-    return this.createMarkdownEl(`---\n\n**Patch:**\n\n\`\`\`diff\n${patchText}\n\`\`\``);
+    return this.createPatchedMarkdownEl(`\`\`\`diff\n${this.sanitizePatchText(patchText)}\n\`\`\``);
   }
 
   async renderCompact(part, result, showDebug) {
@@ -79,6 +110,7 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     const ops = this.parsePatch(patchText);
     const summary = this.buildSummary(ops);
     const details = await this.buildDetails(toolId, summary, input, showDebug);
+    details.open = true;
 
     const opsEl = await this.renderOps(ops);
     if (opsEl) details.appendChild(opsEl);
@@ -104,6 +136,7 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     const ops = this.parsePatch(patchText);
     const summary = this.buildSummary(ops);
     const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    details.open = true;
 
     const opsEl = await this.renderOps(ops);
     if (opsEl) details.appendChild(opsEl);

@@ -458,6 +458,12 @@ lively.openComponentInWindow('lively-mcp')
 // Claude Code can then execute code in the live environment
 ```
 
+**Eval Code Style:**
+- In Lively eval code, prefer the simplest direct Lively-native expression that should work in the current session
+- Do not add defensive existence checks, fallback paths, or wrapper IIFEs just to avoid errors
+- Let Lively surface errors normally; only add guards when cross-environment compatibility or optional APIs are explicitly required
+- Prefer `lively.notify("hi")` over defensive patterns that probe for `lively`, `$world`, or `console.log` fallbacks
+
 **TODO:**
 - [ ] #TODO Add MCP tools for special URL schemes (`open://`, `edit://`, `browse://`) to support direct file/component operations without eval
 

@@ -22,7 +22,7 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
   }
 
   /**
-   * Build a markdown table row for a single todo item.
+   * Build a markdown bullet for a single todo item.
    */
   todoRow(todo) {
     const icon = this.statusIcon(todo.status);
@@ -30,7 +30,7 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
       ? `~~${todo.content}~~`
       : todo.content;
     const priority = todo.priority ? ` *(${todo.priority})*` : '';
-    return `| ${icon} | ${content}${priority} |`;
+    return `- ${icon} ${content}${priority}`;
   }
 
   /**
@@ -40,8 +40,7 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
   renderTodosMd(todos) {
     if (!todos || todos.length === 0) return '*No todos*';
 
-    const rows = todos.map(t => this.todoRow(t));
-    return `| | Task |\n|---|---|\n${rows.join('\n')}`;
+    return todos.map(t => this.todoRow(t)).join('\n');
   }
 
   /**
@@ -101,12 +100,8 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
     if (!toolId) console.warn('OpenCodeTodoWriteTool.renderCompact: part.id is missing', part);
 
     const summaryText = this.buildSummaryText(todos);
-
-    if (this.inlineTodoLabel(todos) && !showDebug) {
-      return this.buildInlineSummary(summaryText);
-    }
-
     const details = await this.buildDetails(toolId, summaryText, input, showDebug);
+    details.open = true;
     details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
 
     return details;
@@ -120,12 +115,8 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
     if (!toolId) console.warn('OpenCodeTodoWriteTool.renderCompactStreaming: part.callID is missing', part);
 
     const summaryText = this.buildSummaryText(todos);
-
-    if (this.inlineTodoLabel(todos) && !showDebug) {
-      return this.buildInlineSummary(summaryText);
-    }
-
     const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
+    details.open = true;
     details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
 
     return details;
