@@ -658,6 +658,13 @@ export default class LivelyChatMessage extends Morph {
     return md;
   }
 
+  createPlainTextElement(text) {
+    const element = document.createElement('div');
+    element.className = 'plain-text-content';
+    element.textContent = text;
+    return element;
+  }
+
   async dispatchToolRender(part, methodName) {
     const renderer = this.toolRenderers.find(r => r.matches(part));
     
@@ -738,6 +745,7 @@ export default class LivelyChatMessage extends Morph {
 
   async renderOpenCodeParts(opencodeMessage) {
     const parts = opencodeMessage.parts || [];
+    const preserveUserWhitespace = opencodeMessage.info?.role === 'user';
 
     // Clear previous content
     this.partsContainer.innerHTML = '';
@@ -803,7 +811,11 @@ export default class LivelyChatMessage extends Morph {
 
           // Render user message first
           if (beforeReminder) {
-            this.partsContainer.appendChild(await this.createMarkdownElement(beforeReminder));
+            this.partsContainer.appendChild(
+              preserveUserWhitespace
+                ? this.createPlainTextElement(beforeReminder)
+                : await this.createMarkdownElement(beforeReminder)
+            );
           }
 
           // Render system reminder as collapsible block
@@ -814,12 +826,20 @@ export default class LivelyChatMessage extends Morph {
           em.textContent = 'Project Focus';
           summary.appendChild(em);
           details.appendChild(summary);
-          details.appendChild(await this.createMarkdownElement(reminderText));
+          details.appendChild(
+            preserveUserWhitespace
+              ? this.createPlainTextElement(reminderText)
+              : await this.createMarkdownElement(reminderText)
+          );
           this.partsContainer.appendChild(details);
 
           // Render any content after reminder
           if (afterReminder) {
-            this.partsContainer.appendChild(await this.createMarkdownElement(afterReminder));
+            this.partsContainer.appendChild(
+              preserveUserWhitespace
+                ? this.createPlainTextElement(afterReminder)
+                : await this.createMarkdownElement(afterReminder)
+            );
           }
         } else {
           // Try legacy format for backward compatibility
@@ -839,15 +859,27 @@ export default class LivelyChatMessage extends Morph {
             em.textContent = 'Project Focus';
             summary.appendChild(em);
             details.appendChild(summary);
-            details.appendChild(await this.createMarkdownElement(projText));
+            details.appendChild(
+              preserveUserWhitespace
+                ? this.createPlainTextElement(projText)
+                : await this.createMarkdownElement(projText)
+            );
             this.partsContainer.appendChild(details);
 
             if (rest) {
-              this.partsContainer.appendChild(await this.createMarkdownElement(rest));
+              this.partsContainer.appendChild(
+                preserveUserWhitespace
+                  ? this.createPlainTextElement(rest)
+                  : await this.createMarkdownElement(rest)
+              );
             }
           } else {
             // No special formatting - render as normal text
-            this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
+            this.partsContainer.appendChild(
+              preserveUserWhitespace
+                ? this.createPlainTextElement(part.text)
+                : await this.createMarkdownElement(part.text)
+            );
           }
         }
       } else if (part.type === 'reasoning') {
@@ -972,7 +1004,11 @@ export default class LivelyChatMessage extends Morph {
     // Set markdown content
     if (this.partsContainer) {
       this.partsContainer.innerHTML = '';
-      this.partsContainer.appendChild(await this.createMarkdownElement(content));
+      this.partsContainer.appendChild(
+        messageObj.role === 'user'
+          ? this.createPlainTextElement(content)
+          : await this.createMarkdownElement(content)
+      );
     }
   }
 

@@ -166,6 +166,40 @@ describe('LivelyChatMessage', () => {
       expect(renderedText).to.include("OpenCode function response with full text");
     });
 
+    it('should preserve whitespace for OpenCode user text messages', async () => {
+      const text = 'first line\n  indented line\nthird  line';
+      const opencodeMessage = {
+        info: { role: 'user' },
+        parts: [{
+          type: 'text',
+          text
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const content = component.get('.plain-text-content');
+      expect(content).to.exist;
+      expect(content.classList.contains('plain-text-content')).to.equal(true);
+      expect(content.textContent).to.equal(text);
+    });
+
+    it('should preserve whitespace for regular user messages', async () => {
+      const messageObj = {
+        role: 'user',
+        content: 'first line\n  indented line\nthird  line'
+      };
+
+      await component.setMessage(messageObj);
+
+      const content = component.get('.plain-text-content');
+      expect(content).to.exist;
+      expect(content.classList.contains('plain-text-content')).to.equal(true);
+      expect(content.textContent).to.include('first line');
+      expect(content.textContent).to.include('  indented line');
+      expect(content.textContent).to.include('third  line');
+    });
+
     it('should render single-line todowrite inline', async () => {
       const opencodeMessage = {
         info: { role: 'assistant' },
