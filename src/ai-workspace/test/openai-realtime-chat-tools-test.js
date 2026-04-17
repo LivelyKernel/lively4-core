@@ -357,8 +357,74 @@ describe('openai-realtime-chat-tools', () => {
       const definitions = toolset.getDefinitions();
 
       expect(definitions).to.be.an('array');
-      const taskTool = definitions.find(d => d.name === 'send_opencode_task');
-      expect(taskTool).to.exist;
+      const toolNames = definitions.map(d => d.name);
+      expect(toolNames).to.include('send_opencode_task');
+      expect(toolNames).to.include('stop_opencode_task');
+      expect(toolNames).to.include('continue_opencode_task');
+      expect(toolNames).to.include('get_opencode_current_state');
+    });
+
+    it('should delegate stop_opencode_task to workspace', async () => {
+      let receivedArgs = null;
+      const mockWorkspace = {
+        stopOpenCodeTask: async (args) => {
+          receivedArgs = args;
+          return { success: true, message: 'stopped' };
+        }
+      };
+      const toolset = new WorkspaceToolset(mockWorkspace);
+
+      const result = await toolset.execute('stop_opencode_task', { requestId: 'req-123' });
+
+      expect(receivedArgs).to.deep.equal({ requestId: 'req-123' });
+      expect(result.success).to.be.true;
+      expect(result.message).to.equal('stopped');
+    });
+
+    it('should delegate get_opencode_current_state to workspace', async () => {
+      let receivedArgs = null;
+      const mockWorkspace = {
+        getOpenCodeCurrentState: async (args) => {
+          receivedArgs = args;
+          return {
+            success: true,
+            state: { connected: true, isGenerating: false }
+          };
+        }
+      };
+      const toolset = new WorkspaceToolset(mockWorkspace);
+
+      const result = await toolset.execute('get_opencode_current_state', { includePending: false });
+
+      expect(receivedArgs).to.deep.equal({ includePending: false });
+      expect(result.success).to.be.true;
+      expect(result.state.connected).to.be.true;
+    });
+
+    it('should continue task and return immediate response when available', async () => {
+      const requestResponse = {
+        parts: [
+          { type: 'text', text: 'Continuing now.' }
+        ]
+      };
+
+      const mockWorkspace = {
+        continueOpenCodeTask: async ({ instruction, requestId }) => ({
+          success: true,
+          instruction,
+          requestId
+        }),
+        getRequestResponse: () => requestResponse
+      };
+
+      const toolset = new WorkspaceToolset(mockWorkspace);
+      const result = await toolset.execute('continue_opencode_task', {
+        instruction: 'Continue and finish the refactor'
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.immediate).to.be.true;
+      expect(result.response).to.include('Continuing now.');
     });
   });
 

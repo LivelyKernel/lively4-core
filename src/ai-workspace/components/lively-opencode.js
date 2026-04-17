@@ -156,6 +156,9 @@ export default class LivelyOpencode extends LivelyChat {
     this.isGenerating = false; // Track if AI is currently generating response
     this.generatingSessions = this.generatingSessions || new Set(); // Track generating state per session
     this._busyTimeouts = new Map(); // Per-session debounce timers for idle detection (always fresh)
+    this.lastEventType = this.lastEventType || null;
+    this.lastEventTime = this.lastEventTime || null;
+    this.lastStatusInfo = this.lastStatusInfo || null;
 
     // Set default variant if not present
     if (!this.variant) {
@@ -309,16 +312,28 @@ export default class LivelyOpencode extends LivelyChat {
     if (!this.currentSession) {
       this.showEscIndicator('first-press', '⚠️', 'No active session', 'Nothing to abort');
       setTimeout(() => this.hideEscIndicator(), 1500);
-      return;
+      return {
+        success: false,
+        error: 'No active session'
+      };
     }
 
     try {
       this.log(`Aborting session ${this.currentSession.id}...`);
       this.showEscIndicator('aborting', '⏹️', 'Sending abort request...', '');
+      const abortTimeoutMs = 8000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), abortTimeoutMs);
       
-      const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
-        method: 'POST'
-      });
+      let response;
+      try {
+        response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
+          method: 'POST',
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to abort session: ${response.status}`);
@@ -326,14 +341,34 @@ export default class LivelyOpencode extends LivelyChat {
 
       this.showEscIndicator('aborting', '✅', 'Generation aborted', 'Request sent successfully');
       this.isGenerating = false;
+      this.generatingSessions.delete(this.currentSession.id);
+      this.lastStatusInfo = {
+        status: 'idle',
+        reason: 'abort',
+        sessionId: this.currentSession.id,
+        timestamp: Date.now()
+      };
       
       // Hide indicator after showing success
       setTimeout(() => this.hideEscIndicator(), 1500);
 
+      return {
+        success: true,
+        message: 'Generation abort requested',
+        sessionId: this.currentSession.id
+      };
+
     } catch (error) {
       console.error('Error aborting session:', error);
-      this.showEscIndicator('aborting', '❌', 'Abort failed', error.message);
+      const errorMessage = error.name === 'AbortError'
+        ? 'Abort request timed out after 8 seconds'
+        : error.message;
+      this.showEscIndicator('aborting', '❌', 'Abort failed', errorMessage);
       setTimeout(() => this.hideEscIndicator(), 2000);
+      return {
+        success: false,
+        error: errorMessage
+      };
     }
   }
 
@@ -495,6 +530,8 @@ export default class LivelyOpencode extends LivelyChat {
       LivelyOpencode.eventTypeLog.push(eventType);
       const currentCount = LivelyOpencode.eventTypeTally.get(eventType) || 0;
       LivelyOpencode.eventTypeTally.set(eventType, currentCount + 1);
+      this.lastEventType = eventType;
+      this.lastEventTime = Date.now();
     }
     
     // Log all events for debugging
@@ -585,8 +622,23 @@ export default class LivelyOpencode extends LivelyChat {
 
     const statusInfo = this.inferStatusFromEvent(data, sessionId);
     if (statusInfo) {
+      this.lastStatusInfo = statusInfo;
       this.dispatchMessageEvent('opencode:status-change', statusInfo);
     }
+  }
+
+  getExecutionStateSnapshot() {
+    return {
+      connected: this.connected,
+      isGenerating: this.isGenerating,
+      currentSessionId: this.currentSession?.id || null,
+      generatingSessionIds: Array.from(this.generatingSessions || []),
+      lastEvent: {
+        type: this.lastEventType,
+        timestamp: this.lastEventTime
+      },
+      lastStatusInfo: this.lastStatusInfo
+    };
   }
 
   /**
@@ -3472,6 +3524,9 @@ export default class LivelyOpencode extends LivelyChat {
     this.variant = other.variant || 'none';
     this.generatingSessions = other.generatingSessions || new Set();
     this.isGenerating = other.isGenerating || false;
+    this.lastEventType = other.lastEventType || null;
+    this.lastEventTime = other.lastEventTime || null;
+    this.lastStatusInfo = other.lastStatusInfo || null;
     // _busyTimeouts: always start fresh; re-arm debounce for any already-busy sessions
     this._busyTimeouts = new Map();
     for (const sessionId of this.generatingSessions) {

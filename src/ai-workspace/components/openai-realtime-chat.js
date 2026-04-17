@@ -515,7 +515,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     if (allowOpenCodeTasks && workspace) {
       const workspaceToolset = new WorkspaceToolset(workspace);
       toolsets.push(workspaceToolset);
-      allowedToolNames.push('send_opencode_task');
+      allowedToolNames.push(
+        'send_opencode_task',
+        'stop_opencode_task',
+        'continue_opencode_task',
+        'get_opencode_current_state'
+      );
     }
 
     // Add MessageToolset if message inspection is allowed AND workspace is available

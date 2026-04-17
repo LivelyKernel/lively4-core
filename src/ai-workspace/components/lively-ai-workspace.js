@@ -219,14 +219,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async abortCurrentSession() {
     if (!this.opencodeComponent) {
       this.log('No OpenCode component available');
-      return;
+      return {
+        success: false,
+        error: 'OpenCode component not available'
+      };
     }
 
     // Delegate to the opencode component's abort method
     if (this.opencodeComponent.abortCurrentSession) {
-      await this.opencodeComponent.abortCurrentSession();
+      return await this.opencodeComponent.abortCurrentSession();
     } else {
       lively.notify('OpenCode abort not available');
+      return {
+        success: false,
+        error: 'OpenCode abort not available'
+      };
     }
   }
 
@@ -1196,6 +1203,169 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Public API for Realtime Chat MD*/
+
+  async stopOpenCodeTask({requestId = null} = {}) {
+    if (!this.opencodeComponent) {
+      return {
+        success: false,
+        error: 'OpenCode component not available'
+      };
+    }
+
+    // Fall back to last tracked request if none provided
+    const targetRequestId = requestId || this.blackboard.lastRequestId;
+
+    const abortResult = await this.abortCurrentSession();
+    if (!abortResult?.success) {
+      return abortResult;
+    }
+
+    // Mark pending request as aborted if we can identify it
+    if (targetRequestId && this.blackboard.pendingRequests.has(targetRequestId)) {
+      const request = this.blackboard.pendingRequests.get(targetRequestId);
+      this.blackboard.pendingRequests.delete(targetRequestId);
+      this.blackboard.completedRequests.set(targetRequestId, {
+        task: request.task,
+        response: null,
+        responses: [],
+        responseContent: '',
+        timestamp: Date.now(),
+        audioWaiting: request.audioWaiting,
+        aborted: true,
+        status: 'aborted'
+      });
+    }
+
+    this.blackboard.agentStatus = 'idle';
+    this.blackboard.lastUpdate = Date.now();
+
+    // Update workspace OpenCode status UI immediately
+    if (this.updateOpenCodeStatus) {
+      this.updateOpenCodeStatus('Idle', true);
+    }
+    const dotEl = this.get ? this.get('#opencodeDot') : null;
+    if (dotEl) dotEl.classList.remove('working');
+
+    // Clear realtime waiting flags to prevent stale "waiting for reply" state
+    if (this.realtimeComponent) {
+      const shouldClearRealtimePending =
+        !targetRequestId ||
+        this.realtimeComponent.pendingRequestId === targetRequestId;
+
+      if (shouldClearRealtimePending) {
+        this.realtimeComponent.waitingForAgentReply = false;
+        this.realtimeComponent.pendingRequestId = null;
+        this.realtimeComponent.pendingTask = null;
+      }
+
+      // Record status transition without triggering auto-relay logic
+      if (this.realtimeComponent.onAgentStatusChange) {
+        this.realtimeComponent.onAgentStatusChange({
+          status: 'idle',
+          message: 'Agent stop requested',
+          eventType: 'session.aborted',
+          task: this.blackboard.currentTask,
+          timestamp: Date.now()
+        });
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Stop request sent to OpenCode agent',
+      requestId: targetRequestId,
+      sessionId: this.opencodeComponent.currentSession?.id || null
+    };
+  }
+
+  async continueOpenCodeTask({instruction = '', requestId = null} = {}) {
+    const continueInstruction = instruction || 'Continue from where you stopped.';
+    const result = await this.sendMessageToOpenCode(continueInstruction, requestId);
+
+    if (!result.success) {
+      return result;
+    }
+
+    return {
+      ...result,
+      continued: true,
+      instruction: continueInstruction
+    };
+  }
+
+  async getOpenCodeCurrentState({includeHistory = false, includePending = true} = {}) {
+    if (!this.opencodeComponent) {
+      return {
+        success: false,
+        error: 'OpenCode component not available'
+      };
+    }
+
+    const opencodeState = this.opencodeComponent.getExecutionStateSnapshot
+      ? this.opencodeComponent.getExecutionStateSnapshot()
+      : {
+          connected: this.opencodeComponent.connected,
+          isGenerating: this.opencodeComponent.isGenerating,
+          currentSessionId: this.opencodeComponent.currentSession?.id || null,
+          generatingSessionIds: Array.from(this.opencodeComponent.generatingSessions || [])
+        };
+
+    const pendingEntries = Array.from(this.blackboard.pendingRequests.entries());
+    const completedEntries = Array.from(this.blackboard.completedRequests.entries());
+
+    const state = {
+      available: true,
+      connected: opencodeState.connected,
+      serverUrl: this.opencodeComponent.serverUrl,
+      agentStatus: this.blackboard.agentStatus,
+      currentTask: this.blackboard.currentTask,
+      lastUpdate: this.blackboard.lastUpdate,
+      lastRequestId: this.blackboard.lastRequestId || null,
+      isGenerating: opencodeState.isGenerating,
+      currentSession: this.opencodeComponent.currentSession
+        ? {
+            id: this.opencodeComponent.currentSession.id,
+            title: this.opencodeComponent.currentSession.title || 'Untitled session'
+          }
+        : null,
+      currentSessionId: opencodeState.currentSessionId,
+      generatingSessionIds: opencodeState.generatingSessionIds || [],
+      pendingRequestCount: pendingEntries.length,
+      completedRequestCount: completedEntries.length,
+      lastEvent: opencodeState.lastEvent || null
+    };
+
+    if (includePending) {
+      state.pendingRequests = pendingEntries.map(([id, request]) => ({
+        requestId: id,
+        task: request.task,
+        status: request.status,
+        timestamp: request.timestamp,
+        sessionId: request.sessionId,
+        audioWaiting: request.audioWaiting
+      }));
+    }
+
+    if (includeHistory) {
+      state.recentCompletedRequests = completedEntries
+        .slice(-10)
+        .map(([id, completed]) => ({
+          requestId: id,
+          task: completed.task,
+          timestamp: completed.timestamp,
+          aborted: completed.aborted === true,
+          hasResponse: !!completed.response,
+          responsePreview: completed.responseContent
+            ? String(completed.responseContent).substring(0, 240)
+            : ''
+        }));
+    }
+
+    return {
+      success: true,
+      state
+    };
+  }
 
   // #important
   async sendMessageToOpenCode(message, requestId = null) {

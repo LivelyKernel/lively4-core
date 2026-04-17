@@ -939,6 +939,9 @@ export default class LivelyChatMessage extends Morph {
   isLocalFunction(functionName) {
     const localFunctions = [
       'send_opencode_task',
+      'stop_opencode_task',
+      'continue_opencode_task',
+      'get_opencode_current_state',
       'get_opencode_status',
       'get_opencode_history',
       'create_opencode_session',

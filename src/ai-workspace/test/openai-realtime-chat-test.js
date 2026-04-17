@@ -653,6 +653,9 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
       expect(toolNames).to.not.include('evaluate_code');
       expect(toolNames).to.not.include('send_opencode_task');
+      expect(toolNames).to.not.include('stop_opencode_task');
+      expect(toolNames).to.not.include('continue_opencode_task');
+      expect(toolNames).to.not.include('get_opencode_current_state');
     });
 
     it('should include code evaluation tool when allowed', () => {
@@ -667,6 +670,9 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
       expect(toolNames).to.include('evaluate_code');
       expect(toolNames).to.not.include('send_opencode_task');
+      expect(toolNames).to.not.include('stop_opencode_task');
+      expect(toolNames).to.not.include('continue_opencode_task');
+      expect(toolNames).to.not.include('get_opencode_current_state');
     });
 
     it('should include OpenCode task tool when allowed (with workspace)', () => {
@@ -685,6 +691,9 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
       expect(toolNames).to.not.include('evaluate_code');
       expect(toolNames).to.include('send_opencode_task');
+      expect(toolNames).to.include('stop_opencode_task');
+      expect(toolNames).to.include('continue_opencode_task');
+      expect(toolNames).to.include('get_opencode_current_state');
 
       mockWorkspace.remove();
     });

@@ -307,4 +307,143 @@ describe('LivelyAiWorkspace', () => {
       expect(renderMessagesCalls).to.equal(0, 'Should NOT call renderMessages during event streaming');
     });
   });
+
+  describe('Realtime OpenCode Control API', () => {
+    it('stopOpenCodeTask should abort and mark pending request as aborted', async () => {
+      const pendingRequests = new Map([[
+        'req-1',
+        {
+          task: 'Refactor parser',
+          timestamp: 123,
+          status: 'sent',
+          audioWaiting: true,
+          sessionId: 'session-1'
+        }
+      ]]);
+
+      const mockWorkspace = {
+        opencodeComponent: {
+          currentSession: { id: 'session-1' }
+        },
+        blackboard: {
+          pendingRequests,
+          completedRequests: new Map(),
+          lastRequestId: 'req-1',
+          agentStatus: 'working',
+          lastUpdate: 0
+        },
+        abortCurrentSession: async () => ({ success: true })
+      };
+
+      const result = await LivelyAiWorkspace.prototype.stopOpenCodeTask.call(mockWorkspace, {});
+
+      expect(result.success).to.be.true;
+      expect(mockWorkspace.blackboard.pendingRequests.has('req-1')).to.be.false;
+      expect(mockWorkspace.blackboard.completedRequests.has('req-1')).to.be.true;
+      expect(mockWorkspace.blackboard.completedRequests.get('req-1').aborted).to.be.true;
+      expect(mockWorkspace.blackboard.agentStatus).to.equal('idle');
+    });
+
+    it('stopOpenCodeTask should clear realtime waiting flags for matching request', async () => {
+      const mockRealtime = {
+        waitingForAgentReply: true,
+        pendingRequestId: 'req-2',
+        pendingTask: 'Do something',
+        onAgentStatusChange: () => {}
+      };
+
+      const mockWorkspace = {
+        opencodeComponent: {
+          currentSession: { id: 'session-2' }
+        },
+        realtimeComponent: mockRealtime,
+        blackboard: {
+          pendingRequests: new Map([[
+            'req-2',
+            {
+              task: 'Do something',
+              timestamp: 123,
+              status: 'sent',
+              audioWaiting: true,
+              sessionId: 'session-2'
+            }
+          ]]),
+          completedRequests: new Map(),
+          lastRequestId: 'req-2',
+          agentStatus: 'working',
+          lastUpdate: 0,
+          currentTask: 'Do something'
+        },
+        abortCurrentSession: async () => ({ success: true }),
+        updateOpenCodeStatus: () => {},
+        get: () => null
+      };
+
+      const result = await LivelyAiWorkspace.prototype.stopOpenCodeTask.call(mockWorkspace, {});
+
+      expect(result.success).to.be.true;
+      expect(mockRealtime.waitingForAgentReply).to.be.false;
+      expect(mockRealtime.pendingRequestId).to.be.null;
+      expect(mockRealtime.pendingTask).to.be.null;
+    });
+
+    it('continueOpenCodeTask should delegate to sendMessageToOpenCode', async () => {
+      let capturedMessage = null;
+      let capturedRequestId = null;
+
+      const mockWorkspace = {
+        sendMessageToOpenCode: async (message, requestId) => {
+          capturedMessage = message;
+          capturedRequestId = requestId;
+          return { success: true, requestId };
+        }
+      };
+
+      const result = await LivelyAiWorkspace.prototype.continueOpenCodeTask.call(mockWorkspace, {
+        instruction: 'Continue with tests',
+        requestId: 'req-2'
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.continued).to.be.true;
+      expect(capturedMessage).to.equal('Continue with tests');
+      expect(capturedRequestId).to.equal('req-2');
+    });
+
+    it('getOpenCodeCurrentState should return compact state snapshot', async () => {
+      const mockWorkspace = {
+        opencodeComponent: {
+          connected: true,
+          isGenerating: false,
+          serverUrl: 'http://localhost:9100',
+          currentSession: { id: 'session-9', title: 'Sample session' },
+          getExecutionStateSnapshot: () => ({
+            connected: true,
+            isGenerating: false,
+            currentSessionId: 'session-9',
+            generatingSessionIds: [],
+            lastEvent: { type: 'session.idle', timestamp: 999 }
+          })
+        },
+        blackboard: {
+          agentStatus: 'idle',
+          currentTask: 'Inspect state',
+          lastUpdate: 999,
+          lastRequestId: 'req-last',
+          pendingRequests: new Map(),
+          completedRequests: new Map()
+        }
+      };
+
+      const result = await LivelyAiWorkspace.prototype.getOpenCodeCurrentState.call(mockWorkspace, {
+        includePending: true
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.state.connected).to.be.true;
+      expect(result.state.currentSessionId).to.equal('session-9');
+      expect(result.state.agentStatus).to.equal('idle');
+      expect(result.state.pendingRequests).to.deep.equal([]);
+    });
+  });
 });
