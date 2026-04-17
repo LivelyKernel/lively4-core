@@ -263,6 +263,40 @@ describe('LivelyChatMessage', () => {
       expect(partsContainer.textContent).to.include('Thinking...');
       expect(partsContainer.querySelector('details')).to.exist;
     });
+
+    it('should render full apply_patch content inside the details block', async () => {
+      const patchText = [
+        '*** Begin Patch',
+        '*** Update File: src/ai-workspace/components/lively-chat.js',
+        '@@',
+        '-old line',
+        '+new line',
+        '*** End Patch'
+      ].join('\n');
+
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool_use',
+          id: 'call_patch_1',
+          name: 'apply_patch',
+          input: { patchText }
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const details = component.get('details.compact-tool-call');
+      expect(details).to.exist;
+      expect(details.querySelector('summary')?.textContent).to.include('🩹 patch — 1 updated');
+
+      const markdowns = details.querySelectorAll('lively-markdown');
+      expect(markdowns.length).to.equal(2);
+
+      const code = markdowns[1].shadowRoot.querySelector('pre code.language-diff');
+      expect(code).to.exist;
+      expect(code.textContent.trimEnd()).to.equal(patchText);
+    });
   });
 
   describe('Project focus context rendering', () => {

@@ -65,6 +65,11 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     return this.createMarkdownEl(`| | File |\n|---|---|\n${rows}`);
   }
 
+  async buildPatchBlock(patchText) {
+    if (!patchText) return null;
+    return this.createMarkdownEl(`---\n\n**Patch:**\n\n\`\`\`diff\n${patchText}\n\`\`\``);
+  }
+
   async renderCompact(part, result, showDebug) {
     const input = part.input || {};
     const patchText = input.patchText || '';
@@ -77,6 +82,9 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
 
     const opsEl = await this.renderOps(ops);
     if (opsEl) details.appendChild(opsEl);
+
+    const patchBlock = await this.buildPatchBlock(patchText);
+    if (patchBlock) details.appendChild(patchBlock);
 
     if (result && result.is_error) {
       const errorContent = ToolHelpers.extractResultContent(result);
@@ -99,6 +107,9 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
 
     const opsEl = await this.renderOps(ops);
     if (opsEl) details.appendChild(opsEl);
+
+    const patchBlock = await this.buildPatchBlock(patchText);
+    if (patchBlock) details.appendChild(patchBlock);
 
     return details;
   }
