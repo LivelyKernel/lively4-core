@@ -357,7 +357,7 @@ describe('OpenCode Chat Event Replay', () => {
       ];
 
       const accumulated = component.computeAccumulatedTokens(messages);
-      expect(accumulated.gpt-5).to.deep.equal({
+      expect(accumulated['gpt-5']).to.deep.equal({
         input: 1_000_000,
         output: 1_000_000,
         cacheRead: 1_000_000,
@@ -419,7 +419,7 @@ describe('OpenCode Chat Event Replay', () => {
       ];
 
       const accumulated = component.computeAccumulatedTokens(messages);
-      expect(accumulated.gpt-5).to.deep.equal({
+      expect(accumulated['gpt-5']).to.deep.equal({
         input: 2_000,
         output: 300,
         cacheRead: 500,
@@ -454,7 +454,7 @@ describe('OpenCode Chat Event Replay', () => {
       ];
 
       const accumulated = component.computeAccumulatedTokens(messages);
-      expect(accumulated.gpt-5).to.deep.equal({
+      expect(accumulated['gpt-5']).to.deep.equal({
         input: 100,
         output: 20,
         cacheRead: 10,
@@ -463,16 +463,13 @@ describe('OpenCode Chat Event Replay', () => {
     });
 
     it('should persist message.updated info changes for existing messages', async () => {
-      const originalPut = component.constructor.messagesdb.messages.put;
+      const db = component.constructor.messagesdb;
       const originalUpdateSessionCostDisplay = component.updateSessionCostDisplay;
-      const putCalls = [];
-
-      component.constructor.messagesdb.messages.put = async (record) => {
-        putCalls.push(record);
-      };
       component.updateSessionCostDisplay = async () => {};
 
       try {
+        await db.messages.where('sessionId').equals('test-session').delete();
+
         component._replayMode = false;
         component.messages.set('test-session', [{
           info: { id: 'msg_1', role: 'assistant' },
@@ -492,12 +489,14 @@ describe('OpenCode Chat Event Replay', () => {
           }
         });
 
-        expect(putCalls).to.have.length(1);
-        expect(putCalls[0].sessionId).to.equal('test-session');
-        expect(putCalls[0].messageId).to.equal('msg_1');
-        expect(putCalls[0].message.info.tokens.input).to.equal(42);
+        const persisted = await db.messages.where('sessionId').equals('test-session').toArray();
+
+        expect(persisted).to.have.length(1);
+        expect(persisted[0].sessionId).to.equal('test-session');
+        expect(persisted[0].messageId).to.equal('msg_1');
+        expect(persisted[0].message.info.tokens.input).to.equal(42);
       } finally {
-        component.constructor.messagesdb.messages.put = originalPut;
+        await db.messages.where('sessionId').equals('test-session').delete();
         component.updateSessionCostDisplay = originalUpdateSessionCostDisplay;
       }
     });

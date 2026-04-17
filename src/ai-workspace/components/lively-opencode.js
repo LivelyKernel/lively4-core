@@ -69,14 +69,17 @@ export default class LivelyOpencode extends LivelyChat {
    * Note: Server is source of truth for actual messages - this is metadata cache only
    */
   static get sessionMetaDB() {
-    var db = new Dexie("opencode-session-metadata");
-    db.version(31).stores({
-      sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
-    }).upgrade(function () {});
-    db.version(32).stores({
-      sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime, parentSessionId'
-    }).upgrade(function () {});
-    return db;
+    if (!this._sessionMetaDB) {
+      const db = new Dexie("opencode-session-metadata");
+      db.version(31).stores({
+        sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
+      }).upgrade(function () {});
+      db.version(32).stores({
+        sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime, parentSessionId'
+      }).upgrade(function () {});
+      this._sessionMetaDB = db;
+    }
+    return this._sessionMetaDB;
   }
 
   /**
@@ -84,11 +87,14 @@ export default class LivelyOpencode extends LivelyChat {
    * Stores full messages enriched with browser-local timestamps for consistent ordering
    */
   static get messagesdb() {
-    var db = new Dexie("opencode-messages");
-    db.version(1).stores({
-      messages: '[sessionId+messageId], sessionId, messageId, localTimestamp, lastModified'
-    }).upgrade(function () {});
-    return db;
+    if (!this._messagesdb) {
+      const db = new Dexie("opencode-messages");
+      db.version(1).stores({
+        messages: '[sessionId+messageId], sessionId, messageId, localTimestamp, lastModified'
+      }).upgrade(function () {});
+      this._messagesdb = db;
+    }
+    return this._messagesdb;
   }
 
   // Override base class method to update message debug state
@@ -1968,7 +1974,7 @@ export default class LivelyOpencode extends LivelyChat {
       msg.lastModified = Date.now();
 
       // Persist info/token updates immediately so usage/cost survives reloads
-      if (!this._replayMode) {
+      if (this.canWriteToDatabase()) {
         await LivelyOpencode.messagesdb.messages.put({
           sessionId: sessionId,
           messageId: msg.info.id,
@@ -2002,7 +2008,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Live-update session cost display when token data arrives
       if (messageInfo.tokens) {
-        this.updateSessionCostDisplay(sessionId);
+        await this.updateSessionCostDisplay(sessionId);
       }
     } else {
       // Create new message with info (parts will be added by message.part.updated)
@@ -2011,7 +2017,7 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Check if message already exists in DB to preserve localTimestamp (skip in replay mode)
       let existing = null;
-      if (!this._replayMode) {
+      if (this.canWriteToDatabase()) {
         existing = await LivelyOpencode.messagesdb.messages.get({
           sessionId: sessionId,
           messageId: messageId
@@ -2049,7 +2055,7 @@ export default class LivelyOpencode extends LivelyChat {
       // this.log('[opencode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
 
       // Save to IndexedDB (skip in replay mode)
-      if (!this._replayMode) {
+      if (this.canWriteToDatabase()) {
         await LivelyOpencode.messagesdb.messages.put({
           sessionId: sessionId,
           messageId: messageId,
