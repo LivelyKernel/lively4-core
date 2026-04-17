@@ -594,21 +594,13 @@ export default class LivelyChat extends Morph {
     output += `*${new Date().toLocaleString()}*\n\n`;
     output += `---\n\n`;
 
-    let lastRole = null;
-
     for (const messageEl of messageElements) {
       const role = messageEl.getAttribute('role') || 'unknown';
       const normalizedRole = role.toUpperCase();
       
       // Get text content from the parts container (where rendered content lives)
       const partsContainer = messageEl.get?.('#partsContainer');
-      let content = '';
-      
-      if (partsContainer) {
-        // Get the text content, but preserve some structure
-        content = partsContainer.textContent || '';
-        content = content.trim();
-      }
+      const content = this._extractRenderedMessageMarkdown(partsContainer);
       
       // Skip empty messages
       if (!content) continue;
@@ -617,11 +609,95 @@ export default class LivelyChat extends Morph {
       output += `**${normalizedRole}:**\n\n`;
       output += `${content}\n\n`;
       output += `---\n\n`;
-      
-      lastRole = normalizedRole;
     }
 
     return output;
+  }
+
+  _extractRenderedMessageMarkdown(partsContainer) {
+    if (!partsContainer) return '';
+
+    const chunks = Array.from(partsContainer.childNodes)
+      .map(node => this._serializeDramaNode(node))
+      .map(text => text && text.trim())
+      .filter(Boolean);
+
+    return this._normalizeDramaMarkdown(chunks.join('\n\n'));
+  }
+
+  _serializeDramaNode(node) {
+    if (!node) return '';
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent || '';
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return '';
+    }
+
+    const tagName = node.tagName.toLowerCase();
+
+    if (tagName === 'lively-markdown') {
+      return node.textContent || '';
+    }
+
+    if (tagName === 'pre') {
+      return this._serializeDramaCodeBlock(node);
+    }
+
+    if (tagName === 'code') {
+      if (node.parentElement?.tagName?.toLowerCase() === 'pre') {
+        return '';
+      }
+      return `\`${node.textContent || ''}\``;
+    }
+
+    if (tagName === 'details') {
+      const summary = Array.from(node.children).find(child => child.tagName?.toLowerCase() === 'summary');
+      const summaryText = summary?.textContent?.trim();
+      const body = Array.from(node.childNodes)
+        .filter(child => child !== summary)
+        .map(child => this._serializeDramaNode(child))
+        .map(text => text && text.trim())
+        .filter(Boolean)
+        .join('\n\n');
+
+      return [summaryText ? `*${summaryText}*` : '', body]
+        .filter(Boolean)
+        .join('\n\n');
+    }
+
+    const childContent = Array.from(node.childNodes)
+      .map(child => this._serializeDramaNode(child))
+      .map(text => text && text.trim())
+      .filter(Boolean)
+      .join('\n\n');
+
+    return childContent || node.textContent || '';
+  }
+
+  _serializeDramaCodeBlock(preNode) {
+    const codeNode = preNode.querySelector('code');
+    const languageClass = codeNode
+      ? Array.from(codeNode.classList || []).find(className => className.startsWith('language-'))
+      : null;
+    const language = languageClass ? languageClass.replace(/^language-/, '') : '';
+    const code = (codeNode?.textContent || preNode.textContent || '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\n+$/, '');
+
+    return `\`\`\`${language}\n${code}\n\`\`\``;
+  }
+
+  _normalizeDramaMarkdown(markdown) {
+    if (!markdown) return '';
+
+    return markdown
+      .replace(/\r\n/g, '\n')
+      .replace(/(```[^\n]*\n[\s\S]*?\n```)(?=\S)/g, '$1\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
   /**

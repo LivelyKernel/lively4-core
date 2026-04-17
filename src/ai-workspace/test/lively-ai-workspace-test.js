@@ -1,6 +1,7 @@
 import {expect} from 'src/external/chai.js';
 import { testWorld, loadComponent } from 'test/templates/templates-fixture.js';
 import LivelyAiWorkspace from 'src/ai-workspace/components/lively-ai-workspace.js';
+import LivelyChat from 'src/ai-workspace/components/lively-chat.js';
 
 /*MD
 # AI Workspace Integration Tests
@@ -236,6 +237,51 @@ describe('LivelyAiWorkspace', () => {
 
   after(() => {
     testWorld().innerHTML = "";
+  });
+
+  describe('Drama script export formatting', () => {
+    it('preserves markdown block boundaries between rendered message parts', () => {
+      const partsContainer = document.createElement('div');
+      const codeMarkdown = document.createElement('lively-markdown');
+      codeMarkdown.textContent = '```javascript\n2 + 2\n```';
+      const resultMarkdown = document.createElement('lively-markdown');
+      resultMarkdown.textContent = '**Result:** 4';
+      partsContainer.appendChild(codeMarkdown);
+      partsContainer.appendChild(resultMarkdown);
+
+      const message = document.createElement('div');
+      message.setAttribute('role', 'assistant');
+      message.get = selector => selector === '#partsContainer' ? partsContainer : null;
+
+      const output = LivelyChat.prototype._formatRenderedMessagesAsDrama.call(
+        LivelyChat.prototype,
+        [message]
+      );
+
+      expect(output).to.include('```javascript\n2 + 2\n```\n\n**Result:** 4');
+      expect(output).to.not.include('```**Result:**');
+    });
+
+    it('serializes pre/code blocks as fenced markdown with a trailing newline boundary', () => {
+      const partsContainer = document.createElement('div');
+      const pre = document.createElement('pre');
+      const code = document.createElement('code');
+      code.className = 'language-json';
+      code.textContent = '{\n  "ok": true\n}';
+      pre.appendChild(code);
+      partsContainer.appendChild(pre);
+
+      const message = document.createElement('div');
+      message.setAttribute('role', 'assistant');
+      message.get = selector => selector === '#partsContainer' ? partsContainer : null;
+
+      const output = LivelyChat.prototype._formatRenderedMessagesAsDrama.call(
+        LivelyChat.prototype,
+        [message]
+      );
+
+      expect(output).to.include('```json\n{\n  "ok": true\n}\n```\n\n---');
+    });
   });
 
 
