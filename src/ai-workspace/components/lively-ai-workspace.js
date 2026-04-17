@@ -538,9 +538,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
         if (dotEl) dotEl.classList.remove('working');
       }
 
-      // Check for completed requests when agent becomes idle
-      if (status === 'idle' && type === 'session.idle') {
-        this.checkAndCompleteRequests();
+      // Check for completed or aborted requests when agent becomes idle
+      if (status === 'idle') {
+        if (message === 'Generation aborted') {
+          // Abort case - mark pending request as aborted
+          this.handleAbortedSession();
+        } else if (type === 'session.idle') {
+          // Normal completion - check for completed requests with responses
+          this.checkAndCompleteRequests();
+        }
       }
 
       // Notify realtime chat component
@@ -1202,25 +1208,16 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  /*MD ## Public API for Realtime Chat MD*/
-
-  async stopOpenCodeTask({requestId = null} = {}) {
-    if (!this.opencodeComponent) {
-      return {
-        success: false,
-        error: 'OpenCode component not available'
-      };
-    }
-
+  /**
+   * Handle aborted session - centralized cleanup for both ESC and voice-stop paths
+   * Marks pending request as aborted and clears realtime waiting flags
+   * Idempotent - safe to call multiple times for the same request
+   */
+  handleAbortedSession(requestId = null) {
     // Fall back to last tracked request if none provided
     const targetRequestId = requestId || this.blackboard.lastRequestId;
 
-    const abortResult = await this.abortCurrentSession();
-    if (!abortResult?.success) {
-      return abortResult;
-    }
-
-    // Mark pending request as aborted if we can identify it
+    // Mark pending request as aborted if we can identify it (idempotent check)
     if (targetRequestId && this.blackboard.pendingRequests.has(targetRequestId)) {
       const request = this.blackboard.pendingRequests.get(targetRequestId);
       this.blackboard.pendingRequests.delete(targetRequestId);
@@ -1236,16 +1233,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       });
     }
 
-    this.blackboard.agentStatus = 'idle';
-    this.blackboard.lastUpdate = Date.now();
-
-    // Update workspace OpenCode status UI immediately
-    if (this.updateOpenCodeStatus) {
-      this.updateOpenCodeStatus('Idle', true);
-    }
-    const dotEl = this.get ? this.get('#opencodeDot') : null;
-    if (dotEl) dotEl.classList.remove('working');
-
     // Clear realtime waiting flags to prevent stale "waiting for reply" state
     if (this.realtimeComponent) {
       const shouldClearRealtimePending =
@@ -1257,18 +1244,30 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.pendingRequestId = null;
         this.realtimeComponent.pendingTask = null;
       }
-
-      // Record status transition without triggering auto-relay logic
-      if (this.realtimeComponent.onAgentStatusChange) {
-        this.realtimeComponent.onAgentStatusChange({
-          status: 'idle',
-          message: 'Agent stop requested',
-          eventType: 'session.aborted',
-          task: this.blackboard.currentTask,
-          timestamp: Date.now()
-        });
-      }
     }
+  }
+
+  /*MD ## Public API for Realtime Chat MD*/
+
+  async stopOpenCodeTask({requestId = null} = {}) {
+    if (!this.opencodeComponent) {
+      return {
+        success: false,
+        error: 'OpenCode component not available'
+      };
+    }
+
+    const targetRequestId = requestId || this.blackboard.lastRequestId;
+
+    // Abort the session
+    const abortResult = await this.abortCurrentSession();
+    if (!abortResult?.success) {
+      return abortResult;
+    }
+
+    // Clean up immediately - don't wait for event path
+    // (handleAbortedSession is idempotent, so safe if event also triggers it)
+    this.handleAbortedSession(targetRequestId);
 
     return {
       success: true,

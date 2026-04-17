@@ -332,7 +332,8 @@ describe('LivelyAiWorkspace', () => {
           agentStatus: 'working',
           lastUpdate: 0
         },
-        abortCurrentSession: async () => ({ success: true })
+        abortCurrentSession: async () => ({ success: true }),
+        handleAbortedSession: LivelyAiWorkspace.prototype.handleAbortedSession
       };
 
       const result = await LivelyAiWorkspace.prototype.stopOpenCodeTask.call(mockWorkspace, {});
@@ -341,7 +342,6 @@ describe('LivelyAiWorkspace', () => {
       expect(mockWorkspace.blackboard.pendingRequests.has('req-1')).to.be.false;
       expect(mockWorkspace.blackboard.completedRequests.has('req-1')).to.be.true;
       expect(mockWorkspace.blackboard.completedRequests.get('req-1').aborted).to.be.true;
-      expect(mockWorkspace.blackboard.agentStatus).to.equal('idle');
     });
 
     it('stopOpenCodeTask should clear realtime waiting flags for matching request', async () => {
@@ -375,6 +375,7 @@ describe('LivelyAiWorkspace', () => {
           currentTask: 'Do something'
         },
         abortCurrentSession: async () => ({ success: true }),
+        handleAbortedSession: LivelyAiWorkspace.prototype.handleAbortedSession,
         updateOpenCodeStatus: () => {},
         get: () => null
       };

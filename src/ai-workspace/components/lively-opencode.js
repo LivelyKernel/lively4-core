@@ -874,14 +874,22 @@ export default class LivelyOpencode extends LivelyChat {
 
     switch(data.type) {
       case 'message.updated':
-        status = 'working';
-        statusMessage = 'Agent is responding';
-        // Find the message in the store
+        // Find the message in the store first
         if (sessionId && data.properties?.info?.id) {
           const messages = this.messages.get(sessionId);
           if (messages) {
             messageObj = messages.find(m => m.info?.id === data.properties.info.id);
           }
+        }
+        
+        // Check for abort error
+        const errorName = data.properties?.info?.error?.name || messageObj?.info?.error?.name;
+        if (errorName === 'MessageAbortedError') {
+          status = 'idle';
+          statusMessage = 'Generation aborted';
+        } else {
+          status = 'working';
+          statusMessage = 'Agent is responding';
         }
         break;
       case 'message.part.updated':
