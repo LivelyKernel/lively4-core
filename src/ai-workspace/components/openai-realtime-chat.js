@@ -229,6 +229,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Context menu handler using base class
     this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
+    this.messagesContainer = this.get('#messagesContainer');
+    this.ensureMessageSelectionInteractions(this.messagesContainer);
 
     // Load preferences
     this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true

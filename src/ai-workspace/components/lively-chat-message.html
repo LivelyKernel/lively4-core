@@ -5,58 +5,157 @@
       position: relative;
       display: block;
       margin: 10px 0;
-      padding: 10px;
-      border-radius: 5px;
-      transition: background-color 0.2s;
       box-sizing: border-box;
       width: 800px;
       overflow-x: visible;
       overflow-y: visible;
     }
 
+    #shell {
+      display: grid;
+      grid-template-columns: 0 minmax(0, 1fr);
+      align-items: start;
+      width: 100%;
+      transition: grid-template-columns 0.18s ease;
+    }
+
+    :host(:hover) #shell,
+    :host([selected]) #shell,
+    :host([selection-mode]) #shell,
+    :host(:focus-within) #shell {
+      grid-template-columns: 28px minmax(0, 1fr);
+    }
+
+    .selection-gutter {
+      display: flex;
+      justify-content: center;
+      padding-top: 12px;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+      transition: opacity 0.16s ease;
+    }
+
+    :host(:hover) .selection-gutter,
+    :host([selected]) .selection-gutter,
+    :host([selection-mode]) .selection-gutter,
+    :host(:focus-within) .selection-gutter {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .selection-control {
+      position: relative;
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .selection-checkbox {
+      position: absolute;
+      inset: 0;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .selection-checkmark {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #b9c0c8;
+      border-radius: 4px;
+      background: white;
+      box-sizing: border-box;
+      transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+      position: relative;
+    }
+
+    .selection-checkmark::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border-right: 2px solid white;
+      border-bottom: 2px solid white;
+      transform: rotate(45deg) scale(0);
+      transform-origin: center;
+      transition: transform 0.12s ease;
+    }
+
+    .selection-control:hover .selection-checkmark {
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.12);
+    }
+
+    .selection-checkbox:checked + .selection-checkmark {
+      background: #4a90e2;
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.18);
+    }
+
+    .selection-checkbox:checked + .selection-checkmark::after {
+      transform: rotate(45deg) scale(1);
+    }
+
+    #container {
+      position: relative;
+      min-width: 0;
+      padding: 10px;
+      border-radius: 5px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    :host([selected]) #container {
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.35);
+    }
+
 
     /* Default role-based colors */
-    :host([role="user"]) {
+    :host([role="user"]) #container {
       background-color: #e3f2fd;
       border-left: 3px solid #2196f3;
     }
 
-    :host([role="assistant"]) {
+    :host([role="assistant"]) #container {
       background-color: #f3e5f5;
       border-left: 3px solid #9c27b0;
     }
 
     /* Assistant messages with tool calls - different color */
-    :host([role="assistant"][has-tools]) {
+    :host([role="assistant"][has-tools]) #container {
       background-color: #fff3e0;
       border-left: 3px solid #ff9800;
     }
 
-    :host([role="tool"]) {
+    :host([role="tool"]) #container {
       background-color: #fff3e0;
       border-left: 3px solid #ff9800;
     }
 
     /* System messages (special voice-agent system notifications) */
-    :host([role="system"]) {
+    :host([role="system"]) #container {
       background-color: #f0f4fa;
       border-left: 3px solid #607d8b;
       font-style: italic;
       opacity: 0.9;
     }
 
-    :host([role="tool"]:hover) {
+    :host([role="tool"]:hover) #container {
       background-color: #ffe0b2;
     }
 
     /* OpenCode user messages (voice agent) = green, always */
-    :host([role="user"][source="code"]) {
+    :host([role="user"][source="code"]) #container {
       background-color: #e8f5e9;
       border-left: 3px solid #4caf50;
     }
 
     /* Error messages - red regardless of role */
-    :host([has-error]) {
+    :host([has-error]) #container {
       background-color: #ffebee;
       border-left: 3px solid #f44336;
     }
@@ -513,16 +612,24 @@
 
   </style>
 
-  <div id="container">
-    <button id="inspect" class="debug" >inspect</button>
-    <button id="viewRawButton" class="debug">View Raw</button>
-    <div id="debugHeader" class="debug-header debug"></div>
-    <div id="content" class="content">
-      <div id="partsContainer" class="parts-container"></div>
+  <div id="shell">
+    <div id="selectionGutter" class="selection-gutter">
+      <label id="selectionControl" class="selection-control" title="Select message">
+        <input id="selectionCheckbox" class="selection-checkbox" type="checkbox" aria-label="Select message">
+        <span class="selection-checkmark"></span>
+      </label>
     </div>
-    <div id="rawDisplay" class="raw-display debug" style="display:none">
-      <pre id="rawJson"></pre>
+    <div id="container">
+      <button id="inspect" class="debug" >inspect</button>
+      <button id="viewRawButton" class="debug">View Raw</button>
+      <div id="debugHeader" class="debug-header debug"></div>
+      <div id="content" class="content">
+        <div id="partsContainer" class="parts-container"></div>
+      </div>
+      <div id="rawDisplay" class="raw-display debug" style="display:none">
+        <pre id="rawJson"></pre>
+      </div>
+      <div id="usageStats" class="usage-stats hidden"></div>
     </div>
-    <div id="usageStats" class="usage-stats hidden"></div>
   </div>
 </template>

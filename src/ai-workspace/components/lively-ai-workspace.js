@@ -110,6 +110,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.sessionsComponent = this.get('#sessionsComponent');
 
     this.messagesContainer = this.get('#messagesContainer');
+    this.ensureMessageSelectionInteractions(this.messagesContainer);
 
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;

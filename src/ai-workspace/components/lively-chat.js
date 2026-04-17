@@ -57,6 +57,14 @@ export default class LivelyChat extends Morph {
     // Tool call tracking for appending results to function calls (shared across all chat components)
     // Map<call_id, widget> - tracks function_call widgets waiting for function_call_output
     this.pendingToolCalls = this.pendingToolCalls || new Map();
+
+    // Shared message selection state
+    this._messageSelectionContainers = this._messageSelectionContainers || new WeakSet();
+    this._messageSelectionGesture = this._messageSelectionGesture || null;
+    this._suppressNextMessageClick = this._suppressNextMessageClick || false;
+    this._clearSuppressedMessageClickTimeout = this._clearSuppressedMessageClickTimeout || null;
+    this._boundMessageSelectionMouseMove = this._boundMessageSelectionMouseMove || (evt => this.onMessageSelectionMouseMove(evt));
+    this._boundMessageSelectionMouseUp = this._boundMessageSelectionMouseUp || (evt => this.onMessageSelectionMouseUp(evt));
   }
 
   /**
@@ -246,6 +254,8 @@ export default class LivelyChat extends Morph {
     
     if (!container) return null;
 
+    this.ensureMessageSelectionInteractions(container);
+
     // Step 1: Pre-render buffering (for streaming with race conditions)
     if (enableBuffering && messageId) {
       this.renderingMessages.add(messageId);
@@ -321,6 +331,7 @@ export default class LivelyChat extends Morph {
     
     // Apply debug state from parent
     widget.showDebug = this.showDebug;
+    widget.selectionMode = this.hasSelectedMessages(container) || !!this._messageSelectionGesture?.active;
 
     // Step 7: Post-render handling (for streaming with race conditions)
     if (enableBuffering && messageId) {
@@ -350,6 +361,151 @@ export default class LivelyChat extends Morph {
     }
     
     return widget;
+  }
+
+  ensureMessageSelectionInteractions(container = this.messagesContainer) {
+    if (!container || this._messageSelectionContainers.has(container)) return;
+
+    this._messageSelectionContainers.add(container);
+    container.addEventListener('mousedown', evt => this.onMessageSelectionMouseDown(evt, container), true);
+    container.addEventListener('click', evt => this.onMessagesContainerClickCapture(evt), true);
+    container.addEventListener('message-selection-changed', evt => this.onMessageSelectionChanged(evt, container));
+
+    this.updateMessageSelectionMode(container);
+  }
+
+  onMessageSelectionChanged(evt, container = this.messagesContainer) {
+    if (!evt.target?.matches?.('lively-chat-message')) return;
+    this.updateMessageSelectionMode(container);
+  }
+
+  onMessageSelectionMouseDown(evt, container = this.messagesContainer) {
+    if (evt.button !== 0) return;
+
+    const message = this.getChatMessageFromEvent(evt, container);
+    if (!message?.canStartSelectionDrag?.(evt)) return;
+
+    if (window.getSelection?.()?.toString().trim()) return;
+
+    this._messageSelectionGesture = {
+      container,
+      startX: evt.clientX,
+      startY: evt.clientY,
+      candidateMessage: message,
+      targetSelected: !message.selected,
+      visitedMessages: new Set(),
+      active: false
+    };
+
+    document.addEventListener('mousemove', this._boundMessageSelectionMouseMove, true);
+    document.addEventListener('mouseup', this._boundMessageSelectionMouseUp, true);
+  }
+
+  onMessageSelectionMouseMove(evt) {
+    const gesture = this._messageSelectionGesture;
+    if (!gesture) return;
+
+    const movedEnough = Math.hypot(evt.clientX - gesture.startX, evt.clientY - gesture.startY) >= 6;
+    if (!gesture.active && !movedEnough) return;
+
+    if (!gesture.active) {
+      gesture.active = true;
+      this.applyDragSelectionToMessage(gesture.candidateMessage, gesture.targetSelected, gesture.visitedMessages);
+      this.updateMessageSelectionMode(gesture.container, true);
+    }
+
+    evt.preventDefault();
+
+    const hoveredMessage = this.findChatMessageAtPoint(gesture.container, evt.clientX, evt.clientY);
+    if (hoveredMessage) {
+      this.applyDragSelectionToMessage(hoveredMessage, gesture.targetSelected, gesture.visitedMessages);
+    }
+  }
+
+  onMessageSelectionMouseUp() {
+    const gesture = this._messageSelectionGesture;
+
+    document.removeEventListener('mousemove', this._boundMessageSelectionMouseMove, true);
+    document.removeEventListener('mouseup', this._boundMessageSelectionMouseUp, true);
+
+    if (!gesture) return;
+
+    if (gesture.active) {
+      this.suppressNextMessageClick();
+    }
+
+    this._messageSelectionGesture = null;
+    this.updateMessageSelectionMode(gesture.container);
+  }
+
+  onMessagesContainerClickCapture(evt) {
+    if (!this._suppressNextMessageClick) return;
+
+    this._suppressNextMessageClick = false;
+    if (this._clearSuppressedMessageClickTimeout) {
+      clearTimeout(this._clearSuppressedMessageClickTimeout);
+      this._clearSuppressedMessageClickTimeout = null;
+    }
+
+    evt.preventDefault();
+    evt.stopPropagation();
+  }
+
+  suppressNextMessageClick() {
+    this._suppressNextMessageClick = true;
+
+    if (this._clearSuppressedMessageClickTimeout) {
+      clearTimeout(this._clearSuppressedMessageClickTimeout);
+    }
+
+    this._clearSuppressedMessageClickTimeout = setTimeout(() => {
+      this._suppressNextMessageClick = false;
+      this._clearSuppressedMessageClickTimeout = null;
+    }, 250);
+  }
+
+  applyDragSelectionToMessage(message, selected, visitedMessages = new Set()) {
+    if (!message || visitedMessages.has(message)) return;
+
+    visitedMessages.add(message);
+    message.setSelected(selected);
+  }
+
+  getChatMessageElements(container = this.messagesContainer) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('lively-chat-message'));
+  }
+
+  hasSelectedMessages(container = this.messagesContainer) {
+    return this.getChatMessageElements(container).some(message => message.selected);
+  }
+
+  updateMessageSelectionMode(container = this.messagesContainer, forceVisible = false) {
+    const selectionMode = forceVisible || this.hasSelectedMessages(container) || !!this._messageSelectionGesture?.active;
+    this.getChatMessageElements(container).forEach(message => {
+      message.selectionMode = selectionMode;
+    });
+  }
+
+  getChatMessageFromEvent(evt, container = this.messagesContainer) {
+    const path = evt.composedPath?.() || [];
+    return path.find(node => node instanceof HTMLElement
+      && node.matches?.('lively-chat-message')
+      && (!container || container.contains(node))
+    ) || null;
+  }
+
+  findChatMessageAtPoint(container = this.messagesContainer, clientX, clientY) {
+    const messages = this.getChatMessageElements(container);
+
+    for (const message of messages) {
+      const rect = message.getBoundingClientRect();
+      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+        return message;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -572,8 +728,11 @@ export default class LivelyChat extends Morph {
       return;
     }
     
-    // Get all rendered chat messages
-    const messageElements = messagesContainer.querySelectorAll('lively-chat-message');
+    const selectedMessageElements = this.getSelectedChatMessageElements(messagesContainer);
+    const messageElements = selectedMessageElements.length > 0
+      ? selectedMessageElements
+      : this.getChatMessageElements(messagesContainer);
+
     if (messageElements.length === 0) {
       lively.warn("No messages to export");
       return;
@@ -581,7 +740,12 @@ export default class LivelyChat extends Morph {
     
     const drama = this._formatRenderedMessagesAsDrama(messageElements);
     await navigator.clipboard.writeText(drama);
-    lively.success(`Copied ${messageElements.length} messages as drama script`);
+    const scope = selectedMessageElements.length > 0 ? 'selected ' : '';
+    lively.success(`Copied ${messageElements.length} ${scope}messages as drama script`);
+  }
+
+  getSelectedChatMessageElements(container = this.messagesContainer) {
+    return this.getChatMessageElements(container).filter(message => message.selected);
   }
 
   /**
@@ -1328,6 +1492,7 @@ export default class LivelyChat extends Morph {
     this.chatMessages = other.chatMessages || new Map();
     this.pendingUpdates = other.pendingUpdates || new Map();
     this.renderingMessages = other.renderingMessages || new Set();
+    this.pendingToolCalls = other.pendingToolCalls || new Map();
   }
   
 }

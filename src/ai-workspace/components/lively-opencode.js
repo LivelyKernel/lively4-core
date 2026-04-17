@@ -192,6 +192,8 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup input handling using base class method
     this.setupInputHandling('#messageInput', this.onSendButton);
+    this.messagesContainer = this.get('#messagesContainer');
+    this.ensureMessageSelectionInteractions(this.messagesContainer);
 
     // Setup sessions component
     this.setupSessionsComponent();

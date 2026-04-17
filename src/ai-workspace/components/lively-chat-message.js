@@ -46,6 +46,8 @@ export default class LivelyChatMessage extends Morph {
 
     // Store message data
     this._showRaw = this._showRaw || false;
+    this._selected = this._selected || false;
+    this._selectionMode = this._selectionMode || false;
 
     // Register OpenCode tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
@@ -95,19 +97,53 @@ export default class LivelyChatMessage extends Morph {
 
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
+    this.containerElement = this.get("#container");
     this.contentDiv = this.get("#content");
     this.partsContainer = this.get("#partsContainer");
     this.viewRawButton = this.get("#viewRawButton");
     this.rawDisplay = this.get("#rawDisplay");
     this.rawJson = this.get("#rawJson");
     this.usageStatsEl = this.get("#usageStats");
+    this.selectionGutter = this.get("#selectionGutter");
+    this.selectionControl = this.get("#selectionControl");
+    this.selectionCheckbox = this.get("#selectionCheckbox");
 
     this.registerButtons()
+    this.setupSelectionUI();
+    this.selectionMode = this._selectionMode;
+    this.selected = this._selected;
+
     if (this._opencodeMessage) {
       this.setOpenCodeMessage(this._opencodeMessage);
     } else {
       this.setMessage(this._messageData || null);
     }
+  }
+
+  setupSelectionUI() {
+    if (this._selectionUIInitialized) return;
+    this._selectionUIInitialized = true;
+
+    this.selectionControl?.addEventListener('click', evt => evt.stopPropagation());
+    this.selectionCheckbox?.addEventListener('change', evt => this.onSelectionCheckboxChange(evt));
+    this.addEventListener('click', evt => this.onMessageClick(evt));
+  }
+
+  get selected() {
+    return !!this._selected;
+  }
+
+  set selected(value) {
+    this.setSelected(value, { emit: false });
+  }
+
+  get selectionMode() {
+    return !!this._selectionMode;
+  }
+
+  set selectionMode(value) {
+    this._selectionMode = !!value;
+    this.toggleAttribute('selection-mode', this._selectionMode);
   }
 
   get showDebug() {
@@ -300,6 +336,85 @@ export default class LivelyChatMessage extends Morph {
   onViewRawButton() {
     this._showRaw = !this._showRaw;
     this.updateRawDisplay();
+  }
+
+  onSelectionCheckboxChange(evt) {
+    this.setSelected(evt.target.checked, { originalEvent: evt });
+  }
+
+  onMessageClick(evt) {
+    if (this.shouldIgnoreSelectionClick(evt)) return;
+    this.toggleSelected({ originalEvent: evt });
+  }
+
+  canStartSelectionDrag(evt) {
+    const path = evt.composedPath();
+
+    if (path.some(node => node instanceof HTMLElement && node.isContentEditable)) return false;
+    if (path.some(node => node instanceof HTMLElement && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'SUMMARY'].includes(node.tagName))) return false;
+
+    if (path.some(node => node === this.selectionGutter || node === this.selectionControl || node === this.selectionCheckbox)) {
+      return true;
+    }
+
+    if (path.some(node => node instanceof HTMLElement && this.contentDiv?.contains(node))) {
+      return false;
+    }
+
+    return path.some(node => node === this || node === this.containerElement || node === this.debugHeader);
+  }
+
+  shouldIgnoreSelectionClick(evt) {
+    if (evt.defaultPrevented) return true;
+
+    const selection = window.getSelection?.();
+    if (selection && selection.toString().trim()) return true;
+
+    return evt.composedPath().some(node => {
+      if (!(node instanceof HTMLElement)) return false;
+      if (node === this) return false;
+      if (node.closest?.('#selectionControl')) return true;
+      if (node.isContentEditable) return true;
+      return ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT', 'SUMMARY', 'LABEL'].includes(node.tagName);
+    });
+  }
+
+  toggleSelected(options = {}) {
+    this.setSelected(!this.selected, options);
+  }
+
+  setSelected(value, { emit = true, originalEvent = null } = {}) {
+    const nextValue = !!value;
+    const changed = this._selected !== nextValue;
+
+    this._selected = nextValue;
+    this.toggleAttribute('selected', nextValue);
+    this.setAttribute('aria-selected', String(nextValue));
+
+    if (this.selectionCheckbox) {
+      this.selectionCheckbox.checked = nextValue;
+    }
+
+    if (changed && emit) {
+      this.dispatchEvent(new CustomEvent('message-selection-changed', {
+        detail: {
+          selected: nextValue,
+          message: this.getMessageData(),
+          messageId: this.getMessageId(),
+          widget: this,
+          originalEvent
+        },
+        bubbles: true,
+        composed: true
+      }));
+    }
+  }
+
+  getMessageId() {
+    return this._opencodeMessage?.info?.id
+      || this._messageData?.item_id
+      || this._messageData?.id
+      || null;
   }
 
   updateRawDisplay() {
@@ -1121,5 +1236,7 @@ export default class LivelyChatMessage extends Morph {
     this._messageData = other._messageData;
     this._opencodeMessage = other._opencodeMessage || other._rawMessage; // Handle old name
     this._showRaw = other._showRaw;
+    this._selected = other._selected;
+    this._selectionMode = other._selectionMode;
   }
 }
