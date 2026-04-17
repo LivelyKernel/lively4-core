@@ -698,15 +698,14 @@ export default class LivelyChat extends Morph {
   }
   
   async exportChatHistory(compactEvents) {
-    // Filter to current session if available, so selecting a session and copying gives that session's events
-    const sessionId = this.currentSession?.id ?? null;
-    var events = this.getCapturedEvents(sessionId)
+    const selection = this._getSelectedEventsForExport();
+    var events = selection.events;
     if (compactEvents) events = this.compactEvents(events)
     
     let jsonl =  events.map(event => JSON.stringify(event)).join('\n');
 
     await navigator.clipboard.writeText(jsonl);
-    lively.success(`Copied ${events.length} events to clipboard`);
+    lively.success(`Copied ${events.length} ${selection.scope}events to clipboard`);
   }
 
   async exportChatHistoryShortened() {
@@ -714,12 +713,10 @@ export default class LivelyChat extends Morph {
   }
 
   _getEventsForExport() {
-    const sessionId = this.currentSession?.id ?? null;
-    return this.getCapturedEvents(sessionId);
+    return this._getSelectedEventsForExport().events;
   }
 
-  _generateJSONL(compact = false) {
-    const events = this._getEventsForExport();
+  _generateJSONL(compact = false, events = this._getEventsForExport()) {
     return events.map(event => {
       if (!compact) return JSON.stringify(event);
       const compacted = JSON.parse(JSON.stringify(event));
@@ -729,14 +726,15 @@ export default class LivelyChat extends Morph {
   }
 
   async _exportStatistics({ compact = false, tree = false } = {}) {
-    const events = this._getEventsForExport();
+    const selection = this._getSelectedEventsForExport();
+    const events = selection.events;
 
     if (events.length === 0) {
       lively.warn("No events to analyze");
       return;
     }
 
-    const jsonl = this._generateJSONL(compact);
+    const jsonl = this._generateJSONL(compact, events);
     const stats = analyzeJSONL(jsonl);
     const output = tree ? generateStatsTree(stats, 1) : JSON.stringify(stats, null, 2);
 
@@ -744,7 +742,7 @@ export default class LivelyChat extends Morph {
 
     const mode = compact ? "shortened " : "";
     const format = tree ? "tree" : "statistics";
-    lively.success(`Copied ${mode}${format} for ${events.length} events to clipboard`);
+    lively.success(`Copied ${mode}${format} for ${events.length} ${selection.scope}events to clipboard`);
   }
 
   async exportChatStatistics() {
@@ -793,6 +791,63 @@ export default class LivelyChat extends Morph {
 
   getSelectedChatMessageElements(container = this.messagesContainer) {
     return this.getChatMessageElements(container).filter(message => message.selected);
+  }
+
+  getSelectedChatMessages(container = this.messagesContainer) {
+    return this.getSelectedChatMessageElements(container).map(message => ({
+      element: message,
+      messageId: message.getMessageId?.() || null,
+      message: message.getMessageData?.() || null
+    }));
+  }
+
+  getSelectedChatMessageIds(container = this.messagesContainer) {
+    return this.getSelectedChatMessages(container)
+      .map(({messageId}) => messageId)
+      .filter(Boolean);
+  }
+
+  _getSelectedEventsForExport() {
+    const sessionId = this.currentSession?.id ?? null;
+    const events = this.getCapturedEvents(sessionId);
+    const selectedMessageIds = this.getSelectedChatMessageIds();
+
+    if (selectedMessageIds.length === 0) {
+      return { events, scope: '' };
+    }
+
+    const selectedIds = new Set(selectedMessageIds);
+    return {
+      events: events.filter(event => this._eventMatchesSelectedMessages(event, selectedIds)),
+      scope: 'selected '
+    };
+  }
+
+  _eventMatchesSelectedMessages(event, selectedIds) {
+    for (const messageId of this._getCapturedEventMessageIds(event)) {
+      if (selectedIds.has(messageId)) return true;
+    }
+    return false;
+  }
+
+  _getCapturedEventMessageIds(event) {
+    const data = event?.data || {};
+    const ids = new Set();
+    const add = value => {
+      if (typeof value === 'string' && value.length > 0) ids.add(value);
+    };
+
+    add(data.item_id);
+    add(data.item?.id);
+    add(data.properties?.info?.id);
+    add(data.properties?.part?.messageID);
+    add(data.properties?.part?.id);
+
+    if (Array.isArray(data.response?.output)) {
+      data.response.output.forEach(item => add(item?.id));
+    }
+
+    return ids;
   }
 
   /**

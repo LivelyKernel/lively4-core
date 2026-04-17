@@ -284,6 +284,130 @@ describe('LivelyAiWorkspace', () => {
     });
   });
 
+  describe('Selected message export helpers', () => {
+    it('returns selected message metadata from selected widgets', () => {
+      const selectedMessage = {
+        selected: true,
+        getMessageId: () => 'msg-selected',
+        getMessageData: () => ({id: 'msg-selected', role: 'assistant'})
+      };
+      const unselectedMessage = {
+        selected: false,
+        getMessageId: () => 'msg-other',
+        getMessageData: () => ({id: 'msg-other', role: 'user'})
+      };
+      const fakeChat = {
+        messagesContainer: {},
+        getChatMessageElements: () => [selectedMessage, unselectedMessage]
+      };
+
+      fakeChat.getSelectedChatMessageElements = LivelyChat.prototype.getSelectedChatMessageElements;
+
+      const selected = LivelyChat.prototype.getSelectedChatMessages.call(fakeChat);
+
+      expect(selected).to.deep.equal([{
+        element: selectedMessage,
+        messageId: 'msg-selected',
+        message: {id: 'msg-selected', role: 'assistant'}
+      }]);
+    });
+
+    it('filters exported events to the currently selected messages', () => {
+      const selectedMessage = {
+        selected: true,
+        getMessageId: () => 'item_audio_response',
+        getMessageData: () => ({item_id: 'item_audio_response', role: 'assistant'})
+      };
+      const unselectedMessage = {
+        selected: false,
+        getMessageId: () => 'item_user_audio_1',
+        getMessageData: () => ({item_id: 'item_user_audio_1', role: 'user'})
+      };
+      const fakeChat = {
+        currentSession: {id: 'session-1'},
+        messagesContainer: {},
+        getChatMessageElements: () => [selectedMessage, unselectedMessage],
+        getCapturedEvents: () => [
+          realtimeEvt(1000, 'conversation.item.created', {
+            item: {id: 'item_user_audio_1', type: 'message', role: 'user'}
+          }),
+          realtimeEvt(2000, 'response.audio_transcript.done', {
+            item_id: 'item_audio_response',
+            transcript: 'Selected assistant message'
+          }),
+          realtimeEvt(2100, 'response.done', {
+            response: {
+              output: [{id: 'item_audio_response', type: 'message'}]
+            }
+          }),
+          realtimeEvt(2200, 'session.updated', {
+            session: {id: 'session-1'}
+          })
+        ]
+      };
+
+      fakeChat.getSelectedChatMessageElements = LivelyChat.prototype.getSelectedChatMessageElements;
+      fakeChat.getSelectedChatMessages = LivelyChat.prototype.getSelectedChatMessages;
+      fakeChat.getSelectedChatMessageIds = LivelyChat.prototype.getSelectedChatMessageIds;
+      fakeChat._getCapturedEventMessageIds = LivelyChat.prototype._getCapturedEventMessageIds;
+      fakeChat._eventMatchesSelectedMessages = LivelyChat.prototype._eventMatchesSelectedMessages;
+
+      const selection = LivelyChat.prototype._getSelectedEventsForExport.call(fakeChat);
+
+      expect(selection.scope).to.equal('selected ');
+      expect(selection.events.map(evt => evt.data.type)).to.deep.equal([
+        'response.audio_transcript.done',
+        'response.done'
+      ]);
+    });
+
+    it('uses selected-message scope for statistics event exports too', () => {
+      const selectedMessage = {
+        selected: true,
+        getMessageId: () => 'item_audio_response',
+        getMessageData: () => ({item_id: 'item_audio_response', role: 'assistant'})
+      };
+      const unselectedMessage = {
+        selected: false,
+        getMessageId: () => 'item_user_audio_1',
+        getMessageData: () => ({item_id: 'item_user_audio_1', role: 'user'})
+      };
+      const fakeChat = {
+        currentSession: {id: 'session-1'},
+        messagesContainer: {},
+        getChatMessageElements: () => [selectedMessage, unselectedMessage],
+        getCapturedEvents: () => [
+          realtimeEvt(1000, 'conversation.item.created', {
+            item: {id: 'item_user_audio_1', type: 'message', role: 'user'}
+          }),
+          realtimeEvt(2000, 'response.audio_transcript.done', {
+            item_id: 'item_audio_response',
+            transcript: 'Selected assistant message'
+          }),
+          realtimeEvt(2100, 'response.done', {
+            response: {
+              output: [{id: 'item_audio_response', type: 'message'}]
+            }
+          })
+        ]
+      };
+
+      fakeChat.getSelectedChatMessageElements = LivelyChat.prototype.getSelectedChatMessageElements;
+      fakeChat.getSelectedChatMessages = LivelyChat.prototype.getSelectedChatMessages;
+      fakeChat.getSelectedChatMessageIds = LivelyChat.prototype.getSelectedChatMessageIds;
+      fakeChat._getSelectedEventsForExport = LivelyChat.prototype._getSelectedEventsForExport;
+      fakeChat._getCapturedEventMessageIds = LivelyChat.prototype._getCapturedEventMessageIds;
+      fakeChat._eventMatchesSelectedMessages = LivelyChat.prototype._eventMatchesSelectedMessages;
+
+      const events = LivelyChat.prototype._getEventsForExport.call(fakeChat);
+
+      expect(events.map(evt => evt.data.type)).to.deep.equal([
+        'response.audio_transcript.done',
+        'response.done'
+      ]);
+    });
+  });
+
 
   describe('Incremental UI Updates', () => {
 
