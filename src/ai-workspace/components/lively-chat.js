@@ -387,13 +387,19 @@ export default class LivelyChat extends Morph {
 
     if (window.getSelection?.()?.toString().trim()) return;
 
+    const messages = this.getChatMessageElements(container);
+    const anchorIndex = messages.indexOf(message);
+    if (anchorIndex === -1) return;
+
     this._messageSelectionGesture = {
       container,
       startX: evt.clientX,
       startY: evt.clientY,
-      candidateMessage: message,
+      anchorMessage: message,
+      anchorIndex,
       targetSelected: !message.selected,
-      visitedMessages: new Set(),
+      originalStates: new Map(messages.map(ea => [ea, ea.selected])),
+      lastRangeEndIndex: anchorIndex,
       active: false
     };
 
@@ -410,15 +416,15 @@ export default class LivelyChat extends Morph {
 
     if (!gesture.active) {
       gesture.active = true;
-      this.applyDragSelectionToMessage(gesture.candidateMessage, gesture.targetSelected, gesture.visitedMessages);
+      this.applyDragSelectionRange(gesture, gesture.anchorMessage);
       this.updateMessageSelectionMode(gesture.container, true);
     }
 
     evt.preventDefault();
 
-    const hoveredMessage = this.findChatMessageAtPoint(gesture.container, evt.clientX, evt.clientY);
-    if (hoveredMessage) {
-      this.applyDragSelectionToMessage(hoveredMessage, gesture.targetSelected, gesture.visitedMessages);
+    const currentMessage = this.findChatMessageForDragPosition(gesture.container, evt.clientY);
+    if (currentMessage) {
+      this.applyDragSelectionRange(gesture, currentMessage);
     }
   }
 
@@ -464,11 +470,25 @@ export default class LivelyChat extends Morph {
     }, 250);
   }
 
-  applyDragSelectionToMessage(message, selected, visitedMessages = new Set()) {
-    if (!message || visitedMessages.has(message)) return;
+  applyDragSelectionRange(gesture, currentMessage) {
+    if (!gesture || !currentMessage) return;
 
-    visitedMessages.add(message);
-    message.setSelected(selected);
+    const messages = this.getChatMessageElements(gesture.container);
+    const currentIndex = messages.indexOf(currentMessage);
+    if (currentIndex === -1) return;
+
+    const startIndex = Math.min(gesture.anchorIndex, currentIndex);
+    const endIndex = Math.max(gesture.anchorIndex, currentIndex);
+    gesture.lastRangeEndIndex = currentIndex;
+
+    messages.forEach((message, index) => {
+      const inRange = index >= startIndex && index <= endIndex;
+      const desired = inRange
+        ? gesture.targetSelected
+        : gesture.originalStates.get(message);
+
+      message.setSelected(desired, { emit: false });
+    });
   }
 
   getChatMessageElements(container = this.messagesContainer) {
@@ -506,6 +526,33 @@ export default class LivelyChat extends Morph {
     }
 
     return null;
+  }
+
+  findChatMessageForDragPosition(container = this.messagesContainer, clientY) {
+    const messages = this.getChatMessageElements(container);
+    if (messages.length === 0) return null;
+
+    let closestMessage = messages[0];
+    let closestDistance = Infinity;
+
+    for (const message of messages) {
+      const rect = message.getBoundingClientRect();
+
+      if (clientY >= rect.top && clientY <= rect.bottom) {
+        return message;
+      }
+
+      const distance = clientY < rect.top
+        ? rect.top - clientY
+        : clientY - rect.bottom;
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestMessage = message;
+      }
+    }
+
+    return closestMessage;
   }
 
   /**
