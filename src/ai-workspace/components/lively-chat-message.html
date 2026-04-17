@@ -13,17 +13,9 @@
 
     #shell {
       display: grid;
-      grid-template-columns: 0 minmax(0, 1fr);
+      grid-template-columns: 28px minmax(0, 1fr);
       align-items: start;
       width: 100%;
-      transition: grid-template-columns 0.18s ease;
-    }
-
-    :host(:hover) #shell,
-    :host([selected]) #shell,
-    :host([selection-mode]) #shell,
-    :host(:focus-within) #shell {
-      grid-template-columns: 28px minmax(0, 1fr);
     }
 
     .selection-gutter {
