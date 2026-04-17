@@ -540,17 +540,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       // Check for completed or aborted requests when agent becomes idle
       if (status === 'idle') {
+        console.log(`[workspace] Agent idle: message="${message}", type="${type}"`);
         if (message === 'Generation aborted') {
           // Abort case - mark pending request as aborted
+          console.log('[workspace] Handling abort via event');
           this.handleAbortedSession();
         } else if (type === 'session.idle') {
           // Normal completion - check for completed requests with responses
+          console.log('[workspace] Checking for completed requests');
           this.checkAndCompleteRequests();
         }
       }
 
       // Notify realtime chat component
       if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
+        console.log(`[workspace] Notifying realtime: status=${status}, message=${message}, type=${type}`);
         this.realtimeComponent.onAgentStatusChange({
           status: status,
           message: message,
@@ -1115,6 +1119,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
 
     const currentSessionId = this.opencodeComponent.currentSession.id;
+    console.log(`[workspace] checkAndCompleteRequests: session=${currentSessionId}, pending=${this.blackboard.pendingRequests.size}`);
 
     // Check each pending request
     for (const [requestId, request] of this.blackboard.pendingRequests.entries()) {
@@ -1140,6 +1145,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         if (responses.length > 0) {
           // Mark request as completed with ALL responses
+          console.log(`[workspace] Marking requestId=${requestId} as completed with ${responses.length} responses`);
           this.completeRequest(requestId, responses);
         }
       }
@@ -1216,10 +1222,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   handleAbortedSession(requestId = null) {
     // Fall back to last tracked request if none provided
     const targetRequestId = requestId || this.blackboard.lastRequestId;
+    console.log(`[workspace] handleAbortedSession: requestId=${targetRequestId}, hasPending=${this.blackboard.pendingRequests.has(targetRequestId)}`);
 
     // Mark pending request as aborted if we can identify it (idempotent check)
     if (targetRequestId && this.blackboard.pendingRequests.has(targetRequestId)) {
       const request = this.blackboard.pendingRequests.get(targetRequestId);
+      console.log(`[workspace] Marking requestId=${targetRequestId} as aborted, task="${request.task}"`);
       this.blackboard.pendingRequests.delete(targetRequestId);
       this.blackboard.completedRequests.set(targetRequestId, {
         task: request.task,
@@ -1231,6 +1239,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         aborted: true,
         status: 'aborted'
       });
+    } else {
+      console.log(`[workspace] handleAbortedSession: No pending request found for ${targetRequestId}`);
     }
 
     // Clear realtime waiting flags to prevent stale "waiting for reply" state
@@ -1258,6 +1268,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
 
     const targetRequestId = requestId || this.blackboard.lastRequestId;
+    console.log(`[workspace] stopOpenCodeTask: requestId=${targetRequestId}`);
 
     // Abort the session
     const abortResult = await this.abortCurrentSession();
@@ -1267,6 +1278,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Clean up immediately - don't wait for event path
     // (handleAbortedSession is idempotent, so safe if event also triggers it)
+    console.log('[workspace] Calling handleAbortedSession immediately');
     this.handleAbortedSession(targetRequestId);
 
     return {

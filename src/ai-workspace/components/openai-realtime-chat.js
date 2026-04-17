@@ -2065,6 +2065,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   onAgentStatusChange(eventData) {
     const {status, message, eventType, task, timestamp} = eventData;
 
+    console.log('[Audio Chat] Agent status changed:', eventData);
     // this.log('[Audio Chat] Agent status changed:', eventData);
 
     // Store current status (free, no token cost)
@@ -2085,7 +2086,22 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Inject conversation context for major status changes
     // This allows the AI to naturally mention completion without user asking
-    if (status === 'idle' && eventData.eventType === 'session.idle') {
+    if (status === 'idle' && message === 'Generation aborted') {
+      // Agent was aborted - clear waiting state and mark abort
+      if (this.waitingForAgentReply) {
+        this.waitingForAgentReply = false;
+        this.pendingTask = null;
+        this.pendingRequestId = null;
+        this.injectSystemContext(`The coding agent was stopped.`);
+      }
+      // Set flag to suppress subsequent session.idle notification
+      this._recentAbort = true;
+      setTimeout(() => { this._recentAbort = false; }, 2000);
+    } else if (status === 'idle' && eventData.eventType === 'session.idle') {
+      // Skip notification if this is right after an abort
+      if (this._recentAbort) {
+        return;
+      }
       // Agent finished a task
       if (this.waitingForAgentReply) {
         // Automatically relay the agent's response
