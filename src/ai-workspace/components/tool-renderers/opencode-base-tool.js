@@ -4,25 +4,47 @@ import * as ToolHelpers from '../chat-tool-helpers.js';
  * Universal base class for all tool renderers.
  *
  * Provides:
+ *   - parsePart()          normalizes streaming/non-streaming data structures
  *   - createMarkdownEl()   shared factory for lively-markdown elements
  *   - buildDetails()       builds a <details class="compact-tool-call"> wrapper
+ *   - renderCompact()      delegates to render(part, result, showDebug, false)
+ *   - renderCompactStreaming() delegates to render(part, null, showDebug, true)
  *   - renderToolUse        delegates to this.renderCompact(part, result, showDebug)
  *   - renderToolResult     returns null (already rendered in renderToolUse)
- *   - renderToolStreaming   delegates to this.renderCompactStreaming(part, showDebug)
+ *   - renderToolStreaming  delegates to this.renderCompactStreaming(part, showDebug)
  *                          when status === 'completed', otherwise returns null
  *
  * Subclasses must implement:
  *   - matches(part) -> boolean
- *   - async renderCompact(part, result, showDebug) -> HTMLElement
- *   - async renderCompactStreaming(part, showDebug) -> HTMLElement
+ *   - async render(part, result, showDebug, isStreaming) -> HTMLElement
  */
 export class OpenCodeBaseTool {
 
   matches(/*part*/) { return false; }
 
-  async renderCompact(/*part, result, showDebug*/) { return null; }
+  /**
+   * Public rendering methods that delegate to render().
+   * These handle the call-site differences between streaming and non-streaming formats.
+   */
+  async renderCompact(part, result, showDebug) {
+    return this.render(part, result, showDebug, false);
+  }
 
-  async renderCompactStreaming(/*part, showDebug*/) { return null; }
+  async renderCompactStreaming(part, showDebug) {
+    return this.render(part, null, showDebug, true);
+  }
+
+  /**
+   * Main rendering hook that subclasses override.
+   * Use this.parsePart(part, result) to extract normalized data.
+   * 
+   * @param {object} part - The tool use part
+   * @param {object} result - The tool result (null for streaming)
+   * @param {boolean} showDebug - Whether to show debug information
+   * @param {boolean} isStreaming - True if rendering streaming format
+   * @returns {HTMLElement} The rendered element
+   */
+  async render(/*part, result, showDebug, isStreaming*/) { return null; }
 
   // ── shared helpers ───────────────────────────────────────────────────────
 

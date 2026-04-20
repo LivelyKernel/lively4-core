@@ -33,15 +33,7 @@ export class OpenCodeWebFetchTool extends OpenCodeBaseTool {
     return { text: lines.slice(0, maxLines).join('\n'), wasTruncated: true, totalLines };
   }
 
-  async renderCompact(part, result, showDebug) {
-    return this._renderShared(part, result, showDebug, false);
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    return this._renderShared(part, null, showDebug, true);
-  }
-
-  async _renderShared(part, result, showDebug, isStreaming) {
+  async render(part, result, showDebug, isStreaming) {
     const data = this.parsePart(part, result);
     const url = data.input.url || '';
     const format = data.input.format || 'markdown';

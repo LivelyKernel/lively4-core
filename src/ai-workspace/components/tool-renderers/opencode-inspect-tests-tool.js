@@ -43,15 +43,7 @@ export class OpenCodeInspectTestsTool extends OpenCodeBaseTool {
     return `${icon} ${label}`;
   }
 
-  async renderCompact(part, result, showDebug) {
-    return this._renderShared(part, result, showDebug, false);
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    return this._renderShared(part, null, showDebug, true);
-  }
-
-  async _renderShared(part, result, showDebug, isStreaming) {
+  async render(part, result, showDebug, isStreaming) {
     const data = this.parsePart(part, result);
 
     if (!data.toolId) {

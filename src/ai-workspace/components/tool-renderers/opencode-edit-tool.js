@@ -48,19 +48,21 @@ export class OpenCodeEditTool extends OpenCodeBaseTool {
     }
   }
 
-  async renderCompact(part, result, showDebug) {
+  async render(part, result, showDebug, isStreaming) {
     const data = this.parsePart(part, result);
     this.parseEditInput(data);
 
     if (!data.toolId) {
-      console.warn('OpenCodeEditTool.renderCompact: toolId is missing', part);
+      console.warn('OpenCodeEditTool: toolId is missing', part);
     }
 
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
     const details = await this.buildDetails(
       data.toolId, 
       `✏️ ${data.fileName}${data.replaceAll ? ' (replace all)' : ''}`, 
       data.input, 
-      showDebug
+      showDebug,
+      debugLabel
     );
 
     details.appendChild(await this.createMarkdownEl('**Changes:**'));
@@ -70,7 +72,7 @@ export class OpenCodeEditTool extends OpenCodeBaseTool {
       details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     } else if (data.output && showDebug) {
       details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${data.output}\n\`\`\``));
-    } else if (result && !data.isError && showDebug) {
+    } else if (!isStreaming && result && !data.isError && showDebug) {
       details.appendChild(await this.createMarkdownEl('✅ Edit applied successfully'));
     }
 

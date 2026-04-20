@@ -41,15 +41,7 @@ export class OpenCodeBatchTool extends OpenCodeBaseTool {
     return this.createMarkdownEl(`| Tool | Parameters |\n|---|---|\n${rows.join('\n')}`);
   }
 
-  async renderCompact(part, result, showDebug) {
-    return this._renderShared(part, result, showDebug, false);
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    return this._renderShared(part, null, showDebug, true);
-  }
-
-  async _renderShared(part, result, showDebug, isStreaming) {
+  async render(part, result, showDebug, isStreaming) {
     const data = this.parsePart(part, result);
     const toolCalls = data.input.tool_calls || [];
 
