@@ -64,8 +64,8 @@ export class OpenCodeEditTool extends OpenCodeBaseTool {
       showDebug,
       debugLabel
     );
+    details.open = true;
 
-    details.appendChild(await this.createMarkdownEl('**Changes:**'));
     details.appendChild(this.generateInlineDiffEl(data.oldString, data.newString));
 
     if (data.isError) {
