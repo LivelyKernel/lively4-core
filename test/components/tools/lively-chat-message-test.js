@@ -290,9 +290,12 @@ describe('LivelyChatMessage', () => {
       await component.setOpenCodeMessage(opencodeMessage);
 
       const partsContainer = component.get('#partsContainer');
+      const details = partsContainer.querySelector('details.thinking-block');
+
       expect(partsContainer).to.exist;
-      expect(partsContainer.textContent).to.include('Thinking...');
-      expect(partsContainer.querySelector('details')).to.exist;
+      expect(details).to.exist;
+      expect(details.querySelector('summary').textContent).to.include('I am checking two options');
+      expect(details.textContent).to.include('and comparing tradeoffs.');
     });
 
     it('should render full apply_patch content inside the details block', async () => {
