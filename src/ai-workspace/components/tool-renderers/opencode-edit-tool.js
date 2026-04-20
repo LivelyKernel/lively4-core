@@ -14,6 +14,18 @@ export class OpenCodeEditTool extends OpenCodeBaseTool {
   }
 
   /**
+   * Parse edit-specific input parameters and add them to the data object.
+   * Mutates the data object by adding: filePath, fileName, oldString, newString, replaceAll
+   */
+  parseEditInput(data) {
+    data.filePath = data.input.filePath || 'unknown';
+    data.fileName = ToolHelpers.getFileName(data.filePath);
+    data.oldString = data.input.oldString || '';
+    data.newString = data.input.newString || '';
+    data.replaceAll = data.input.replaceAll || false;
+  }
+
+  /**
    * Generate an inline-diff DOM element using diff-match-patch.
    * diff_prettyHtml() returns an HTML string, which we inject via innerHTML.
    * @returns {HTMLElement}
@@ -37,57 +49,29 @@ export class OpenCodeEditTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const filePath = input.filePath || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeEditTool.renderCompact: part.id is missing', part);
+    const data = this.parsePart(part, result);
+    this.parseEditInput(data);
 
-    const oldString = input.oldString || '';
-    const newString = input.newString || '';
-    const replaceAll = input.replaceAll || false;
-
-    const details = await this.buildDetails(
-      toolId, `✏️ ${fileName}${replaceAll ? ' (replace all)' : ''}`, input, showDebug
-    );
-
-    details.appendChild(await this.createMarkdownEl('**Changes:**'));
-    details.appendChild(this.generateInlineDiffEl(oldString, newString));
-
-    if (result) {
-      if (result.is_error) {
-        const errorContent = ToolHelpers.extractResultContent(result);
-        details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${errorContent}\n\`\`\``));
-      } else if (showDebug) {
-        details.appendChild(await this.createMarkdownEl('✅ Edit applied successfully'));
-      }
+    if (!data.toolId) {
+      console.warn('OpenCodeEditTool.renderCompact: toolId is missing', part);
     }
 
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const filePath = input.filePath || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeEditTool.renderCompactStreaming: part.callID is missing', part);
-
-    const oldString = input.oldString || '';
-    const newString = input.newString || '';
-    const replaceAll = input.replaceAll || false;
-
     const details = await this.buildDetails(
-      toolId, `✏️ ${fileName}${replaceAll ? ' (replace all)' : ''}`, input, showDebug, 'Input'
+      data.toolId, 
+      `✏️ ${data.fileName}${data.replaceAll ? ' (replace all)' : ''}`, 
+      data.input, 
+      showDebug
     );
 
     details.appendChild(await this.createMarkdownEl('**Changes:**'));
-    details.appendChild(this.generateInlineDiffEl(oldString, newString));
+    details.appendChild(this.generateInlineDiffEl(data.oldString, data.newString));
 
-    if (output && showDebug) {
-      details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${output}\n\`\`\``));
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
+    } else if (data.output && showDebug) {
+      details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${data.output}\n\`\`\``));
+    } else if (result && !data.isError && showDebug) {
+      details.appendChild(await this.createMarkdownEl('✅ Edit applied successfully'));
     }
 
     return details;

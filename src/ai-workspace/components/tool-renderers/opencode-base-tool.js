@@ -27,6 +27,28 @@ export class OpenCodeBaseTool {
   // ── shared helpers ───────────────────────────────────────────────────────
 
   /**
+   * Parse part data from either streaming or non-streaming format.
+   * Normalizes the different data structures into a single data object.
+   * 
+   * @param {object} part - The tool use part (streaming or non-streaming)
+   * @param {object} result - The tool result (null for streaming)
+   * @returns {object} data object with: input, output, toolId, isError
+   */
+  parsePart(part, result) {
+    const data = {};
+    const isStreamingFormat = part.state !== undefined;
+    
+    data.input = isStreamingFormat ? (part.state?.input || {}) : (part.input || {});
+    data.output = isStreamingFormat 
+      ? (part.state?.output || '') 
+      : (result ? ToolHelpers.extractResultContent(result) : '');
+    data.toolId = isStreamingFormat ? part.callID : part.id;
+    data.isError = result?.is_error || false;
+    
+    return data;
+  }
+
+  /**
    * Create an initialized lively-markdown element with content set.
    */
   async createMarkdownEl(markdownText) {
