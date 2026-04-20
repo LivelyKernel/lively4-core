@@ -200,6 +200,85 @@ describe('LivelyChatMessage', () => {
       expect(content.textContent).to.include('third  line');
     });
 
+    it('should keep normal paragraph wrapping for assistant markdown messages', async () => {
+      const text = 'first line\n  indented line\nthird  line';
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'text',
+          text
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const markdown = component.get('#partsContainer lively-markdown');
+      expect(markdown).to.exist;
+      expect(markdown.hasAttribute('preserve-whitespace')).to.equal(true);
+
+      const paragraph = markdown.shadowRoot.querySelector('#content p');
+      expect(paragraph).to.exist;
+      expect(getComputedStyle(paragraph).whiteSpace).to.equal('normal');
+    });
+
+    it('should preserve whitespace and allow wrapping for assistant markdown code blocks', async () => {
+      const code = 'first line\n  indented line\nverylongtoken_without_spaces_that_should_still_wrap';
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'text',
+          text: `\`\`\`js\n${code}\n\`\`\``
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const wrappedMarkdown = component.shadowRoot.querySelector('#partsContainer lively-markdown');
+      expect(wrappedMarkdown).to.exist;
+      expect(wrappedMarkdown.hasAttribute('preserve-whitespace')).to.equal(true);
+
+      const pre = wrappedMarkdown.shadowRoot.querySelector('#content pre');
+      const codeEl = wrappedMarkdown.shadowRoot.querySelector('#content pre code');
+      expect(pre).to.exist;
+      expect(codeEl).to.exist;
+      expect(codeEl.textContent).to.include('  indented line');
+      expect(getComputedStyle(pre).whiteSpace).to.equal('pre-wrap');
+      expect(getComputedStyle(pre).overflowWrap).to.equal('anywhere');
+    });
+
+    it('should preserve whitespace and allow wrapping for tool code blocks', async () => {
+      const content = 'first line\n  indented line\nverylongtoken_without_spaces_that_should_still_wrap';
+      const opencodeMessage = {
+        info: { role: 'assistant' },
+        parts: [{
+          type: 'tool_use',
+          id: 'call_read_wrap_1',
+          name: 'read',
+          input: {
+            filePath: '/tmp/example.js'
+          }
+        }, {
+          type: 'tool_result',
+          tool_use_id: 'call_read_wrap_1',
+          content: `<content>${content}</content>`
+        }]
+      };
+
+      await component.setOpenCodeMessage(opencodeMessage);
+
+      const wrappedMarkdown = component.shadowRoot.querySelector('#partsContainer details.compact-tool-call lively-markdown');
+      expect(wrappedMarkdown).to.exist;
+      expect(wrappedMarkdown.hasAttribute('preserve-whitespace')).to.equal(true);
+
+      const pre = wrappedMarkdown.shadowRoot.querySelector('#content pre');
+      const codeEl = wrappedMarkdown.shadowRoot.querySelector('#content pre code');
+      expect(pre).to.exist;
+      expect(codeEl).to.exist;
+      expect(codeEl.textContent).to.include('  indented line');
+      expect(getComputedStyle(pre).whiteSpace).to.equal('pre-wrap');
+      expect(getComputedStyle(pre).overflowWrap).to.equal('anywhere');
+    });
+
     it('should render todowrite as expanded details', async () => {
       const opencodeMessage = {
         info: { role: 'assistant' },

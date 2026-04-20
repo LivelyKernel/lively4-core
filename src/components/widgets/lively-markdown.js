@@ -70,8 +70,25 @@ export default class LivelyMarkdown extends Morph {
   }
   
   attributeChangedCallback(attr, oldVal, newVal) {
+    if (attr === 'preserve-whitespace') {
+      this.applyWhitespacePreservation();
+    }
     var method = "on" + Strings.toUpperCaseFirst(attr) + "Changed"
     if (this[method]) this[method](newVal, oldVal)
+  }
+
+  applyWhitespacePreservation(root = this.get("#content")) {
+    if (!root) return;
+
+    const preserveWhitespace = this.hasAttribute('preserve-whitespace');
+    const setStyle = (elements, whiteSpace) => {
+      elements.forEach(element => {
+        element.style.whiteSpace = preserveWhitespace ? whiteSpace : '';
+        element.style.overflowWrap = preserveWhitespace ? 'anywhere' : '';
+      });
+    };
+
+    setStyle(root.querySelectorAll('pre, pre code'), 'pre-wrap');
   }
   
   onContenteditableChanged(value, oldVal) {
@@ -184,8 +201,10 @@ export default class LivelyMarkdown extends Morph {
         }
       })
     })
-    
-    
+
+    this.applyWhitespacePreservation(root)
+
+
     if (configPresentation)
       this.startPresentation()
 

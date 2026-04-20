@@ -61,6 +61,7 @@ export class OpenCodeBaseTool {
    */
   async createMarkdownEl(markdownText) {
     const md = await lively.create('lively-markdown');
+    md.setAttribute('preserve-whitespace', '');
     await md.setContent(markdownText);
     return md;
   }

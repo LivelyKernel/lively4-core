@@ -646,12 +646,14 @@ export default class LivelyChatMessage extends Morph {
    */
   async createMarkdownElement(markdownText) {
     const md = await lively.create('lively-markdown');
+    md.setAttribute('preserve-whitespace', '');
     try {
       await md.setContent(markdownText);
     } catch (error) {
       // If markdown rendering fails (e.g., script error), show error instead of breaking message
       console.error('[lively-chat-message] Markdown rendering error:', error);
       const errorMd = await lively.create('lively-markdown');
+      errorMd.setAttribute('preserve-whitespace', '');
       await errorMd.setContent(`**⚠️ Markdown Rendering Error**\n\n\`\`\`\n${error.message || error}\n\`\`\``);
       return errorMd;
     }

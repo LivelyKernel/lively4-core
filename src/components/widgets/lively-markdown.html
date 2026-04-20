@@ -67,6 +67,12 @@
       content: ""
     }
 
+    :host([preserve-whitespace]) #content pre,
+    :host([preserve-whitespace]) #content pre code {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
 
   </style>
   <div id="content">
