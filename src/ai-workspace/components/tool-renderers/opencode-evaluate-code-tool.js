@@ -39,17 +39,27 @@ export class OpenCodeEvaluateCodeTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const code = input.code || '';
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeEvaluateCodeTool.renderCompact: part.id is missing', part);
+    return this._renderShared(part, result, showDebug, false);
+  }
 
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const icon = this.statusIcon(rawOutput);
+  async renderCompactStreaming(part, showDebug) {
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const code = data.input.code || '';
+
+    if (!data.toolId) {
+      console.warn('OpenCodeEvaluateCodeTool: toolId is missing', part);
+    }
+
+    const icon = this.statusIcon(data.output);
     const label = this.codeLabel(code);
     const summaryText = `${icon} ${label}`;
 
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
 
     // Code block
     if (code) {
@@ -59,8 +69,8 @@ export class OpenCodeEvaluateCodeTool extends OpenCodeBaseTool {
     }
 
     // Parsed output: result + console
-    if (rawOutput) {
-      const parsed = ToolHelpers.parseLively4EvaluateOutput(rawOutput);
+    if (data.output) {
+      const parsed = ToolHelpers.parseLively4EvaluateOutput(data.output);
       if (parsed) {
         const outputParts = [];
         if (parsed.result) outputParts.push(`**Result:**\n\`\`\`\n${parsed.result}\n\`\`\``);
@@ -69,46 +79,7 @@ export class OpenCodeEvaluateCodeTool extends OpenCodeBaseTool {
           details.appendChild(await this.createMarkdownEl(outputParts.join('\n\n')));
         }
       } else if (showDebug) {
-        details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${rawOutput}\n\`\`\``));
-      }
-    }
-
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const code = input.code || '';
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeEvaluateCodeTool.renderCompactStreaming: part.callID is missing', part);
-
-    const icon = this.statusIcon(output);
-    const label = this.codeLabel(code);
-    const summaryText = `${icon} ${label}`;
-
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
-
-    // Code block
-    if (code) {
-      details.appendChild(await this.createMarkdownEl(
-        `\`\`\`javascript\n${code.trim()}\n\`\`\``
-      ));
-    }
-
-    // Parsed output
-    if (output) {
-      const parsed = ToolHelpers.parseLively4EvaluateOutput(output);
-      if (parsed) {
-        const outputParts = [];
-        if (parsed.result) outputParts.push(`**Result:**\n\`\`\`\n${parsed.result}\n\`\`\``);
-        if (parsed.consoleOutput) outputParts.push(`**Console output:**\n\`\`\`\n${parsed.consoleOutput}\n\`\`\``);
-        if (outputParts.length) {
-          details.appendChild(await this.createMarkdownEl(outputParts.join('\n\n')));
-        }
-      } else if (showDebug) {
-        details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${output}\n\`\`\``));
+        details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${data.output}\n\`\`\``));
       }
     }
 

@@ -102,40 +102,25 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const patchText = input.patchText || '';
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeApplyPatchTool.renderCompact: part.id is missing', part);
-
-    const ops = this.parsePatch(patchText);
-    const summary = this.buildSummary(ops);
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-    details.open = true;
-
-    const opsEl = await this.renderOps(ops);
-    if (opsEl) details.appendChild(opsEl);
-
-    const patchBlock = await this.buildPatchBlock(patchText);
-    if (patchBlock) details.appendChild(patchBlock);
-
-    if (result && result.is_error) {
-      const errorContent = ToolHelpers.extractResultContent(result);
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${errorContent}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const patchText = input.patchText || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeApplyPatchTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const patchText = data.input.patchText || '';
+
+    if (!data.toolId) {
+      console.warn('OpenCodeApplyPatchTool: toolId is missing', part);
+    }
 
     const ops = this.parsePatch(patchText);
     const summary = this.buildSummary(ops);
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
     details.open = true;
 
     const opsEl = await this.renderOps(ops);
@@ -143,6 +128,10 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
 
     const patchBlock = await this.buildPatchBlock(patchText);
     if (patchBlock) details.appendChild(patchBlock);
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
+    }
 
     return details;
   }

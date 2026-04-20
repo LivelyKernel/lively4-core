@@ -23,47 +23,34 @@ export class OpenCodeCodeSearchTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const query = input.query || '';
-    const tokensNum = input.tokensNum || 5000;
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeCodeSearchTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const hasError = result && result.is_error;
-    const summary = `🔎 code: "${query.length > 60 ? query.slice(0, 60) + '…' : query}"`;
-
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    if (rawOutput && !hasError) {
-      const { text, wasTruncated, totalLines } = this.truncate(rawOutput, 40);
-      const suffix = wasTruncated ? `\n\n*… ${totalLines - 40} more lines (${tokensNum} tokens requested)*` : '';
-      details.appendChild(await this.createMarkdownEl(text + suffix));
-    }
-
-    if (hasError) {
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${rawOutput}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const query = input.query || '';
-    const tokensNum = input.tokensNum || 5000;
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeCodeSearchTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const query = data.input.query || '';
+    const tokensNum = data.input.tokensNum || 5000;
+
+    if (!data.toolId) {
+      console.warn('OpenCodeCodeSearchTool: toolId is missing', part);
+    }
 
     const summary = `🔎 code: "${query.length > 60 ? query.slice(0, 60) + '…' : query}"`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
-    if (output) {
-      const { text, wasTruncated, totalLines } = this.truncate(output, 40);
+    if (data.output && !data.isError) {
+      const { text, wasTruncated, totalLines } = this.truncate(data.output, 40);
       const suffix = wasTruncated ? `\n\n*… ${totalLines - 40} more lines (${tokensNum} tokens requested)*` : '';
       details.appendChild(await this.createMarkdownEl(text + suffix));
+    }
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

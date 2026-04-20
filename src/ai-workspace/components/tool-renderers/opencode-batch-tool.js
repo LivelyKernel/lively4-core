@@ -42,51 +42,36 @@ export class OpenCodeBatchTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolCalls = input.tool_calls || [];
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeBatchTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const hasError = result && result.is_error;
-
-    const summary = this.buildSummary(toolCalls);
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    const listEl = await this.renderToolCallList(toolCalls, showDebug);
-    if (listEl) details.appendChild(listEl);
-
-    if (rawOutput && showDebug) {
-      const { text, wasTruncated, totalLines } = this._truncate(rawOutput, 30);
-      const suffix = wasTruncated ? `\n\n*… ${totalLines - 30} more lines*` : '';
-      details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${text}\n\`\`\`${suffix}`));
-    }
-
-    if (hasError) {
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${rawOutput}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolCalls = input.tool_calls || [];
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeBatchTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const toolCalls = data.input.tool_calls || [];
+
+    if (!data.toolId) {
+      console.warn('OpenCodeBatchTool: toolId is missing', part);
+    }
 
     const summary = this.buildSummary(toolCalls);
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
     const listEl = await this.renderToolCallList(toolCalls, showDebug);
     if (listEl) details.appendChild(listEl);
 
-    if (output && showDebug) {
-      const { text, wasTruncated, totalLines } = this._truncate(output, 30);
+    if (data.output && showDebug) {
+      const { text, wasTruncated, totalLines } = this._truncate(data.output, 30);
       const suffix = wasTruncated ? `\n\n*… ${totalLines - 30} more lines*` : '';
       details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${text}\n\`\`\`${suffix}`));
+    }
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

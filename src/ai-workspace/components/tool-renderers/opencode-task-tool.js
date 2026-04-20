@@ -78,21 +78,29 @@ export class OpenCodeTaskTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeTaskTool.renderCompact: part.id is missing', part);
+    return this._renderShared(part, result, showDebug, false);
+  }
 
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const { taskId, result: parsedResult } = this.parseOutput(rawOutput);
-    const hasError = result && result.is_error;
-    const status = hasError ? 'error' : (rawOutput ? 'completed' : 'pending');
+  async renderCompactStreaming(part, showDebug) {
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const input = data.input;
+
+    if (!data.toolId) {
+      console.warn('OpenCodeTaskTool: toolId is missing', part);
+    }
+
+    const { taskId, result: parsedResult } = this.parseOutput(data.output);
+    const status = isStreaming ? 'completed' : (data.isError ? 'error' : (data.output ? 'completed' : 'pending'));
 
     const summaryText = this.buildSummaryText(input, status);
-    const details = await this.buildDetails(toolId, summaryText, input, false);
+    const details = await this.buildDetails(data.toolId, summaryText, input, false);
 
     // Status line
-    const statusLine = `**Status:** ${status}`;
-    details.appendChild(await this.createMarkdownEl(statusLine));
+    details.appendChild(await this.createMarkdownEl(`**Status:** ${status}`));
 
     // Input block
     const inputFields = {};
@@ -114,44 +122,8 @@ export class OpenCodeTaskTool extends OpenCodeBaseTool {
       details.appendChild(await this.createMarkdownEl(`*Task ID: ${taskId}*`));
     }
 
-    if (hasError) {
+    if (!isStreaming && data.isError) {
       details.appendChild(await this.createMarkdownEl('**⚠️ Task failed with error**'));
-    }
-
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeTaskTool.renderCompactStreaming: part.callID is missing', part);
-
-    const { taskId, result: parsedResult } = this.parseOutput(output);
-    const summaryText = this.buildSummaryText(input, 'completed');
-
-    const details = await this.buildDetails(toolId, summaryText, input, false, 'Input');
-
-    // Status line
-    details.appendChild(await this.createMarkdownEl('**Status:** completed'));
-
-    // Input block
-    const inputFields = {};
-    if (input.description) inputFields.description = input.description;
-    if (input.subagent_type) inputFields.subagent_type = input.subagent_type;
-    if (input.prompt) inputFields.prompt = input.prompt;
-    details.appendChild(await this.createMarkdownEl(
-      `**Input:**\n\`\`\`json\n${JSON.stringify(Object.keys(inputFields).length > 0 ? inputFields : input, null, 2)}\n\`\`\``
-    ));
-
-    // Output block
-    if (parsedResult) {
-      details.appendChild(await this.createMarkdownEl(`**Output:**\n\n${parsedResult}`));
-    }
-
-    if (taskId && showDebug) {
-      details.appendChild(await this.createMarkdownEl(`*Task ID: ${taskId}*`));
     }
 
     return details;

@@ -13,39 +13,27 @@ export class OpenCodeReadTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const filePath = input.filePath || input.path || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const rangeInfo = ToolHelpers.generateRangeInfo(input);
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeReadTool.renderCompact: part.id is missing', part);
-    const language = ToolHelpers.detectLanguage(fileName);
-    const rawContent = ToolHelpers.extractResultContent(result);
-    const content = ToolHelpers.parseReadToolContent(rawContent);
-
-    const details = await this.buildDetails(toolId, `📖 ${fileName}${rangeInfo}`, input, showDebug);
-
-    if (content) {
-      const label = showDebug ? '**Output:**\n' : '';
-      details.appendChild(await this.createMarkdownEl(`${label}\`\`\`${language}\n${content}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const filePath = input.filePath || input.path || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const rangeInfo = ToolHelpers.generateRangeInfo(input);
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeReadTool.renderCompactStreaming: part.callID is missing', part);
-    const language = ToolHelpers.detectLanguage(fileName);
-    const content = ToolHelpers.parseReadToolContent(output);
+    return this._renderShared(part, null, showDebug, true);
+  }
 
-    const details = await this.buildDetails(toolId, `📖 ${fileName}${rangeInfo}`, input, showDebug, 'Input');
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const filePath = data.input.filePath || data.input.path || 'unknown';
+    const fileName = ToolHelpers.getFileName(filePath);
+    const rangeInfo = ToolHelpers.generateRangeInfo(data.input);
+    const language = ToolHelpers.detectLanguage(fileName);
+    const content = ToolHelpers.parseReadToolContent(data.output);
+
+    if (!data.toolId) {
+      console.warn('OpenCodeReadTool: toolId is missing', part);
+    }
+
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, `📖 ${fileName}${rangeInfo}`, data.input, showDebug, debugLabel);
 
     if (content) {
       const label = showDebug ? '**Output:**\n' : '';

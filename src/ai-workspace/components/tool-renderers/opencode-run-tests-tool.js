@@ -50,37 +50,28 @@ export class OpenCodeRunTestsTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeRunTestsTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const { summary: outputSummary } = this.parseOutput(rawOutput);
-    const summaryText = this.buildSummaryText(input, outputSummary);
-
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-
-    if (rawOutput) {
-      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${rawOutput}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeRunTestsTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
 
-    const { summary: outputSummary } = this.parseOutput(output);
-    const summaryText = this.buildSummaryText(input, outputSummary);
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
 
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
+    if (!data.toolId) {
+      console.warn('OpenCodeRunTestsTool: toolId is missing', part);
+    }
 
-    if (output) {
-      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${output}\n\`\`\``));
+    const { summary: outputSummary } = this.parseOutput(data.output);
+    const summaryText = this.buildSummaryText(data.input, outputSummary);
+
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
+
+    if (data.output) {
+      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

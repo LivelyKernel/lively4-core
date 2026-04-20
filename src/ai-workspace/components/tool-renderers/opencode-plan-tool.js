@@ -33,48 +33,32 @@ export class OpenCodePlanTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const toolName = part.name || part.tool || '';
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodePlanTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const { from, to, icon } = this.modeLabel(toolName);
-    const answer = this.parseAnswer(rawOutput);
-    const switched = answer === 'Yes';
-
-    const summaryText = switched
-      ? `${icon} switched to ${to} agent`
-      : `${icon} stayed in ${from} agent`;
-
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-
-    if (answer) {
-      const actionMd = switched
-        ? `Switched from **${from}** → **${to}** agent`
-        : `Remained in **${from}** agent`;
-      details.appendChild(await this.createMarkdownEl(actionMd));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const toolName = part.tool || '';
-    const state = part.state || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodePlanTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const toolName = part.name || part.tool || '';
+
+    if (!data.toolId) {
+      console.warn('OpenCodePlanTool: toolId is missing', part);
+    }
 
     const { from, to, icon } = this.modeLabel(toolName);
-    const answer = this.parseAnswer(output);
+    const answer = this.parseAnswer(data.output);
     const switched = answer === 'Yes';
 
     const summaryText = switched
       ? `${icon} switched to ${to} agent`
       : `${icon} ${answer ? `stayed in ${from} agent` : `plan mode prompt`}`;
 
-    const details = await this.buildDetails(toolId, summaryText, {}, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const inputForDebug = isStreaming ? {} : data.input;
+    const details = await this.buildDetails(data.toolId, summaryText, inputForDebug, showDebug, debugLabel);
 
     if (answer) {
       const actionMd = switched

@@ -44,35 +44,26 @@ export class OpenCodeInspectTestsTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeInspectTestsTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-
-    // Strip the leading "inspect-test-results successful in Xms (...)" header line
-    const body = rawOutput.replace(/^inspect-test-results successful[^\n]*\n\n?/, '').trim();
-
-    const summaryText = this.buildSummaryText(input, body);
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-
-    if (body) {
-      details.appendChild(await this.createMarkdownEl(body));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeInspectTestsTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
 
-    const body = output.replace(/^inspect-test-results successful[^\n]*\n\n?/, '').trim();
-    const summaryText = this.buildSummaryText(input, body);
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+
+    if (!data.toolId) {
+      console.warn('OpenCodeInspectTestsTool: toolId is missing', part);
+    }
+
+    // Strip the leading "inspect-test-results successful in Xms (...)" header line
+    const body = data.output.replace(/^inspect-test-results successful[^\n]*\n\n?/, '').trim();
+
+    const summaryText = this.buildSummaryText(data.input, body);
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
 
     if (body) {
       details.appendChild(await this.createMarkdownEl(body));

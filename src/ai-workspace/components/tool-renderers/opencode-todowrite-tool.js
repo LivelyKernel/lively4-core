@@ -66,28 +66,24 @@ export class OpenCodeTodoWriteTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const todos = input.todos || [];
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeTodoWriteTool.renderCompact: part.id is missing', part);
-
-    const summaryText = this.buildSummaryText(todos);
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-    details.open = true;
-    details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const todos = input.todos || [];
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeTodoWriteTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const todos = data.input.todos || [];
+
+    if (!data.toolId) {
+      console.warn('OpenCodeTodoWriteTool: toolId is missing', part);
+    }
 
     const summaryText = this.buildSummaryText(todos);
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
     details.open = true;
     details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
 

@@ -29,49 +29,36 @@ export class OpenCodeMultiEditTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const filePath = input.filePath || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const edits = input.edits || [];
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeMultiEditTool.renderCompact: part.id is missing', part);
-
-    const hasError = result && result.is_error;
-    const summary = `✏️ ${fileName} (${edits.length} edit${edits.length === 1 ? '' : 's'})`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    for (const [i, edit] of edits.entries()) {
-      if (edits.length > 1) {
-        details.appendChild(await this.createMarkdownEl(`**Edit ${i + 1}${edit.replaceAll ? ' (replace all)' : ''}:**`));
-      }
-      details.appendChild(this.generateInlineDiffEl(edit.oldString || '', edit.newString || ''));
-    }
-
-    if (hasError) {
-      const errorContent = ToolHelpers.extractResultContent(result);
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${errorContent}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const filePath = input.filePath || 'unknown';
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const filePath = data.input.filePath || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
-    const edits = input.edits || [];
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeMultiEditTool.renderCompactStreaming: part.callID is missing', part);
+    const edits = data.input.edits || [];
+
+    if (!data.toolId) {
+      console.warn('OpenCodeMultiEditTool: toolId is missing', part);
+    }
 
     const summary = `✏️ ${fileName} (${edits.length} edit${edits.length === 1 ? '' : 's'})`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
     for (const [i, edit] of edits.entries()) {
       if (edits.length > 1) {
         details.appendChild(await this.createMarkdownEl(`**Edit ${i + 1}${edit.replaceAll ? ' (replace all)' : ''}:**`));
       }
       details.appendChild(this.generateInlineDiffEl(edit.oldString || '', edit.newString || ''));
+    }
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

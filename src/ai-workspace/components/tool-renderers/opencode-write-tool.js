@@ -26,46 +26,22 @@ export class OpenCodeWriteTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const filePath = input.filePath || input.path || 'unknown';
-    const fileName = ToolHelpers.getFileName(filePath);
-    const content = input.content || '';
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeWriteTool.renderCompact: part.id is missing', part);
-
-    const language = ToolHelpers.detectLanguage(fileName);
-    const { truncated, originalLineCount, wasTruncated } = this.truncateContent(content, 20);
-
-    const summaryText = wasTruncated
-      ? `💾 ${fileName} (${originalLineCount} lines)`
-      : `💾 ${fileName}`;
-
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-
-    if (truncated) {
-      const label = showDebug ? '**Content:**\n' : '';
-      const suffix = wasTruncated ? `\n*… ${originalLineCount - 20} more lines*` : '';
-      details.appendChild(await this.createMarkdownEl(
-        `${label}\`\`\`${language}\n${truncated}\n\`\`\`${suffix}`
-      ));
-    }
-
-    if (result && result.is_error) {
-      const errorContent = ToolHelpers.extractResultContent(result);
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${errorContent}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const content = input.content || '';
-    const filePath = input.filePath || input.path || 'unknown';
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const filePath = data.input.filePath || data.input.path || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeWriteTool.renderCompactStreaming: part.callID is missing', part);
+    const content = data.input.content || '';
+
+    if (!data.toolId) {
+      console.warn('OpenCodeWriteTool: toolId is missing', part);
+    }
 
     const language = ToolHelpers.detectLanguage(fileName);
     const { truncated, originalLineCount, wasTruncated } = this.truncateContent(content, 20);
@@ -74,7 +50,8 @@ export class OpenCodeWriteTool extends OpenCodeBaseTool {
       ? `💾 ${fileName} (${originalLineCount} lines)`
       : `💾 ${fileName}`;
 
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
 
     if (truncated) {
       const label = showDebug ? '**Content:**\n' : '';
@@ -82,6 +59,10 @@ export class OpenCodeWriteTool extends OpenCodeBaseTool {
       details.appendChild(await this.createMarkdownEl(
         `${label}\`\`\`${language}\n${truncated}\n\`\`\`${suffix}`
       ));
+    }
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

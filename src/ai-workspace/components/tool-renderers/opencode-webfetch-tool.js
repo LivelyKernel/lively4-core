@@ -34,58 +34,39 @@ export class OpenCodeWebFetchTool extends OpenCodeBaseTool {
   }
 
   async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const url = input.url || '';
-    const format = input.format || 'markdown';
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeWebFetchTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const hasError = result && result.is_error;
-
-    const label = this.urlLabel(url);
-    const summary = `🌐 ${label}`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    if (rawOutput && !hasError) {
-      const { text, wasTruncated, totalLines } = this.truncate(rawOutput, 30);
-      const suffix = wasTruncated ? `\n\n*… ${totalLines - 30} more lines*` : '';
-      // If format is markdown, render as markdown directly; otherwise use code block
-      if (format === 'markdown') {
-        details.appendChild(await this.createMarkdownEl(text + suffix));
-      } else {
-        details.appendChild(await this.createMarkdownEl(`\`\`\`\n${text}\n\`\`\`${suffix}`));
-      }
-    }
-
-    if (hasError) {
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${rawOutput}\n\`\`\``));
-    }
-
-    return details;
+    return this._renderShared(part, result, showDebug, false);
   }
 
   async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const url = input.url || '';
-    const format = input.format || 'markdown';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeWebFetchTool.renderCompactStreaming: part.callID is missing', part);
+    return this._renderShared(part, null, showDebug, true);
+  }
+
+  async _renderShared(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const url = data.input.url || '';
+    const format = data.input.format || 'markdown';
+
+    if (!data.toolId) {
+      console.warn('OpenCodeWebFetchTool: toolId is missing', part);
+    }
 
     const label = this.urlLabel(url);
     const summary = `🌐 ${label}`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : 'Arguments';
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
-    if (output) {
-      const { text, wasTruncated, totalLines } = this.truncate(output, 30);
+    if (data.output && !data.isError) {
+      const { text, wasTruncated, totalLines } = this.truncate(data.output, 30);
       const suffix = wasTruncated ? `\n\n*… ${totalLines - 30} more lines*` : '';
       if (format === 'markdown') {
         details.appendChild(await this.createMarkdownEl(text + suffix));
       } else {
         details.appendChild(await this.createMarkdownEl(`\`\`\`\n${text}\n\`\`\`${suffix}`));
       }
+    }
+
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;
