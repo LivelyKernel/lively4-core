@@ -964,15 +964,14 @@ OpenCodeBaseTool (Base Renderer)
 
 **Core Methods:**
 ```javascript
-matches(toolName)              // Check if tool matches
-renderCompact(part)            // Compact view
-renderCompactStreaming(part)   // Streaming compact view
-renderToolUse(part)            // Tool call details
-renderToolResult(part)         // Tool result details
-renderToolStreaming(part)      // Streaming updates
-createMarkdownEl(text)         // Markdown rendering
-makeCodeBlock(code, lang)      // Code block rendering
-buildDetails(summary, body)    // Details element
+matches(part)                               // Check if tool matches
+render(part, result, showDebug, isStreaming) // Shared rendering hook
+renderToolUse(part, component)              // Tool call details
+renderToolResult(part, component)           // Tool result details
+renderToolStreaming(part, component)        // Streaming updates
+createMarkdownEl(text)                      // Markdown rendering
+makeCodeBlock(code, lang)                   // Code block rendering
+buildDetails(toolId, summary, input, showDebug) // Details element
 ```
 
 ### Tool Renderer Examples
@@ -980,19 +979,16 @@ buildDetails(summary, body)    // Details element
 #### Read Tool
 ```javascript
 class OpenCodeReadTool extends OpenCodeBaseTool {
-  matches(toolName) {
-    return toolName === 'mcp_read';
+  matches(part) {
+    return (part.name || part.tool) === 'mcp_read';
   }
   
-  renderCompact(part) {
-    const filePath = part.input?.filePath;
-    const offset = part.input?.offset || 1;
-    const limit = part.input?.limit || 2000;
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const filePath = data.input?.filePath;
+    const offset = data.input?.offset || 1;
+    const limit = data.input?.limit || 2000;
     
-    return `📖 Read ${filePath} (lines ${offset}-${offset + limit})`;
-  }
-  
-  renderCompactStreaming(part) {
     // Syntax highlighted code display
     // Shows file path and line numbers
     // Expandable details
@@ -1003,8 +999,8 @@ class OpenCodeReadTool extends OpenCodeBaseTool {
 #### Edit Tool
 ```javascript
 class OpenCodeEditTool extends OpenCodeBaseTool {
-  matches(toolName) {
-    return toolName === 'mcp_edit';
+  matches(part) {
+    return (part.name || part.tool) === 'mcp_edit';
   }
   
   generateInlineDiffEl(oldString, newString) {
@@ -1013,7 +1009,9 @@ class OpenCodeEditTool extends OpenCodeBaseTool {
     // Line-by-line comparison
   }
   
-  renderCompact(part) {
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const filePath = data.input?.filePath;
     return `✏️ Edit ${filePath}`;
   }
 }
@@ -1022,8 +1020,16 @@ class OpenCodeEditTool extends OpenCodeBaseTool {
 #### Question Tool
 ```javascript
 class OpenCodeQuestionTool extends OpenCodeBaseTool {
-  matches(toolName) {
-    return toolName === 'mcp_question';
+  matches(part) {
+    return (part.name || part.tool) === 'mcp_question';
+  }
+
+  async renderToolStreaming(part, component) {
+    if (part.state?.status === 'running') {
+      return this.renderInteractiveQuestion(part, part.state.input.questions || []);
+    }
+
+    return super.renderToolStreaming(part, component);
   }
   
   renderInteractiveQuestion(part) {
@@ -1041,23 +1047,14 @@ Tool renderers are automatically discovered and registered:
 
 ```javascript
 // In lively-chat-message.js
-dispatchToolRender(part) {
-  const renderers = [
-    OpenCodeReadTool,
-    OpenCodeWriteTool,
-    OpenCodeEditTool,
-    // ... all renderers
-  ];
-  
-  for (const Renderer of renderers) {
-    const renderer = new Renderer();
-    if (renderer.matches(part.name || part.tool)) {
-      return renderer.renderCompact(part);
-    }
+async dispatchToolRender(part, methodName) {
+  const renderer = this.toolRenderers.find(r => r.matches(part));
+
+  if (renderer && renderer[methodName]) {
+    return renderer[methodName](part, this);
   }
-  
-  // Fallback to generic renderer
-  return new OpenCodeGenericTool().renderCompact(part);
+
+  return null;
 }
 ```
 
@@ -1483,9 +1480,10 @@ const response = workspace.getRequestResponse(requestId);
 **Base Interface:**
 ```javascript
 class ToolRenderer {
-  matches(toolName)           // Check if tool matches
-  renderCompact(part)         // Summary view
-  renderCompactStreaming(part) // Streaming view
+  matches(part)                               // Check if tool matches
+  render(part, result, showDebug, isStreaming) // Shared rendering hook
+  renderToolUse(part, component)              // Tool-use entry point
+  renderToolStreaming(part, component)        // Streaming entry point
 }
 ```
 
@@ -1685,35 +1683,23 @@ agentBoard.updateFromMessage(message)
 **Dispatch Flow:**
 ```javascript
 // In lively-chat-message.js
-dispatchToolRender(part) {
-  // Find matching renderer
-  for (const RendererClass of toolRenderers) {
-    const renderer = new RendererClass();
-    if (renderer.matches(part.name || part.tool)) {
-      return renderer.renderCompact(part);
-    }
-  }
-  
-  // Fallback
-  return new OpenCodeGenericTool().renderCompact(part);
+renderToolUsePart(part) {
+  return this.dispatchToolRender(part, 'renderToolUse');
 }
 ```
 
 **Renderer Interface:**
 ```javascript
 class MyToolRenderer extends OpenCodeBaseTool {
-  matches(toolName) {
-    return toolName === 'my_tool';
+  matches(part) {
+    return (part.name || part.tool) === 'my_tool';
   }
   
-  renderCompact(part) {
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+
     // Return HTML string or DOM element
-    return `<div>Tool: ${part.name}</div>`;
-  }
-  
-  renderCompactStreaming(part) {
-    // Handle streaming updates
-    // Show partial results, progress
+    return `<div>Tool: ${part.name || part.tool}</div>`;
   }
 }
 ```

@@ -75,6 +75,7 @@ classDiagram
     class OpenCodeBaseTool {
         <<abstract>>
         matches()
+        render()
         renderToolUse()
         renderToolResult()
         renderToolStreaming()
@@ -90,7 +91,7 @@ classDiagram
     
     class OpenCodeReadTool {
         matches()
-        renderCompact()
+        render()
     }
     
     class BasicToolset {

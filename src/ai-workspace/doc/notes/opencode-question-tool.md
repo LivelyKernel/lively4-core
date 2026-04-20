@@ -139,7 +139,7 @@ OpenCodeQuestionTool.renderToolStreaming(part, component)
         • optional free-text input (custom: true by default)
         • Submit + Dismiss buttons
   if status === "completed":
-    → renderCompactStreaming() — shows answered summary
+    → render(part, null, showDebug, true) — shows answered summary
   else (pending / empty):
     → returns null — nothing shown
   ↓

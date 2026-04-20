@@ -1028,7 +1028,7 @@ export class VoiceReadTool extends OpenCodeBaseTool {
     return result.tool === 'read_file_voice' || result.visualRenderer === 'voice-read-tool';
   }
   
-  async renderCompact(result) {
+  async render(part, result, showDebug, isStreaming) {
     const { path, content, metadata } = result;
     const { fileName, totalLines, shownLines, language } = metadata;
     
@@ -1079,7 +1079,7 @@ export class VoiceEditTool extends OpenCodeEditTool {
     return result.tool === 'edit_file_voice' || result.visualRenderer === 'voice-edit-tool';
   }
   
-  async renderCompact(result) {
+  async render(part, result, showDebug, isStreaming) {
     const { path, oldText, newText, diff } = result;
     const fileName = lively.files.name(path);
     

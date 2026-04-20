@@ -50,9 +50,9 @@ Called by the host component renderer. Override only for exceptional cases (see 
 | Method | Signature | Default behaviour |
 |--------|-----------|-------------------|
 | `matches` | `(part) → boolean` | `false` |
-| `renderToolUse` | `(part, component) → Promise<HTMLElement\|null>` | delegates to `renderCompact(part, result, showDebug)` |
+| `renderToolUse` | `(part, component) → Promise<HTMLElement\|null>` | delegates to `render(part, result, showDebug, false)` |
 | `renderToolResult` | `(part, component) → null` | always `null` — result already folded into `renderToolUse` |
-| `renderToolStreaming` | `(part, component) → Promise<HTMLElement\|null>` | delegates to `renderCompactStreaming` when `state.status === 'completed'`; else `null` |
+| `renderToolStreaming` | `(part, component) → Promise<HTMLElement\|null>` | delegates to `render(part, null, showDebug, true)` when `state.status === 'completed'`; else `null` |
 
 `component` exposes: `component.toolResultById` (map), `component.showDebug` (boolean).
 
@@ -64,16 +64,14 @@ Implemented by every concrete tool (except `GenericTool` which overrides the pub
 
 | Method | Signature | Notes |
 |--------|-----------|-------|
-| `renderCompact` | `(part, result, showDebug) → Promise<HTMLElement\|null>` | `result` is the raw `tool_result` part |
-| `renderCompactStreaming` | `(part, showDebug) → Promise<HTMLElement\|null>` | `part.state` holds `{input, output, status}` |
+| `render` | `(part, result, showDebug, isStreaming) → Promise<HTMLElement\|null>` | `result` is the raw `tool_result` part for non-streaming renders; `part.state` holds `{input, output, status}` while streaming |
 
 ---
 
 ## SearchTool Template Layer — `OpenCodeSearchTool`
 
-Adds a third, narrower contract for tools that render as a single `<details>` block.
-`renderCompact` and `renderCompactStreaming` are both implemented here via the shared
-private dispatcher `_renderCompactDetails`.
+Implements the shared `render(part, result, showDebug, isStreaming)` hook for
+tools that render as a single `<details>` block.
 
 Subclasses implement:
 
@@ -82,14 +80,6 @@ Subclasses implement:
 | `getIcon` | `() → string` | emoji prefix; default `'🔍'` |
 | `getSummary` | `(input, output) → string` | text for `<summary>` line |
 | `renderBody` | `(input, output, showDebug) → Promise<HTMLElement[]>` | elements appended inside `<details>` |
-
-Private:
-
-| Method | Notes |
-|--------|-------|
-| `_renderCompactDetails(part, result, showDebug, isStreaming)` | unified path for both `renderCompact` and `renderCompactStreaming`; not meant to be overridden |
-
----
 
 ## Shared Helpers — `OpenCodeBaseTool`
 
@@ -150,7 +140,7 @@ Key helpers from `chat-tool-helpers.js` used across tools:
 
 ## Refactoring Notes
 
-- `ReadTool` and `WriteTool` bypass `SearchTool` and duplicate `renderCompact`/`renderCompactStreaming` structure — candidate for a `FileTool` intermediate base.
+- `ReadTool` and `WriteTool` bypass `SearchTool` and still share similar `render(part, result, showDebug, isStreaming)` structure — candidate for a `FileTool` intermediate base.
 - `EditTool` and `MultiEditTool` both import `diff-match-patch` and likely share diff-rendering logic — candidate for extraction into `ToolHelpers` or a shared mixin.
 - `QuestionTool` has a hardcoded `SERVER_URL` — should come from config or the component context.
 - `GenericTool` entirely opts out of the template pattern — intentional fallback, but its `lively4_evaluate_code` special-case duplicates logic already in `EvaluateCodeTool`.

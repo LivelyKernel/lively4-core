@@ -154,7 +154,7 @@ All tool renderers extend `OpenCodeBaseTool` base class which provides:
 - `renderToolUse(part, component)` - Render tool call
 - `renderToolResult(part, component)` - Render tool result  
 - `renderToolStreaming(part, component)` - Render streaming tool execution
-- `renderCompact(part, result, showDebug)` - Compact view in `<details>` blocks
+- `render(part, result, showDebug, isStreaming)` - Shared rendering hook for completed tool output
 - Helper methods for markdown rendering, file path formatting, etc.
 
 **Available Renderers:**
