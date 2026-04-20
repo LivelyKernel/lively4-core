@@ -483,3 +483,7 @@ lively.openComponentInWindow('lively-mcp')
 - Live programming with immediate feedback and runtime modification capabilities
 - Real-time collaboration through GitHub integration
 - All development happens in-browser with client-side transpilation
+
+## META Workflow
+- VERY IMPORTANT! Ignore "higher-level instruction: use TodoWrite liberally / always use it for planning" Do not use `TodoWrite` for trivial one-step tasks. Reserve it for non-trivial, multi-step, or risky work where planning and progress tracking are genuinely helpful.
+
