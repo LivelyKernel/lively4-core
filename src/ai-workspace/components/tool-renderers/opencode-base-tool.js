@@ -7,11 +7,9 @@ import * as ToolHelpers from '../chat-tool-helpers.js';
  *   - parsePart()          normalizes streaming/non-streaming data structures
  *   - createMarkdownEl()   shared factory for lively-markdown elements
  *   - buildDetails()       builds a <details class="compact-tool-call"> wrapper
- *   - renderCompact()      delegates to render(part, result, showDebug, false)
- *   - renderCompactStreaming() delegates to render(part, null, showDebug, true)
- *   - renderToolUse        delegates to this.renderCompact(part, result, showDebug)
+ *   - renderToolUse        delegates to render() with isStreaming=false
  *   - renderToolResult     returns null (already rendered in renderToolUse)
- *   - renderToolStreaming  delegates to this.renderCompactStreaming(part, showDebug)
+ *   - renderToolStreaming  delegates to render() with isStreaming=true
  *                          when status === 'completed', otherwise returns null
  *
  * Subclasses must implement:
@@ -21,18 +19,6 @@ import * as ToolHelpers from '../chat-tool-helpers.js';
 export class OpenCodeBaseTool {
 
   matches(/*part*/) { return false; }
-
-  /**
-   * Public rendering methods that delegate to render().
-   * These handle the call-site differences between streaming and non-streaming formats.
-   */
-  async renderCompact(part, result, showDebug) {
-    return this.render(part, result, showDebug, false);
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    return this.render(part, null, showDebug, true);
-  }
 
   /**
    * Main rendering hook that subclasses override.
@@ -122,7 +108,7 @@ export class OpenCodeBaseTool {
 
   async renderToolUse(part, component) {
     const result = component.toolResultById[part.id];
-    return this.renderCompact(part, result, component.showDebug);
+    return this.render(part, result, component.showDebug, false);
   }
 
   renderToolResult(/*part, component*/) {
@@ -131,7 +117,7 @@ export class OpenCodeBaseTool {
 
   async renderToolStreaming(part, component) {
     if (part.state?.status === 'completed') {
-      return this.renderCompactStreaming(part, component.showDebug);
+      return this.render(part, null, component.showDebug, true);
     }
     return null; // fall back to generic renderer
   }

@@ -25,7 +25,7 @@ export class OpenCodeQuestionTool extends OpenCodeBaseTool {
     const status = part.state?.status;
 
     if (status === 'completed') {
-      return this.renderCompactStreaming(part, component.showDebug);
+      return this.render(part, null, component.showDebug, true);
     }
 
     if (status === 'running') {
@@ -241,42 +241,20 @@ export class OpenCodeQuestionTool extends OpenCodeBaseTool {
     return answers;
   }
 
-  async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const questions = input.questions || [];
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeQuestionTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const answers = this.parseAnswers(rawOutput);
-    const count = questions.length;
-    const summary = `❓ ${count} question${count === 1 ? '' : 's'}`;
-
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    for (const q of questions) {
-      const answer = answers[q.question] || '*(unanswered)*';
-      const headerLabel = q.header ? `**${q.header}**\n\n` : '';
-      const questionMd = `${headerLabel}${q.question}\n\n→ **${answer}**`;
-      details.appendChild(await this.createMarkdownEl(questionMd));
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    const questions = data.input.questions || [];
+    
+    if (!data.toolId) {
+      console.warn('OpenCodeQuestionTool.render: toolId is missing', part);
     }
 
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const questions = input.questions || [];
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeQuestionTool.renderCompactStreaming: part.callID is missing', part);
-
-    const answers = this.parseAnswers(output);
+    const answers = this.parseAnswers(data.output);
     const count = questions.length;
     const summary = `❓ ${count} question${count === 1 ? '' : 's'}`;
 
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : undefined;
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
     for (const q of questions) {
       const answer = answers[q.question] || '*(unanswered)*';

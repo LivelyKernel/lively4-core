@@ -54,33 +54,19 @@ export class OpenCodeTodoReadTool extends OpenCodeBaseTool {
     }
   }
 
-  async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeTodoReadTool.renderCompact: part.id is missing', part);
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    
+    if (!data.toolId) {
+      console.warn('OpenCodeTodoReadTool.render: toolId is missing', part);
+    }
 
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const todos = this.parseTodos(rawOutput);
+    const todos = this.parseTodos(data.output);
     const summary = this.summarizeTodos(todos);
     const summaryText = `📋 todoread${summary ? ` — ${summary}` : ''}`;
 
-    const details = await this.buildDetails(toolId, summaryText, input, showDebug);
-    details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
-
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeTodoReadTool.renderCompactStreaming: part.callID is missing', part);
-
-    const todos = this.parseTodos(output);
-    const summary = this.summarizeTodos(todos);
-    const summaryText = `📋 todoread${summary ? ` — ${summary}` : ''}`;
-
-    const details = await this.buildDetails(toolId, summaryText, {}, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : undefined;
+    const details = await this.buildDetails(data.toolId, summaryText, data.input, showDebug, debugLabel);
     details.appendChild(await this.createMarkdownEl(this.renderTodosMd(todos)));
 
     return details;

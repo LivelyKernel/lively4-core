@@ -40,40 +40,23 @@ export class OpenCodeLspTool extends OpenCodeBaseTool {
     return `${icon} ${op} ${fileName}${loc}`;
   }
 
-  async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeLspTool.renderCompact: part.id is missing', part);
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    
+    if (!data.toolId) {
+      console.warn('OpenCodeLspTool.render: toolId is missing', part);
+    }
 
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const hasError = result && result.is_error;
-    const summary = this.buildSummary(input);
+    const summary = this.buildSummary(data.input);
+    const debugLabel = isStreaming ? 'Input' : undefined;
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    if (rawOutput && !hasError) {
+    if (data.output && !data.isError) {
       // Output is usually a list of locations or hover markdown
-      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${rawOutput}\n\`\`\``));
+      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${data.output}\n\`\`\``));
     }
-    if (hasError) {
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${rawOutput}\n\`\`\``));
-    }
-
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeLspTool.renderCompactStreaming: part.callID is missing', part);
-
-    const summary = this.buildSummary(input);
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
-
-    if (output) {
-      details.appendChild(await this.createMarkdownEl(`\`\`\`\n${output}\n\`\`\``));
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;

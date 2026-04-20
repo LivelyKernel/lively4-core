@@ -42,44 +42,25 @@ export class OpenCodeSkillTool extends OpenCodeBaseTool {
     return contentLine.length > 120 ? contentLine.slice(0, 120) + '…' : contentLine;
   }
 
-  async renderCompact(part, result, showDebug) {
-    const input = part.input || {};
-    const toolId = part.id;
-    if (!toolId) console.warn('OpenCodeSkillTool.renderCompact: part.id is missing', part);
-
-    const rawOutput = ToolHelpers.extractResultContent(result);
-    const skillName = this.parseSkillName(input, rawOutput);
-    const preview = this.extractPreview(rawOutput);
-    const hasError = result && result.is_error;
-
-    const summary = `💡 skill: ${skillName}`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug);
-
-    if (preview && !hasError) {
-      details.appendChild(await this.createMarkdownEl(`*${preview}*`));
-    }
-    if (hasError) {
-      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${rawOutput}\n\`\`\``));
+  async render(part, result, showDebug, isStreaming) {
+    const data = this.parsePart(part, result);
+    
+    if (!data.toolId) {
+      console.warn('OpenCodeSkillTool.render: toolId is missing', part);
     }
 
-    return details;
-  }
-
-  async renderCompactStreaming(part, showDebug) {
-    const state = part.state || {};
-    const input = state.input || {};
-    const output = state.output || '';
-    const toolId = part.callID;
-    if (!toolId) console.warn('OpenCodeSkillTool.renderCompactStreaming: part.callID is missing', part);
-
-    const skillName = this.parseSkillName(input, output);
-    const preview = this.extractPreview(output);
+    const skillName = this.parseSkillName(data.input, data.output);
+    const preview = this.extractPreview(data.output);
 
     const summary = `💡 skill: ${skillName}`;
-    const details = await this.buildDetails(toolId, summary, input, showDebug, 'Input');
+    const debugLabel = isStreaming ? 'Input' : undefined;
+    const details = await this.buildDetails(data.toolId, summary, data.input, showDebug, debugLabel);
 
-    if (preview) {
+    if (preview && !data.isError) {
       details.appendChild(await this.createMarkdownEl(`*${preview}*`));
+    }
+    if (data.isError) {
+      details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${data.output}\n\`\`\``));
     }
 
     return details;
