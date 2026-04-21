@@ -652,7 +652,6 @@ describe('OpenCode Chat Event Replay', () => {
         toolUsages: [],
         workingDirectory: null,
         projectPath: null,
-        urlBase: null,
         addFileRead(path) {
           if (!this.filesRead.includes(path)) {
             this.filesRead.push(path);
@@ -669,7 +668,6 @@ describe('OpenCode Chat Event Replay', () => {
         setContext(context) {
           this.workingDirectory = context.workingDirectory;
           this.projectPath = context.projectPath;
-          this.urlBase = context.urlBase;
         },
         updateFromMessage(message, context) {
           // Delegate to the board's actual implementation logic

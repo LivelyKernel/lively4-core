@@ -1,4 +1,5 @@
 import * as ToolHelpers from '../chat-tool-helpers.js';
+import LivelyOpencode from '../lively-opencode.js';
 import { OpenCodeBaseTool } from './opencode-base-tool.js';
 
 // Renderer for ApplyPatch tool (apply_patch)
@@ -54,13 +55,12 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     return `🩹 patch — ${parts.join(', ')}`;
   }
 
-  toRelativePath(filePath) {
+  async toRelativePath(filePath) {
     let relativePath = filePath || '';
-    const workingDirectory = localStorage.getItem('opencode.workingDirectory') || '';
 
-    // #TODO Replace this temporary working-directory prefix stripping with proper project path context from the OpenCode UI/session metadata.
-    if (workingDirectory && relativePath.startsWith(workingDirectory)) {
-      relativePath = relativePath.slice(workingDirectory.length);
+    const mapping = LivelyOpencode.getKnownPathUrlMapping();
+    if (mapping?.localRoot && relativePath.startsWith(mapping.localRoot)) {
+      relativePath = relativePath.slice(mapping.localRoot.length);
     }
 
     return relativePath.replace(/^\/+/, '');
@@ -72,33 +72,41 @@ export class OpenCodeApplyPatchTool extends OpenCodeBaseTool {
     return md;
   }
 
-  formatFileLink(filePath) {
+  async formatFileLink(filePath) {
     const fileName = ToolHelpers.getFileName(filePath);
-    return `[${fileName}](/${this.toRelativePath(filePath)})`;
+    const fileUrl = await LivelyOpencode.filePathToUrl(filePath, {
+      workingDirectory: LivelyOpencode.sharedWorkingDirectory,
+      lazyLoadMapping: false
+    });
+    const fallbackUrl = `/${await this.toRelativePath(filePath)}`;
+    return `[${fileName}](${fileUrl || fallbackUrl})`;
   }
 
-  sanitizePatchText(patchText) {
-    const workingDirectory = localStorage.getItem('opencode.workingDirectory') || '';
-    if (!workingDirectory || !patchText) return patchText;
+  async sanitizePatchText(patchText) {
+    if (!patchText) return patchText;
+
+    const mapping = LivelyOpencode.getKnownPathUrlMapping();
+    const localRoot = mapping?.localRoot;
+    if (!localRoot) return patchText;
     return patchText
-      .split(`${workingDirectory}/`).join('')
-      .split(workingDirectory).join('');
+      .split(`${localRoot}/`).join('')
+      .split(localRoot).join('');
   }
 
   async renderOps(ops) {
     if (!ops.length) return null;
-    const rows = ops.map(({ op, path, dest }) => {
+    const rows = await Promise.all(ops.map(async ({ op, path, dest }) => {
       const icon = this.opIcon(op);
-      const source = this.formatFileLink(path);
-      const detail = dest ? ` → ${this.formatFileLink(dest)}` : '';
+      const source = await this.formatFileLink(path);
+      const detail = dest ? ` → ${await this.formatFileLink(dest)}` : '';
       return `- ${icon} ${source}${detail}`;
-    }).join('\n');
-    return this.createPatchedMarkdownEl(rows);
+    }));
+    return this.createPatchedMarkdownEl(rows.join('\n'));
   }
 
   async buildPatchBlock(patchText) {
     if (!patchText) return null;
-    return this.createPatchedMarkdownEl(`\`\`\`diff\n${this.sanitizePatchText(patchText)}\n\`\`\``);
+    return this.createPatchedMarkdownEl(`\`\`\`diff\n${await this.sanitizePatchText(patchText)}\n\`\`\``);
   }
 
   async render(part, result, showDebug, isStreaming) {

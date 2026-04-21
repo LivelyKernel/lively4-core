@@ -580,8 +580,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Let board handle message parsing and updates
     board.updateFromMessage(message, {
       workingDirectory: this.opencodeComponent.workingDirectory,
-      projectPath: this.opencodeComponent.currentProject?.path,
-      urlBase: this.opencodeComponent.loadProjectUrlBase()
+      projectPath: this.opencodeComponent.currentProject?.path
     });
     
     // Update project focus link if opencode has a project selected

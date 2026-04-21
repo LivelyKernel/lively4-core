@@ -1,6 +1,7 @@
 import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { computeCost } from "src/client/claude/claude-pricing.js";
+import Terminal from 'src/client/terminal.js';
 
 /*MD
 # Lively OpenCode Agent
@@ -36,6 +37,8 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
+  static sharedPathUrlMapping = null;
+  static sharedPathUrlMappingPromise = null;
   
   // Shared state via localStorage (survives page reload, shared across instances)
   static get sharedWorkingDirectory() {
@@ -63,6 +66,123 @@ export default class LivelyOpencode extends LivelyChat {
   // Event type tracking across all instances
   static eventTypeLog = [];
   static eventTypeTally = new Map();
+
+  static normalizeLocalPath(path) {
+    if (!path) return path;
+    const normalized = path.replace(/\/+/g, '/');
+    if (normalized.length <= 1) return normalized;
+    return normalized.replace(/\/$/, '');
+  }
+
+  static joinLocalPath(basePath, childPath) {
+    if (!basePath) return this.normalizeLocalPath(childPath);
+    if (!childPath) return this.normalizeLocalPath(basePath);
+    return this.normalizeLocalPath(`${basePath.replace(/\/+$/, '')}/${childPath.replace(/^\/+/, '')}`);
+  }
+
+  static ensureTrailingSlash(url) {
+    if (!url) return url;
+    return url.endsWith('/') ? url : `${url}/`;
+  }
+
+  static derivePathUrlMapping(localRepoPath = this.sharedWorkingDirectory, repoUrl = typeof lively4url !== 'undefined' ? lively4url : null) {
+    const normalizedRepoPath = this.normalizeLocalPath(localRepoPath);
+    if (!normalizedRepoPath || !repoUrl) return null;
+
+    const repoUrlObject = new URL(repoUrl);
+    const normalizedRepoUrl = repoUrl.replace(/\/+$/, '');
+    const repoName = repoUrlObject.pathname.split('/').filter(Boolean).pop();
+    if (!repoName) return null;
+
+    if (normalizedRepoPath !== repoName && !normalizedRepoPath.endsWith(`/${repoName}`)) {
+      return null;
+    }
+
+    const localRoot = this.normalizeLocalPath(normalizedRepoPath.slice(0, -repoName.length));
+    return {
+      localRoot,
+      urlRoot: repoUrlObject.origin,
+      repoUrl: normalizedRepoUrl,
+      repoPath: repoUrlObject.pathname.replace(/\/+$/, '')
+    };
+  }
+
+  static getKnownPathUrlMapping() {
+    if (this.sharedPathUrlMapping) return this.sharedPathUrlMapping;
+
+    const mapping = this.derivePathUrlMapping();
+    if (mapping) {
+      this.sharedPathUrlMapping = mapping;
+      return mapping;
+    }
+
+    return null;
+  }
+
+  static async getGlobalPathUrlMapping() {
+    const knownMapping = this.getKnownPathUrlMapping();
+    if (knownMapping) return knownMapping;
+
+    if (!this.sharedPathUrlMappingPromise) {
+      this.sharedPathUrlMappingPromise = (async () => {
+        const terminal = new Terminal();
+        const localRoot = this.normalizeLocalPath((await terminal.run('pwd')).stdout.trim());
+        const repoUrl = terminal.url.replace(/\/+$/, '');
+        const repoUrlObject = new URL(repoUrl);
+
+        return {
+          localRoot,
+          urlRoot: repoUrlObject.origin,
+          repoUrl,
+          repoPath: repoUrlObject.pathname.replace(/\/+$/, '')
+        };
+      })()
+        .then(mapping => {
+          this.sharedPathUrlMapping = mapping;
+          return mapping;
+        })
+        .catch(error => {
+          this.sharedPathUrlMappingPromise = null;
+          throw error;
+        });
+    }
+
+    return this.sharedPathUrlMappingPromise;
+  }
+
+  static toAbsoluteLocalPath(path, workingDirectory = null) {
+    if (!path) return path;
+    if (path.startsWith('/')) return this.normalizeLocalPath(path);
+    if (!workingDirectory) return this.normalizeLocalPath(path);
+    return this.joinLocalPath(workingDirectory, path);
+  }
+
+  static async filePathToUrl(path, { workingDirectory = null, isDirectory = false, lazyLoadMapping = true } = {}) {
+    const absolutePath = this.toAbsoluteLocalPath(path, workingDirectory);
+    if (!absolutePath) return null;
+
+    try {
+      const mapping = lazyLoadMapping
+        ? await this.getGlobalPathUrlMapping()
+        : this.getKnownPathUrlMapping();
+      if (!mapping) return null;
+      const normalizedRoot = this.normalizeLocalPath(mapping.localRoot);
+
+      if (!normalizedRoot || (absolutePath !== normalizedRoot && !absolutePath.startsWith(`${normalizedRoot}/`))) {
+        return null;
+      }
+
+      const relativePath = absolutePath.slice(normalizedRoot.length).replace(/^\/+/, '');
+      let url = new URL(relativePath, this.ensureTrailingSlash(mapping.urlRoot)).toString();
+      if (isDirectory) {
+        url = this.ensureTrailingSlash(url);
+      }
+      return url;
+    } catch (error) {
+      console.warn('[project] Error resolving file URL:', error);
+      return null;
+    }
+  }
 
   /**
    * IndexedDB for caching session metadata (message counts, timestamps)
@@ -1098,18 +1218,6 @@ export default class LivelyOpencode extends LivelyChat {
       }
     });
 
-    // URL base input — maps local working dir path to lively4 server URL
-    const urlBaseInput = this.get('#projectUrlBase');
-    if (urlBaseInput) {
-      urlBaseInput.value = this.loadProjectUrlBase();
-      urlBaseInput.addEventListener('change', (evt) => {
-        this.saveProjectUrlBase(urlBaseInput.value.trim());
-      });
-      urlBaseInput.addEventListener('blur', (evt) => {
-        this.saveProjectUrlBase(urlBaseInput.value.trim());
-      });
-    }
-
     this.updateProjectIndicator();
   }
 
@@ -1190,8 +1298,7 @@ export default class LivelyOpencode extends LivelyChat {
     if (board.setContext) {
       board.setContext({
         workingDirectory: this.workingDirectory,
-        projectPath: this.currentProject?.path,
-        urlBase: this.loadProjectUrlBase()
+        projectPath: this.currentProject?.path
       });
     }
     
@@ -1221,8 +1328,7 @@ export default class LivelyOpencode extends LivelyChat {
     // Let board handle message parsing and updates
     board.updateFromMessage(message, {
       workingDirectory: this.workingDirectory,
-      projectPath: this.currentProject?.path,
-      urlBase: this.loadProjectUrlBase()
+      projectPath: this.currentProject?.path
     });
   }
 
@@ -1237,31 +1343,6 @@ export default class LivelyOpencode extends LivelyChat {
     // Scan all messages for file operations
     for (const message of messages) {
       this.updateBoardWithFileOperations(message);
-    }
-  }
-
-  /**
-   * Load the stored URL base for fetching project files.
-   * e.g. "http://localhost:9005/lively4-core/"
-   */
-  loadProjectUrlBase() {
-    try {
-      return localStorage.getItem('opencode-project-url-base') || '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  /**
-   * Save the URL base for fetching project files to localStorage.
-   * @param {string} urlBase - e.g. "http://localhost:9005/lively4-core/"
-   */
-  saveProjectUrlBase(urlBase) {
-    try {
-      localStorage.setItem('opencode-project-url-base', urlBase);
-      lively.success(`URL base saved: ${urlBase || '(cleared)'}`);
-    } catch (e) {
-      console.error('[project] Error saving URL base:', e);
     }
   }
 
@@ -1291,7 +1372,7 @@ export default class LivelyOpencode extends LivelyChat {
 
     const project = {
       path: projectPath,
-      url: this.buildProjectUrl(projectPath),
+      url: await this.buildProjectUrl(projectPath),
       name: projectPath.split('/').pop(),
       indexContent: content, // null if file doesn't exist
       isFile: isFile
@@ -1390,7 +1471,7 @@ export default class LivelyOpencode extends LivelyChat {
       
       this.currentProject = {
         path: storedPath,
-        url: this.buildProjectUrl(storedPath),
+        url: await this.buildProjectUrl(storedPath),
         name: storedPath.split('/').pop(),
         indexContent: content,
         isFile: isFile
@@ -1512,55 +1593,36 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Build a full URL for a project path using the configured URL base.
+   * Build a full URL for a project path from the shared filesystem↔URL mapping.
    * e.g. buildProjectUrl('src/ai-workspace') → 'http://localhost:9005/lively4-core/src/ai-workspace/'
    * e.g. buildProjectUrl('src/ai-workspace/index.md') → 'http://localhost:9005/lively4-core/src/ai-workspace/index.md'
    * e.g. buildProjectUrl('CLAUDE.md') → 'http://localhost:9005/lively4-core/CLAUDE.md'
    * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace' or 'CLAUDE.md'
    * @returns {string} Full URL (with trailing slash for directories, without for files)
    */
-  buildProjectUrl(projectPath) {
-    const storedBase = this.loadProjectUrlBase();
-    let base;
-    if (storedBase) {
-      // Ensure trailing slash
-      base = storedBase.endsWith('/') ? storedBase : storedBase + '/';
-    } else {
-      // Fallback: derive from lively4url browser global if available
-      if (typeof lively4url !== 'undefined') {
-        base = lively4url.replace(/[^/]+$/, '');
-      } else {
-        // No URL base configured and no browser global
-        const isFile = /\.[^/]+$/.test(projectPath);
-        return isFile ? projectPath : projectPath + '/';
-      }
-    }
-    // Add trailing slash only for directories (not for files)
+  async buildProjectUrl(projectPath) {
     const isFile = /\.[^/]+$/.test(projectPath);
-    return base + projectPath + (isFile ? '' : '/');
+    const url = await LivelyOpencode.filePathToUrl(projectPath, {
+      workingDirectory: this.workingDirectory,
+      isDirectory: !isFile
+    });
+    return url || (isFile ? projectPath : LivelyOpencode.ensureTrailingSlash(projectPath));
   }
 
   /**
-   * Try to load a file from a path relative to the lively4 web root.
-   * Uses the configured URL base (e.g. "http://localhost:9005/lively4-core/")
-   * to map the subproject path to a fetchable URL.
-   * Falls back to deriving base from lively4url if no URL base is configured.
+   * Try to load a file from a path relative to the current working directory.
+   * Uses the shared filesystem↔URL mapping to resolve a fetchable URL.
    * Returns file content as string, or null if not found / no server.
    * @param {string} relativePath - Path relative to working directory
    * @param {string} [filename] - Optional filename to append. If omitted, relativePath is treated as complete file path.
    */
   async tryFetchProjectFile(relativePath, filename = null) {
     try {
-      const storedBase = this.loadProjectUrlBase();
-      let base;
-      if (storedBase) {
-        // Ensure trailing slash
-        base = storedBase.endsWith('/') ? storedBase : storedBase + '/';
-      } else {
-        // Fallback: derive from lively4url browser global
-        base = lively4url.replace(/[^/]+$/, '');
-      }
-      const url = filename ? base + relativePath + '/' + filename : base + relativePath;
+      const targetPath = filename ? LivelyOpencode.joinLocalPath(relativePath, filename) : relativePath;
+      const url = await LivelyOpencode.filePathToUrl(targetPath, {
+        workingDirectory: this.workingDirectory
+      });
+      if (!url) return null;
       const response = await fetch(url);
       return response.ok ? await response.text() : null;
     } catch (e) {

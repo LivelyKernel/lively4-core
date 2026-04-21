@@ -1,4 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import LivelyOpencode from './lively-opencode.js';
 
 /*MD
 # Lively Agent Board
@@ -70,7 +71,6 @@ export default class LivelyAgentBoard extends Morph {
     this.fileWriteCounts = new Map();
     this.workingDirectory = null;
     this.projectPath = null;
-    this.urlBase = null;
     this.currentProject = null; // Store full project object
     this.sessionCost = null; // Session cost in USD
   }
@@ -93,7 +93,6 @@ export default class LivelyAgentBoard extends Morph {
   setContext(context) {
     this.workingDirectory = context.workingDirectory;
     this.projectPath = context.projectPath;
-    this.urlBase = context.urlBase;
     this.render();
   }
 
@@ -123,7 +122,6 @@ export default class LivelyAgentBoard extends Morph {
    * @param {Object} context - Optional context for URL building and path shortening
    * @param {string} context.workingDirectory - Current working directory
    * @param {string} context.projectPath - Project path for URL shortening
-   * @param {string} context.urlBase - Base URL for building file links
    */
   updateFromMessage(message, context) {
     if (!message) return;
@@ -247,8 +245,7 @@ export default class LivelyAgentBoard extends Morph {
     // Set context for URL building and path shortening
     this.setContext({
       workingDirectory: opencodeComponent.workingDirectory,
-      projectPath: opencodeComponent.currentProject?.path,
-      urlBase: opencodeComponent.loadProjectUrlBase()
+      projectPath: opencodeComponent.currentProject?.path
     });
     
     // Clear file operations before loading new session data
@@ -277,8 +274,7 @@ export default class LivelyAgentBoard extends Morph {
       for (const message of messages) {
         this.updateFromMessage(message, {
           workingDirectory: this.workingDirectory,
-          projectPath: this.projectPath,
-          urlBase: this.urlBase
+          projectPath: this.projectPath
         });
       }
     }
@@ -292,25 +288,34 @@ export default class LivelyAgentBoard extends Morph {
    * @param {string} filePath - Absolute file path
    * @returns {string} Full URL for lively.openBrowser
    */
-  buildFileUrl(filePath) {
-    if (!this.urlBase || !this.workingDirectory) {
-      // No context - return path as-is
-      return filePath;
+  async buildFileUrl(filePath) {
+    return await LivelyOpencode.filePathToUrl(filePath, {
+      workingDirectory: this.workingDirectory
+    }) || filePath;
+  }
+
+  async buildProjectFocusUrl() {
+    if (!this.currentProject) return this.links.projectFocus;
+    if (this.links.projectFocus && /^https?:\/\//.test(this.links.projectFocus)) {
+      return this.links.projectFocus;
     }
 
-    // Remove working directory prefix to get relative path
-    let relativePath = filePath;
-    if (filePath.startsWith(this.workingDirectory)) {
-      relativePath = filePath.substring(this.workingDirectory.length);
-      // Remove leading slash if present
-      if (relativePath.startsWith('/')) {
-        relativePath = relativePath.substring(1);
-      }
+    if (this.currentProject.isFile) {
+      return await LivelyOpencode.filePathToUrl(this.currentProject.path, {
+        workingDirectory: this.workingDirectory
+      }) || this.currentProject.path;
     }
 
-    // Build full URL
-    const base = this.urlBase.endsWith('/') ? this.urlBase : this.urlBase + '/';
-    return base + relativePath;
+    return await LivelyOpencode.filePathToUrl(`${this.currentProject.path}/index.md`, {
+      workingDirectory: this.workingDirectory
+    }) || `${this.currentProject.path}/index.md`;
+  }
+
+  async buildProjectTasksUrl() {
+    if (!this.currentProject || this.currentProject.isFile) return null;
+    return await LivelyOpencode.filePathToUrl(`${this.currentProject.path}/tasks.md`, {
+      workingDirectory: this.workingDirectory
+    }) || `${this.currentProject.path}/tasks.md`;
   }
 
   /**
@@ -491,7 +496,7 @@ export default class LivelyAgentBoard extends Morph {
         <div class="link-item">
           <span class="link-icon">📁</span>
           <a class="link-path" click={() => {
-              lively.openBrowser(this.links.projectFocus, true)
+              this.buildProjectFocusUrl().then(url => lively.openBrowser(url, true))
             }} title={this.links.projectFocus}>
             Project Focus
           </a>
@@ -502,15 +507,12 @@ export default class LivelyAgentBoard extends Morph {
     // Project Tasks - only show for directory-based projects
     if (this.currentProject && !this.currentProject.isFile) {
       const tasksPath = this.currentProject.path + '/tasks.md';
-      const tasksUrl = this.currentProject.url 
-        ? this.currentProject.url + 'tasks.md'
-        : tasksPath;
       
       section.appendChild(
         <div class="link-item">
           <span class="link-icon">📋</span>
           <a class="link-path" click={() => {
-              lively.openBrowser(tasksUrl, true)
+              this.buildProjectTasksUrl().then(url => lively.openBrowser(url, true))
             }} title={tasksPath}>
             Project Tasks
           </a>
@@ -530,7 +532,7 @@ export default class LivelyAgentBoard extends Morph {
         const readCount = this.fileReadCounts.get(path) || 0;
         const linkItem = <div class="link-item file-read">
           <span class="link-icon">📖</span>
-          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+          <a class="link-path" click={() => url.then(resolvedUrl => lively.openBrowser(resolvedUrl, true))} title={path}>
             {displayPath}
           </a>
         </div>;
@@ -555,7 +557,7 @@ export default class LivelyAgentBoard extends Morph {
         const writeCount = this.fileWriteCounts.get(path) || 0;
         const linkItem = <div class="link-item file-written">
           <span class="link-icon">✏️</span>
-          <a class="link-path" click={() => lively.openBrowser(url, true)} title={path}>
+          <a class="link-path" click={() => url.then(resolvedUrl => lively.openBrowser(resolvedUrl, true))} title={path}>
             {displayPath}
           </a>
         </div>;
@@ -636,8 +638,7 @@ export default class LivelyAgentBoard extends Morph {
     // Set context for URL building and path shortening
     this.setContext({
       workingDirectory: '/home/jens/lively4/lively4-core',
-      projectPath: 'src/ai-workspace',
-      urlBase: 'http://localhost:9005/lively4-core'
+      projectPath: 'src/ai-workspace'
     });
     
     // Set project focus using proper project object

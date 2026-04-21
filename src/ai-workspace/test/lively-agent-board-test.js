@@ -1,16 +1,34 @@
 import { expect } from 'src/external/chai.js';
 import { testWorld, loadComponent } from 'test/templates/templates-fixture.js';
+import LivelyOpencode from '../components/lively-opencode.js';
 
 describe("Lively Agent Board", function() {
   
   let board;
+  let originalFilePathToUrl;
   
   beforeEach(async () => {
+    originalFilePathToUrl = LivelyOpencode.filePathToUrl;
+    LivelyOpencode.filePathToUrl = async (filePath, { workingDirectory = null, isDirectory = false } = {}) => {
+      const path = filePath.startsWith('/') || !workingDirectory
+        ? filePath
+        : `${workingDirectory.replace(/\/+$/, '')}/${filePath.replace(/^\/+/, '')}`;
+      if (!path.startsWith('/home/jens/lively4/')) {
+        return null;
+      }
+      let url = path
+        .replace('/home/jens/lively4/', 'http://localhost:9005/');
+      if (isDirectory && !url.endsWith('/')) {
+        url += '/';
+      }
+      return url;
+    };
     board = await lively.create("lively-agent-board");
     document.body.appendChild(board);
   });
   
   afterEach(() => {
+    LivelyOpencode.filePathToUrl = originalFilePathToUrl;
     if (board && board.parentNode) {
       board.parentNode.removeChild(board);
     }
@@ -160,8 +178,7 @@ describe("Lively Agent Board", function() {
     it("should shorten path by removing working directory", () => {
       board.setContext({
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: null,
-        urlBase: 'http://localhost:9005/lively4-core'
+        projectPath: null
       });
 
       const path = '/home/jens/lively4/lively4-core/src/components/file.js';
@@ -173,8 +190,7 @@ describe("Lively Agent Board", function() {
     it("should shorten path by removing working directory and project path", () => {
       board.setContext({
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: 'src/ai-workspace',
-        urlBase: 'http://localhost:9005/lively4-core'
+        projectPath: 'src/ai-workspace'
       });
 
       const path = '/home/jens/lively4/lively4-core/src/ai-workspace/components/file.js';
@@ -193,8 +209,7 @@ describe("Lively Agent Board", function() {
     it("should handle paths that don't match working directory", () => {
       board.setContext({
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: null,
-        urlBase: 'http://localhost:9005/lively4-core'
+        projectPath: null
       });
 
       const path = '/different/path/to/file.js';
@@ -205,35 +220,33 @@ describe("Lively Agent Board", function() {
   });
 
   describe("URL Building", () => {
-    it("should build full URL from file path", () => {
+    it("should build full URL from file path", async () => {
       board.setContext({
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: null,
-        urlBase: 'http://localhost:9005/lively4-core'
+        projectPath: null
       });
 
       const path = '/home/jens/lively4/lively4-core/src/components/file.js';
-      const url = board.buildFileUrl(path);
+      const url = await board.buildFileUrl(path);
       
       expect(url).to.equal('http://localhost:9005/lively4-core/src/components/file.js');
     });
 
-    it("should handle URL base without trailing slash", () => {
+    it("should handle absolute file paths through the shared mapping", async () => {
       board.setContext({
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: null,
-        urlBase: 'http://localhost:9005/lively4-core'
+        projectPath: null
       });
 
       const path = '/home/jens/lively4/lively4-core/test/file.js';
-      const url = board.buildFileUrl(path);
+      const url = await board.buildFileUrl(path);
       
       expect(url).to.equal('http://localhost:9005/lively4-core/test/file.js');
     });
 
-    it("should return original path when no context set", () => {
+    it("should return original path when no context set", async () => {
       const path = '/absolute/path/to/file.js';
-      const url = board.buildFileUrl(path);
+      const url = await board.buildFileUrl(path);
       
       expect(url).to.equal(path);
     });
@@ -501,15 +514,13 @@ describe("Lively Agent Board", function() {
       
       const context = {
         workingDirectory: '/home/jens/lively4/lively4-core',
-        projectPath: 'src/ai-workspace',
-        urlBase: 'http://localhost:9005/lively4-core/'
+        projectPath: 'src/ai-workspace'
       };
       
       board.updateFromMessage(message, context);
       
       expect(board.workingDirectory).to.equal('/home/jens/lively4/lively4-core');
       expect(board.projectPath).to.equal('src/ai-workspace');
-      expect(board.urlBase).to.equal('http://localhost:9005/lively4-core/');
     });
 
     it("should handle messages without parts", () => {
