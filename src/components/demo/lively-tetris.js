@@ -87,6 +87,7 @@ export default class LivelyTetris extends Morph {
     this.score = 0;
     this.level = 1;
     this.linesCleared = 0;
+    this.isPaused = false;
     this.updateScore();
     
     // Ersten Block erstellen
@@ -145,6 +146,7 @@ export default class LivelyTetris extends Morph {
     this.score = 0;
     this.level = 1;
     this.linesCleared = 0;
+    this.isPaused = false;
     this.updateScore();
     
     // Neuen Block spawnen
@@ -158,6 +160,11 @@ export default class LivelyTetris extends Morph {
   }
   
   gameStep() {
+    // Wenn pausiert, nichts tun
+    if (this.isPaused) {
+      return;
+    }
+    
     // Versuche Block nach unten zu bewegen
     if (this.isValidPosition(this.currentBlock.x, this.currentBlock.y + 1)) {
       this.currentBlock.y++;
@@ -180,6 +187,18 @@ export default class LivelyTetris extends Morph {
         this.draw();
       }
     }
+  }
+  
+  togglePause() {
+    this.isPaused = !this.isPaused;
+    
+    if (this.isPaused) {
+      lively.notify("Pause - Leertaste zum Fortsetzen");
+    } else {
+      lively.notify("Spiel läuft weiter");
+    }
+    
+    this.draw();
   }
   
   spawnNewBlock() {
@@ -286,6 +305,28 @@ export default class LivelyTetris extends Morph {
     
     // Aktuellen Block zeichnen
     this.drawBlock();
+    
+    // Wenn pausiert, "PAUSE" anzeigen
+    if (this.isPaused) {
+      this.drawPauseText();
+    }
+  }
+  
+  drawPauseText() {
+    // Halbtransparenter Hintergrund
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // "PAUSE" Text
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "bold 40px Arial";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+    this.ctx.fillText("PAUSE", this.canvas.width / 2, this.canvas.height / 2);
+    
+    // Kleiner Text darunter
+    this.ctx.font = "20px Arial";
+    this.ctx.fillText("Leertaste drücken", this.canvas.width / 2, this.canvas.height / 2 + 50);
   }
   
   drawLockedBlocks() {
@@ -361,6 +402,18 @@ export default class LivelyTetris extends Morph {
   }
   
   onKeyDown(evt) {
+    // Leertaste für Pause
+    if (evt.key === " ") {
+      this.togglePause();
+      evt.preventDefault();
+      return;
+    }
+    
+    // Wenn pausiert, keine Steuerung
+    if (this.isPaused) {
+      return;
+    }
+    
     // Pfeiltasten abfangen
     if (evt.key === "ArrowLeft") {
       this.moveBlock(-1, 0);  // Nach links
