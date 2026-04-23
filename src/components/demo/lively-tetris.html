@@ -1,0 +1,30 @@
+<template id="lively-tetris" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  display: block;
+  padding: 20px;
+}
+
+#score {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+canvas {
+  border: 2px solid black;
+  background-color: #f0f0f0;
+}
+</style>
+
+<div id="container">
+  <h3>Tetris</h3>
+  <div id="score">Punkte: 0 | Level: 1</div>
+  <canvas id="gameCanvas" width="300" height="600"></canvas>
+</div>
+
+</template>
+
