@@ -88,6 +88,7 @@ export default class LivelyTetris extends Morph {
     this.level = 1;
     this.linesCleared = 0;
     this.isPaused = false;
+    this.gameStarted = false;
     this.updateScore();
     
     // Ersten Block erstellen
@@ -99,31 +100,37 @@ export default class LivelyTetris extends Morph {
     // Spielfeld zeichnen
     this.draw();
     
-    // Automatisches Fallen starten
-    this.startGame();
+    // NICHT automatisch starten - warten auf ersten Tastendruck
   }
   
   startGame() {
-    // Falls schon ein Timer läuft, stoppen
+    // WICHTIG: Alten Timer definitiv stoppen um Bug zu vermeiden
     if (this.gameInterval) {
       clearInterval(this.gameInterval);
+      this.gameInterval = null;
     }
     
     // Geschwindigkeit berechnen: Je höher das Level, desto schneller
     // Level 1: 500ms, Level 2: 450ms, Level 3: 400ms, etc.
     let speed = Math.max(100, 550 - (this.level * 50));
     
-    // Timer mit aktueller Geschwindigkeit starten
-    this.gameInterval = setInterval(() => {
-      this.gameStep();
-    }, speed);
+    // Sicherstellen dass wirklich kein alter Timer mehr läuft
+    setTimeout(() => {
+      // Timer mit aktueller Geschwindigkeit starten
+      this.gameInterval = setInterval(() => {
+        this.gameStep();
+      }, speed);
+    }, 50);
   }
   
   gameOver() {
     // Timer stoppen
     if (this.gameInterval) {
       clearInterval(this.gameInterval);
+      this.gameInterval = null;
     }
+    
+    this.gameStarted = false;
     
     // Game Over anzeigen
     lively.notify("Game Over! Spiel startet neu...");
@@ -135,6 +142,12 @@ export default class LivelyTetris extends Morph {
   }
   
   restartGame() {
+    // Timer stoppen
+    if (this.gameInterval) {
+      clearInterval(this.gameInterval);
+      this.gameInterval = null;
+    }
+    
     // Spielfeld leeren
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
@@ -142,11 +155,12 @@ export default class LivelyTetris extends Morph {
       }
     }
     
-    // Score und Level zurücksetzen
+    // Alles zurücksetzen
     this.score = 0;
     this.level = 1;
     this.linesCleared = 0;
     this.isPaused = false;
+    this.gameStarted = false;
     this.updateScore();
     
     // Neuen Block spawnen
@@ -155,8 +169,7 @@ export default class LivelyTetris extends Morph {
     // Zeichnen
     this.draw();
     
-    // Spiel neu starten
-    this.startGame();
+    // NICHT automatisch starten - warten auf Tastendruck
   }
   
   gameStep() {
@@ -306,10 +319,32 @@ export default class LivelyTetris extends Morph {
     // Aktuellen Block zeichnen
     this.drawBlock();
     
+    // Wenn noch nicht gestartet, Hinweis anzeigen
+    if (!this.gameStarted) {
+      this.drawStartText();
+    }
+    
     // Wenn pausiert, "PAUSE" anzeigen
     if (this.isPaused) {
       this.drawPauseText();
     }
+  }
+  
+  drawStartText() {
+    // Halbtransparenter Hintergrund
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // "START" Text
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "bold 35px Arial";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
+    this.ctx.fillText("Drücke eine Taste", this.canvas.width / 2, this.canvas.height / 2);
+    
+    // Kleiner Text darunter
+    this.ctx.font = "20px Arial";
+    this.ctx.fillText("um zu starten", this.canvas.width / 2, this.canvas.height / 2 + 50);
   }
   
   drawPauseText() {
@@ -402,6 +437,13 @@ export default class LivelyTetris extends Morph {
   }
   
   onKeyDown(evt) {
+    // Bei erstem Tastendruck Spiel starten
+    if (!this.gameStarted) {
+      this.gameStarted = true;
+      this.startGame();
+      lively.notify("Spiel gestartet!");
+    }
+    
     // Leertaste für Pause
     if (evt.key === " ") {
       this.togglePause();
