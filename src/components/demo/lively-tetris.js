@@ -89,6 +89,10 @@ export default class LivelyTetris extends Morph {
     this.linesCleared = 0;
     this.isPaused = false;
     this.gameStarted = false;
+    
+    // High Score aus localStorage laden
+    this.loadHighScore();
+    
     this.updateScore();
     
     // Ersten Block erstellen
@@ -304,6 +308,32 @@ export default class LivelyTetris extends Morph {
     if (scoreElement) {
       scoreElement.textContent = `Punkte: ${this.score} | Level: ${this.level}`;
     }
+    
+    let highScoreElement = this.get("#highScore");
+    if (highScoreElement) {
+      highScoreElement.textContent = `High Score: ${this.highScore}`;
+    }
+    
+    // High Score aktualisieren wenn aktueller Score höher ist
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      this.saveHighScore();
+      // Optionale Benachrichtigung bei neuem High Score
+      if (this.score > 0) {
+        lively.notify(`🏆 Neuer High Score: ${this.highScore}!`);
+      }
+    }
+  }
+  
+  loadHighScore() {
+    // High Score aus localStorage laden (Standard: 0)
+    let stored = localStorage.getItem('tetris-highscore');
+    this.highScore = stored ? parseInt(stored) : 0;
+  }
+  
+  saveHighScore() {
+    // High Score in localStorage speichern
+    localStorage.setItem('tetris-highscore', this.highScore.toString());
   }
   
   draw() {
