@@ -66,6 +66,7 @@ export default class Preferences {
       AILukasExperiment: {default: false, short: "AI Lukas Experiment"},
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
       SemanticScholarAuth: {default: false, short: "use Semantic Scholar API key"},
+      UseLocalLiteratureDB: {default: true, short: "use local Literature DB"},
       UseOpenAlex: {default: true, short: "use OpenAlex for Literature"},
       CodeMirrorAutoCloseBrackets: {default: true, short: "CodeMirror autoCloseBrackets"},
       ShowGitStatusIndicators: {default: true, short: "show git status indicators in code mirror"},

@@ -110,7 +110,7 @@ export default class OpenAlexScheme extends Scheme {
     const MAX_RETRIES = 3
     const RETRY_DELAY = 1000 // Start with 1 second delay
     
-    if (fastURL) {
+    if (fastURL  && Preferences.get("UseLocalLiteratureDB")) {
       const response = await fetch(fastURL, {
           ...options,
           headers

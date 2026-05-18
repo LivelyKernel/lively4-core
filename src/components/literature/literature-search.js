@@ -103,6 +103,7 @@ export default class LiteratureSearch extends Morph {
   }
 
   async findBibtexSearch(queryString, div) {
+    debugger
     div.innerHTML = "searching..."
     var entries
     try {
@@ -198,7 +199,7 @@ export default class LiteratureSearch extends Morph {
     
     var json
     
-    if (true) {
+    if (Preferences.get("UseLocalLiteratureDB")) {
        return this.findBibtexEntriesLocal(queryString, div)
     }
     
