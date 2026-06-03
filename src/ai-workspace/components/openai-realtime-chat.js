@@ -256,7 +256,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
   
   setupModelSelecton() {
-    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-1.5","gpt-realtime-mini"]);
+    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-2", "gpt-realtime-1.5", "gpt-realtime-mini"]);
     this.get("#modelBox").value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
     this.get("#modelBox").addEventListener("change", () => {
       lively.preferences.set("openai-realtime-chat-model", this.get("#modelBox").value);
@@ -1242,16 +1242,29 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   // #important
   async generateEphemeralToken() {
     const apiKey = await OpenAI.ensureSubscriptionKey();
-    const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    const voice = this.realtimeVoice || "shimmer";
+    const model = this.get("#modelBox").value || "gpt-4o-realtime-preview";
+    const tools = this.getFunctionDefinitions();
+    const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: this.get("#modelBox").value || "gpt-4o-realtime-preview",
-        voice: this.realtimeVoice || "shimmer",
-        tools: this.getFunctionDefinitions()
+        session: {
+          type: "realtime",
+          model: model,
+          audio: {
+            input: {
+              transcription: {
+                model: "gpt-realtime-whisper"
+              }
+            },
+            output: { voice: voice }
+          },
+          tools: tools
+        }
       })
     });
     if (!response.ok) {
@@ -1267,7 +1280,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
     const data = await response.json();
     this.log("Ephemeral token response:", data);
-    return data.client_secret.value;
+    return data.value;
   }
 
   // #important
@@ -1318,7 +1331,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await this.peerConnection.setLocalDescription(offer);
 
     // Step 7: Send offer to OpenAI and get answer
-    const answerResponse = await fetch('https://api.openai.com/v1/realtime', {
+    const answerResponse = await fetch('https://api.openai.com/v1/realtime/calls', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.ephemeralToken}`,
@@ -1327,7 +1340,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       body: offer.sdp
     });
     if (!answerResponse.ok) {
-      this.log(`Failed to connect: ${answerResponse.statusText}`);
+      const errorBody = await answerResponse.text();
+      this.log(`Failed to connect: ${answerResponse.statusText} - ${errorBody}`);
+      throw new Error(`SDP exchange failed: ${answerResponse.status} ${answerResponse.statusText} - ${errorBody}`);
     }
     const answerSDP = await answerResponse.text();
 
@@ -1400,11 +1415,17 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       type: "session.update",
       session: {
         instructions: instructions,
-        voice: this.realtimeVoice || "shimmer",
-        input_audio_transcription: {
-          model: "whisper-1"
+        audio: {
+          input: {
+            transcription: {
+              model: "gpt-realtime-whisper"
+            },
+            turn_detection: turn_detection
+          },
+          output: {
+            voice: this.realtimeVoice || "shimmer"
+          }
         },
-        turn_detection: turn_detection,
         tools: this.getFunctionDefinitions(),
         tool_choice: "auto"
       }
@@ -1564,8 +1585,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async handleRealtimeMessage(message) {
     // Capture event for replay (skip audio data and deduplicate item.created)
     if (!this._replayMode && message.type && !message.type.includes('audio.delta')) {
-      // For conversation.item.created events, only capture if we haven't seen this item_id yet
-      if (message.type === 'conversation.item.created' && message.item?.id) {
+      // For conversation.item.created/added events, only capture if we haven't seen this item_id yet
+      if ((message.type === 'conversation.item.created' || message.type === 'conversation.item.added') && message.item?.id) {
         if (!this._capturedItemIds) {
           this._capturedItemIds = new Set();
         }
@@ -1591,6 +1612,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         break;
       case "session.updated":
         this.log("Session updated:", message);
+        this.log("Session transcription config:", JSON.stringify(message.session?.audio?.input?.transcription || message.session?.input_audio_transcription || "NONE"));
         if (message.session && message.session.tools) {
           this.log("✓ Functions in updated session:", message.session.tools);
         }
@@ -1633,6 +1655,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.updateStatus('ready', '✅ Ready to listen - you can speak now');
         break;
       case "conversation.item.created":
+      case "conversation.item.added":
         // this.log("Item created:", message);
 
         // Create message when item exists in API
@@ -1710,6 +1733,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         // }, null, 2));
         break;
       case "response.audio_transcript.delta":
+      case "response.output_audio_transcript.delta":
         this.log("Transcript delta:", message.delta);
 
         if (message.delta && message.item_id) {
@@ -1723,6 +1747,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         }
         break;
       case "response.audio_transcript.done":
+      case "response.output_audio_transcript.done":
         this.log("Transcript done:", message.transcript);
 
         if (message.transcript && message.item_id) {
@@ -1778,6 +1803,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         break;
       case "conversation.item.truncated":
         // this.log("Conversation item truncated:", message.item_id);
+        break;
+      case "conversation.item.done":
+        // this.log("Conversation item done:", message.item_id);
         break;
 
       default:
