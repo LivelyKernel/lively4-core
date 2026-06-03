@@ -592,7 +592,8 @@ describe('OpenAI Realtime Chat Event Replay', () => {
         allowCodeEvaluation: false,
         allowOpenCodeTasks: true,
         allowMessageInspection: false,
-        allowVoiceFileTools: true
+        allowVoiceFileTools: true,
+        allowMcpServers: true
       };
       lively.preferences.set("openai-realtime-chat-tool-permissions", testPermissions);
 
@@ -609,6 +610,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(newComponent.toolPermissions.allowOpenCodeTasks).to.equal(true);
       expect(newComponent.toolPermissions.allowMessageInspection).to.equal(false);
       expect(newComponent.toolPermissions.allowVoiceFileTools).to.equal(true);
+      expect(newComponent.toolPermissions.allowMcpServers).to.equal(true);
 
       newComponent.remove();
     });
@@ -619,7 +621,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       lively.preferences.set("openai-realtime-chat-tool-permissions", {
         allowCodeEvaluation: false,
         allowOpenCodeTasks: true
-        // Missing: allowMessageInspection, allowVoiceFileTools
+        // Missing: allowMessageInspection, allowVoiceFileTools, allowMcpServers
       });
 
       const newComponent = await lively.create('openai-realtime-chat');
@@ -630,12 +632,13 @@ describe('OpenAI Realtime Chat Event Replay', () => {
       expect(newComponent.toolPermissions.allowCodeEvaluation).to.equal(false);
       expect(newComponent.toolPermissions.allowOpenCodeTasks).to.equal(true);
       
-      // Verify missing permissions default to true
+      // Verify missing permissions default to true (except MCP which defaults to false)
       expect(newComponent.toolPermissions.allowMessageInspection).to.equal(true);
       expect(newComponent.toolPermissions.allowVoiceFileTools).to.equal(true);
+      expect(newComponent.toolPermissions.allowMcpServers).to.equal(false);
       
       // Verify all known permission fields are present
-      const expectedKeys = ['allowCodeEvaluation', 'allowOpenCodeTasks', 'allowMessageInspection', 'allowVoiceFileTools'];
+      const expectedKeys = ['allowCodeEvaluation', 'allowOpenCodeTasks', 'allowMessageInspection', 'allowVoiceFileTools', 'allowMcpServers'];
       expect(Object.keys(newComponent.toolPermissions).sort()).to.deep.equal(expectedKeys.sort());
 
       newComponent.remove();

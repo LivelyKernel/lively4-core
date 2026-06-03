@@ -233,7 +233,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.ensureMessageSelectionInteractions(this.messagesContainer);
 
     // Load preferences
-    this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
+    this.showToolCalls = this.readComponentPreference("openai-realtime-chat-show-tool-calls") !== false; // Default to true
 
     await this.ensureConversation();
     await this.setupSessionsComponent();
@@ -257,7 +257,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   
   setupModelSelecton() {
     this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-2", "gpt-realtime-1.5", "gpt-realtime-mini"]);
-    this.get("#modelBox").value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
+    this.get("#modelBox").value = this.readComponentPreference("openai-realtime-chat-model") || "gpt-realtime";
     this.get("#modelBox").addEventListener("change", () => {
       lively.preferences.set("openai-realtime-chat-model", this.get("#modelBox").value);
       lively.notify("Model changed", "Reconnect to apply changes");
@@ -297,7 +297,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Setup voice selection
     var voiceBox = this.get("#voiceBox")
     voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
-    voiceBox.value = lively.preferences.get("openai-realtime-chat-voice") || "marin";
+    voiceBox.value = this.readComponentPreference("openai-realtime-chat-voice") || "marin";
     voiceBox.addEventListener("change", async () => {
       lively.preferences.set("openai-realtime-chat-voice", voiceBox.value);
       this.realtimeVoice = voiceBox.value;
@@ -310,13 +310,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Setup VAD type selection
     const vadTypeBox = this.get("#vadTypeBox");
     vadTypeBox.setOptions(["server_vad", "semantic_vad"]);
-    vadTypeBox.value = lively.preferences.get("openai-realtime-chat-vad-type") || "server_vad";
+    vadTypeBox.value = this.readComponentPreference("openai-realtime-chat-vad-type") || "server_vad";
     this.vadType = vadTypeBox.value;
 
     // Setup VAD eagerness selection (only for semantic_vad)
     const vadEagernessBox = this.get("#vadEagernessBox");
     vadEagernessBox.setOptions(["low", "medium", "high", "auto"]);
-    vadEagernessBox.value = lively.preferences.get("openai-realtime-chat-vad-eagerness") || "medium";
+    vadEagernessBox.value = this.readComponentPreference("openai-realtime-chat-vad-eagerness") || "medium";
     this.vadEagerness = vadEagernessBox.value;
 
     // Setup VAD threshold slider (only for server_vad)
@@ -324,7 +324,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const vadThresholdValue = this.get("#vadThresholdValue");
     const vadThresholdContainer = this.get("#vadThresholdContainer");
     
-    const savedThreshold = lively.preferences.get("openai-realtime-chat-vad-threshold");
+    const savedThreshold = this.readComponentPreference("openai-realtime-chat-vad-threshold");
     this.vadThreshold = savedThreshold !== undefined ? savedThreshold : 0.85;
     vadThresholdSlider.value = this.vadThreshold;
     vadThresholdValue.textContent = this.vadThreshold.toFixed(2);
@@ -410,6 +410,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const allowOpenCode = this.get("#allowOpenCodeTasks");
     const allowMessageInspection = this.get("#allowMessageInspection");
     const allowVoiceFileTools = this.get("#allowVoiceFileTools");
+    const allowMcpServers = this.get("#allowMcpServers");
 
     if (allowCodeEval) {
       allowCodeEval.checked = this.toolPermissions.allowCodeEvaluation;
@@ -423,6 +424,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     if (allowVoiceFileTools) {
       allowVoiceFileTools.checked = this.toolPermissions.allowVoiceFileTools;
     }
+    if (allowMcpServers) {
+      allowMcpServers.checked = this.toolPermissions.allowMcpServers;
+      allowMcpServers.addEventListener("change", () => this.updateMcpConfigVisibility());
+    }
+
+    // Populate MCP servers textarea
+    const mcpTextarea = this.get("#mcpServersText");
+    if (mcpTextarea && this.mcpServers?.length) {
+      mcpTextarea.value = JSON.stringify(this.mcpServers, null, 2);
+    } else if (mcpTextarea) {
+      mcpTextarea.value = "";
+    }
+    this.updateMcpConfigVisibility();
 
     // Show modal
     modal?.classList.add("visible");
@@ -437,9 +451,74 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     overlay?.classList.remove("visible");
   }
 
+  /*MD ### MCP Server Configuration MD*/
+
+  saveMcpServers() {
+    const textarea = this.get("#mcpServersText");
+    if (!textarea) return;
+
+    const text = textarea.value.trim();
+    if (!text) {
+      this.mcpServers = [];
+    } else {
+      try {
+        const parsed = JSON.parse(text);
+        this.mcpServers = Array.isArray(parsed) ? parsed : [parsed];
+      } catch (e) {
+        lively.warn("Invalid MCP server JSON", e.message);
+        return;
+      }
+    }
+    lively.preferences.set("openai-realtime-chat-mcp-servers", this.mcpServers);
+    this.log("[MCP Servers] Saved:", this.mcpServers);
+  }
+
+  getMcpToolEntries() {
+    if (!this.toolPermissions.allowMcpServers || !this.mcpServers?.length) {
+      return [];
+    }
+    return this.mcpServers.map(server => {
+      const entry = {
+        type: "mcp",
+        server_label: server.server_label || "mcp_server",
+        server_url: server.server_url,
+        require_approval: server.require_approval || "never"
+      };
+      if (server.allowed_tools && Array.isArray(server.allowed_tools)) {
+        entry.allowed_tools = server.allowed_tools;
+      }
+      if (server.headers && typeof server.headers === 'object') {
+        entry.headers = server.headers;
+      }
+      return entry;
+    });
+  }
+
+  getSessionTools() {
+    const functionTools = this.getFunctionDefinitions();
+    const mcpTools = this.getMcpToolEntries();
+    return [...functionTools, ...mcpTools];
+  }
+
+  updateMcpConfigVisibility() {
+    const checkbox = this.get("#allowMcpServers");
+    const configArea = this.get("#mcpServersConfig");
+    if (configArea) {
+      configArea.style.display = checkbox?.checked ? "block" : "none";
+    }
+  }
+
+  readComponentPreference(key) {
+    const raw = lively.preferences.read(key);
+    if (typeof raw === 'string') {
+      try { return JSON.parse(raw); } catch (e) { return undefined; }
+    }
+    return undefined;
+  }
+
   loadToolPermissions() {
     // Load from preferences, use defaults if not set
-    const savedPermissions = lively.preferences.get("openai-realtime-chat-tool-permissions");
+    const savedPermissions = this.readComponentPreference("openai-realtime-chat-tool-permissions");
     
     // Always set toolPermissions, don't rely on || operator
     if (savedPermissions && typeof savedPermissions === 'object') {
@@ -447,19 +526,25 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         allowCodeEvaluation: savedPermissions.allowCodeEvaluation !== false,
         allowOpenCodeTasks: savedPermissions.allowOpenCodeTasks !== false,
         allowMessageInspection: savedPermissions.allowMessageInspection !== false,
-        allowVoiceFileTools: savedPermissions.allowVoiceFileTools !== false
+        allowVoiceFileTools: savedPermissions.allowVoiceFileTools !== false,
+        allowMcpServers: savedPermissions.allowMcpServers === true
       };
     } else {
-      // Defaults: all enabled
+      // Defaults: all enabled except MCP (opt-in)
       this.toolPermissions = {
         allowCodeEvaluation: true,
         allowOpenCodeTasks: true,
         allowMessageInspection: true,
-        allowVoiceFileTools: true
+        allowVoiceFileTools: true,
+        allowMcpServers: false
       };
     }
 
+    // Load MCP server configs separately
+    this.mcpServers = this.readComponentPreference("openai-realtime-chat-mcp-servers") || [];
+
     this.log("[Tool Permissions] Loaded:", this.toolPermissions);
+    this.log("[MCP Servers] Loaded:", this.mcpServers);
   }
 
   saveToolPermissions() {
@@ -468,16 +553,21 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const allowOpenCode = this.get("#allowOpenCodeTasks");
     const allowMessageInspection = this.get("#allowMessageInspection");
     const allowVoiceFileTools = this.get("#allowVoiceFileTools");
+    const allowMcpServers = this.get("#allowMcpServers");
 
     this.toolPermissions = {
       allowCodeEvaluation: allowCodeEval?.checked !== false,
       allowOpenCodeTasks: allowOpenCode?.checked !== false,
       allowMessageInspection: allowMessageInspection?.checked !== false,
-      allowVoiceFileTools: allowVoiceFileTools?.checked !== false
+      allowVoiceFileTools: allowVoiceFileTools?.checked !== false,
+      allowMcpServers: allowMcpServers?.checked === true
     };
 
-    // Save to preferences
+    // Save tool permissions
     lively.preferences.set("openai-realtime-chat-tool-permissions", this.toolPermissions);
+
+    // Save MCP server configs from textarea
+    this.saveMcpServers();
 
     this.log("[Tool Permissions] Saved:", this.toolPermissions);
 
@@ -1244,7 +1334,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const apiKey = await OpenAI.ensureSubscriptionKey();
     const voice = this.realtimeVoice || "shimmer";
     const model = this.get("#modelBox").value || "gpt-4o-realtime-preview";
-    const tools = this.getFunctionDefinitions();
+    const tools = this.getSessionTools();
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
@@ -1414,6 +1504,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const sessionConfig = {
       type: "session.update",
       session: {
+        type: "realtime",
         instructions: instructions,
         audio: {
           input: {
@@ -1426,7 +1517,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             voice: this.realtimeVoice || "shimmer"
           }
         },
-        tools: this.getFunctionDefinitions(),
+        tools: this.getSessionTools(),
         tool_choice: "auto"
       }
     };
@@ -1606,16 +1697,34 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       case "session.created":
         this.log("Session created:", message);
         if (message.session && message.session.tools) {
-          this.log("✓ Functions registered in session:", message.session.tools);
-          lively.notify("Functions Ready", `${message.session.tools.length} functions available`);
+          const fnTools = message.session.tools.filter(t => t.type === "function");
+          const mcpTools = message.session.tools.filter(t => t.type === "mcp");
+          this.log(`✓ Tools registered: ${fnTools.length} function, ${mcpTools.length} MCP server(s)`);
+          lively.notify("Tools Ready", `${fnTools.length} functions, ${mcpTools.length} MCP servers`);
         }
         break;
       case "session.updated":
         this.log("Session updated:", message);
         this.log("Session transcription config:", JSON.stringify(message.session?.audio?.input?.transcription || message.session?.input_audio_transcription || "NONE"));
         if (message.session && message.session.tools) {
-          this.log("✓ Functions in updated session:", message.session.tools);
+          const fnTools = message.session.tools.filter(t => t.type === "function");
+          const mcpTools = message.session.tools.filter(t => t.type === "mcp");
+          this.log(`✓ Tools in updated session: ${fnTools.length} function, ${mcpTools.length} MCP server(s)`);
         }
+        break;
+      case "mcp_list_tools.in_progress":
+        this.log("MCP tool discovery in progress:", message);
+        break;
+      case "mcp_list_tools.completed":
+        this.log("MCP tools discovered:", message);
+        if (message.tools) {
+          const toolNames = message.tools.map(t => t.name).join(", ");
+          lively.notify("MCP Tools", `Discovered: ${toolNames}`);
+        }
+        break;
+      case "mcp_list_tools.failed":
+        this.log("MCP tool discovery failed:", JSON.stringify(message, null, 2));
+        lively.warn("MCP Error", `Failed to discover tools (item: ${message.item_id || "?"}). Check server URL and connectivity.`);
         break;
       case "response.function_call_arguments.delta":
         // Function arguments are being streamed
@@ -1627,11 +1736,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         break;
       case "response.done":
         this.log("Response complete:", message);
-        // Check if response contains function calls
+        // Check if response contains function calls or MCP calls
         if (message.response && message.response.output) {
           for (const item of message.response.output) {
             if (item.type === "function_call") {
               this.handleFunctionCallFromResponse(item);
+            } else if (item.type === "mcp_call") {
+              this.log("[MCP] Tool call in response:", item);
             }
           }
         }
@@ -1698,6 +1809,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       case "conversation.item.input_audio_transcription.delta":
         // Incremental transcript update
         if (message.delta && message.item_id) {
+          // Create message widget if it doesn't exist yet (delta can arrive before item.added)
+          if (!this.messageTimestamps.has(message.item_id)) {
+            await this.createRealtimeMessage('user', '', { item_id: message.item_id, persist: false });
+          }
           // Accumulate user transcript deltas (same as assistant)
           const currentTranscript = this.accumulatedTranscripts.get(message.item_id) || "";
           const updatedTranscript = currentTranscript + message.delta;
@@ -1737,6 +1852,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.log("Transcript delta:", message.delta);
 
         if (message.delta && message.item_id) {
+          // Create message widget if it doesn't exist yet (delta can arrive before item.added)
+          if (!this.messageTimestamps.has(message.item_id)) {
+            await this.createRealtimeMessage('assistant', '', { item_id: message.item_id, persist: false });
+          }
           // Accumulate transcript
           const currentTranscript = this.accumulatedTranscripts.get(message.item_id) || "";
           const updatedTranscript = currentTranscript + message.delta;

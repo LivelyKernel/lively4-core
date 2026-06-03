@@ -346,6 +346,34 @@
       margin-bottom: 12px;
     }
 
+    .tool-setting-divider {
+      border-top: 1px solid #e0e0e0;
+      margin: 12px 0;
+    }
+
+    .mcp-config-area {
+      margin-left: 26px;
+      margin-bottom: 12px;
+    }
+
+    .mcp-config-label {
+      display: block;
+      font-size: 12px;
+      color: #444;
+      margin-bottom: 4px;
+    }
+
+    .mcp-config-area textarea {
+      width: 100%;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
     .tool-settings-footer {
       display: flex;
       justify-content: flex-end;
@@ -475,6 +503,24 @@
         </div>
         <div class="tool-setting-description">
           Enables Vox to read files and list recent files during voice conversations
+        </div>
+
+        <div class="tool-setting-divider"></div>
+
+        <div class="tool-setting-item">
+          <input type="checkbox" id="allowMcpServers" />
+          <label for="allowMcpServers">Allow MCP Servers</label>
+        </div>
+        <div class="tool-setting-description">
+          Enables remote MCP tool servers. Tools are called by OpenAI, not executed locally.
+        </div>
+        <div id="mcpServersConfig" class="mcp-config-area" style="display: none;">
+          <label class="mcp-config-label">Server configuration (JSON):</label>
+          <textarea id="mcpServersText" rows="6" spellcheck="false" placeholder='[{
+  "server_label": "my_server",
+  "server_url": "https://example.com/mcp",
+  "require_approval": "never"
+}]'></textarea>
         </div>
       </div>
       <div class="tool-settings-footer">
