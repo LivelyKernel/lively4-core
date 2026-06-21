@@ -21,6 +21,11 @@ export class Point {
   // static random(scalePt) {
   //   return new Point(num.randomSmallerInteger(scalePt.x), num.randomSmallerInteger(scalePt.y));
   // }
+  // not only integer anymore
+  static random(pt) {
+    return new Point(Math.random() * pt.x, Math.random() * pt.y);
+  }
+
 
   static fromLiteral(literal) {
     return pt(literal.x, literal.y);
