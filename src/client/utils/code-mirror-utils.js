@@ -1,4 +1,3 @@
-
 function isBlank(str) {
   return (/^\s*$/.test(str));
 }
@@ -15,7 +14,7 @@ export function hasCleanLeft(start) {
 // `this` is a codemirror
 export function hasCleanRight(pos) {
   const backLineEnd = {
-    co: Infinity,
+    ch: Infinity,
     line: pos.line
   };
   return isBlank(this.getRange(pos, backLineEnd));
