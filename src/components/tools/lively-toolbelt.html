@@ -1,0 +1,149 @@
+<template id="lively-toolbelt" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      position: fixed;
+      display: flex;
+      justify-content: center;
+      
+      left: 0;
+      right: 0;
+      bottom: 0;
+      
+      z-index: 1001;
+      pointer-events: none;
+      
+      --padding: 8px;
+    }
+    
+    #wrapper {
+      /*   background: green; */
+      pointer-events: auto;
+      
+      width: 300px;
+      height: 50px;
+      display: inline-block;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    :host(:hover) #wrapper {
+      width: 400px;
+      height: 70px;
+    }
+    
+    #container {
+      box-sizing: border-box;
+      
+      display: flex;
+      position: relative;
+      
+      overflow: hidden;
+      
+      margin: 0 auto;
+      width: 100px;
+      height: 10px;
+      bottom: 5px;
+      
+      background-color: rgba(255, 255, 255, .3);
+      border-radius: .8125rem;
+      box-shadow: 0px 0px .5px rgba(0,0,0,.18);
+      border: .1px solid color-mix(in rgba, lightgray 50%, transparent);
+      --transition-time: 300ms;
+      --transition-tween: ease;
+      transition:
+        width var(--transition-time) var(--transition-tween),
+        height var(--transition-time) var(--transition-tween),
+        background-color var(--transition-time) var(--transition-tween),
+        border-radius var(--transition-time) var(--transition-tween),
+        box-shadow var(--transition-time) var(--transition-tween),
+        border var(--transition-time) var(--transition-tween),
+        bottom var(--transition-time) var(--transition-tween),
+        transform var(--transition-time) var(--transition-tween);
+    }
+    
+    :host(:hover) #container {
+      /*   background: blue; */
+      width: var(--w);
+      height: calc(var(--h) + var(--padding));
+      
+      background-color: white;
+      border-radius: .8125rem;
+      box-shadow: 0px 0px .5px rgba(0,0,0,.18), 0px 3px 8px rgba(0,0,0,.1), 0px 1px 3px rgba(0,0,0,.1), inset 0px .5px 0px rgba(0,0,0,.08), inset 0px 0px .5px rgba(0,0,0,.1);
+      border: .3px solid darkgray;
+      bottom: 12px;
+    }
+    
+    #inner {
+      /*   height: 48px; */
+      display: flex;
+      gap: .5rem;
+      padding: var(--padding);
+    }
+    .tool-group {
+      display: flex;
+      gap: 1px;
+    }
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000000e5;
+      border-radius: .3125rem;
+      box-shadow: none;
+      outline: none;
+      
+      margin: 0;
+      letter-spacing: inherit;
+      text-align: inherit;
+      border: none;
+      background: none;
+      
+      width: 2rem;
+      &.more {
+        width: 16px;
+      }
+      height: 2rem;
+      
+      &:hover {
+        background: #f5f5f5;
+        /*     border:green solid 2px; */
+      }
+      
+      .fa {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        justify-items: center;
+      }
+      
+    }
+    
+    .divider {
+      width: 1px;
+      background: darkgray;
+    }
+  </style>
+  <div id='wrapper'>
+    <div id='container'>
+      <div id='inner'>
+        <button id="data-loader" title='Data Loader'><i class='fa fa-download'></i></button>
+        <div class='tool-group'>
+          <button id="viewer" title='V2 WebGPU Viewer'><i class='fa fa-desktop'></i></button>
+          <button id="more-viewers" class='more' title='More Viewers'><i class='fa fa-caret-down'></i></button>
+        </div>
+        <span class='divider'></span>
+        <button id="performance-panel" title='Performance Panel'><i class='fa fa-area-chart'></i></button>
+        <div class='tool-group'>
+          <button id="performance-load-tester" title='Notification Events Receiver'><i class='fa fa-list'></i></button>
+          <button id="more-performance" class='more' title='More Benchmark and Introspection Tools'><i class='fa fa-caret-down'></i></button>
+        </div>
+        <div class='tool-group'>
+          <button id="own-code" title='My Code'><i class='fa fa-code'></i></button>
+          <button id="more-code" class='more' title='More Code'><i class='fa fa-caret-down'></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
