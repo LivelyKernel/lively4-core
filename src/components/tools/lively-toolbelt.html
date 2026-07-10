@@ -28,7 +28,8 @@
       justify-content: center;
       align-items: flex-end;
     }
-    :host(:hover) #wrapper {
+    :host(:hover) #wrapper,
+    :host(.pinned) #wrapper {
       width: 400px;
       height: 70px;
     }
@@ -63,7 +64,8 @@
         transform var(--transition-time) var(--transition-tween);
     }
     
-    :host(:hover) #container {
+    :host(:hover) #container,
+    :host(.pinned) #container {
       /*   background: blue; */
       width: var(--w);
       height: calc(var(--h) + var(--padding));
@@ -80,6 +82,9 @@
       display: flex;
       gap: .5rem;
       padding: var(--padding);
+      /* size to content instead of stretching to #container's (animated) height, so the
+         JS measurement of #inner stays independent of --h and can't feed back / grow */
+      align-self: center;
     }
     .tool-group {
       display: flex;
@@ -124,6 +129,11 @@
       width: 1px;
       background: darkgray;
     }
+
+    :host(.pinned) #pin {
+      background: rgb(255 149 0);
+      color: white;
+    }
   </style>
   <div id='wrapper'>
     <div id='container'>
@@ -131,18 +141,20 @@
         <button id="data-loader" title='Data Loader'><i class='fa fa-download'></i></button>
         <div class='tool-group'>
           <button id="viewer" title='V2 WebGPU Viewer'><i class='fa fa-desktop'></i></button>
-          <button id="more-viewers" class='more' title='More Viewers'><i class='fa fa-caret-down'></i></button>
+          <button id="more-viewers" class='more' title='More Viewers'><i class='fa fa-angle-down'></i></button>
         </div>
         <span class='divider'></span>
         <button id="performance-panel" title='Performance Panel'><i class='fa fa-area-chart'></i></button>
         <div class='tool-group'>
           <button id="performance-load-tester" title='Notification Events Receiver'><i class='fa fa-list'></i></button>
-          <button id="more-performance" class='more' title='More Benchmark and Introspection Tools'><i class='fa fa-caret-down'></i></button>
+          <button id="more-performance" class='more' title='More Benchmark and Introspection Tools'><i class='fa fa-angle-down'></i></button>
         </div>
         <div class='tool-group'>
           <button id="own-code" title='My Code'><i class='fa fa-code'></i></button>
-          <button id="more-code" class='more' title='More Code'><i class='fa fa-caret-down'></i></button>
+          <button id="more-code" class='more' title='More Code'><i class='fa fa-angle-down'></i></button>
         </div>
+        <span class='divider'></span>
+        <button id="pin" title='Pin Toolbelt'><i class='fa fa-thumb-tack'></i></button>
       </div>
     </div>
   </div>

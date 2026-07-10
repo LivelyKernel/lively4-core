@@ -128,7 +128,8 @@ The file watcher now properly handles connection lifecycle with the component's 
         lively.notify(`JS module ${label}: ${pathParts.join('/') || change.path}`, 2000, 'purple');
       } else {
         // Fallback: use LivelyChanges for CSS/HTML/other
-        const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+        // cache: 'reload' bypasses the :9005 HTTP cache so we don't re-apply stale content
+        const freshSourceCode = await fetch(expectedUrl, { cache: 'reload' }).then(r => r.text());
         await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
         change.reloadInfo = {
           reloaded: false,
@@ -333,15 +334,20 @@ The file watcher now properly handles connection lifecycle with the component's 
       // No open containers 
       this.markChangeAsUnopened(change);
       
-      // If mode is 'all', apply changes even without open containers
-      if (applyMode === 'all' && change.eventType === 'CHANGE') {
+      // If mode is 'all', apply changes even without open containers.
+      // CREATE is included because atomic/external saves (write-temp + rename, as done by
+      // the Edit tool and many editors on Windows) surface as CREATE rather than CHANGE.
+      if (applyMode === 'all' && (change.eventType === 'CHANGE' || change.eventType === 'CREATE')) {
         await this.applyChangesWithoutContainer(change, expectedUrl, pathParts);
       }
       
       return;
     }
     
-    // For CREATE events, just highlight containers but don't do reactive updates
+    // Atomic/external saves often surface as CREATE (write-temp + rename) rather than
+    // CHANGE. For a file that already has an open container this is a re-save, not a new
+    // file, so clear any deleted-state and then fall through to the shared apply loop
+    // below (no early return) so live instances actually get migrated.
     if (change.eventType === 'CREATE') {
       matchingContainers.forEach(container => {
         // Clear deleted state if file gets recreated
@@ -349,11 +355,8 @@ The file watcher now properly handles connection lifecycle with the component's 
           this.clearContainerDeletedState(container);
           lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
         }
-        
-        // lively.showElement(container);
-        lively.notify(`File created (container open): ${pathParts.join('/') || change.path}`, 2000, 'green');
       });
-      return;
+      // no return: continue to the reactive apply loop below
     }
     
     // For DELETE events, warn dramatically about deleted files still being open
@@ -387,7 +390,8 @@ The file watcher now properly handles connection lifecycle with the component's 
           await container.reloadContent(); // Reload content preserving current mode
           
           // Fetch fresh source code from server for external updates
-          const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+          // cache: 'reload' bypasses the :9005 HTTP cache so we don't re-apply stale content
+          const freshSourceCode = await fetch(expectedUrl, { cache: 'reload' }).then(r => r.text());
           await container.applyOutsideChanges(expectedUrl, false, freshSourceCode); // Reactive update with fresh source
           updatedCount++;
           

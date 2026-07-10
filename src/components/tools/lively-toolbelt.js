@@ -14,20 +14,19 @@ export default class LivelyToolbelt extends Morph {
     this.classList.add('lively-content')
     this.registerButtons()
 
-    const wrap = this.get('#wrapper')
-    const container  = this.get('#container')
-    // const btn  = document.getElementById('toggle')
-    const ro = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        // Prefer borderBoxSize if available; fall back to scrollWidth
-        const w = container.scrollWidth
-        const h = container.scrollHeight
-        // lively.notify('--w: ' + w + ' --h: ' + h)
-        this.style.setProperty('--w', `${Math.ceil(w)}px`)
-        this.style.setProperty('--h', `${Math.ceil(h)}px`)
-      }
+    // Measure the content (#inner), NOT #container: when hovered/pinned #container's
+    // height is calc(var(--h) + var(--padding)), and scrollHeight is always >= that, so
+    // measuring #container feeds --h back into itself and grows the toolbelt by --padding
+    // on every re-measure (e.g. each server change while pinned). #inner sizes to its
+    // content and is independent of the container's animated height.
+    const inner = this.get('#inner')
+    const ro = new ResizeObserver(() => {
+      const w = inner.scrollWidth
+      const h = inner.scrollHeight
+      this.style.setProperty('--w', `${Math.ceil(w)}px`)
+      this.style.setProperty('--h', `${Math.ceil(h)}px`)
     })
-    ro.observe(wrap)
+    ro.observe(inner)
   }
 
   /*MD ## Menu Entries MD*/
@@ -130,6 +129,10 @@ export default class LivelyToolbelt extends Morph {
 
   onOwnCode(evt) {
     this.openOrFocusPath(this.ownFolder + 'lively-toolbelt.js', true, true)
+  }
+
+  onPin(evt) {
+    this.classList.toggle('pinned')
   }
 
   async onMoreCode(e) {
