@@ -68,7 +68,7 @@
     :host(.pinned) #container {
       /*   background: blue; */
       width: var(--w);
-      height: calc(var(--h) + var(--padding));
+      height: var(--h);
       
       background-color: white;
       border-radius: .8125rem;
@@ -83,8 +83,10 @@
       gap: .5rem;
       padding: var(--padding);
       /* size to content instead of stretching to #container's (animated) height, so the
-         JS measurement of #inner stays independent of --h and can't feed back / grow */
-      align-self: center;
+         JS measurement of #inner stays independent of --h and can't feed back / grow.
+         flex-start (not center) keeps the content top-anchored so the collapsed ~10px
+         container clips it to empty padding rather than revealing the icon glyphs. */
+      align-self: flex-start;
     }
     .tool-group {
       display: flex;
