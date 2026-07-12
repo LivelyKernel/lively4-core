@@ -85,10 +85,12 @@ export default class LivelyChanges {
     }
   }
   
-  static async updateModuleFile(container, url, sourceCode) {
+  // force=true marks an interactive save (from onSave); force=false marks a reactive
+  // external change picked up by the change watcher.
+  static async updateModuleFile(container, url, sourceCode, force = false) {
     var moduleName = container.getURL().pathname.match(/([^/]+)\.((js)|(ts))$/);
     if (!moduleName) return;
-    
+
     moduleName = moduleName[1];
 
     if (container.lastLoadingFailed) {
@@ -105,6 +107,12 @@ export default class LivelyChanges {
         container.loadTestModule(...dependentTests);
       }
       console.log("END DEP TEST RUN");
+    } else if (!force) {
+      // Reactive external change while this container has live-eval disabled: still reload
+      // the module so running instances never go stale. The live-eval toggle only governs
+      // whether the container auto-runs *its own* interactive saves, not external edits.
+      // (loadModule still honors a "disable livecode" marker in the source.)
+      await container.loadModule("" + url);
     } else {
       lively.notify("ignore module " + moduleName);
     }
@@ -176,7 +184,7 @@ export default class LivelyChanges {
         break;
       case 'module':
         if (container) {
-          await LivelyChanges.updateModuleFile(container, url, sourceCode);
+          await LivelyChanges.updateModuleFile(container, url, sourceCode, force);
         } else {
           // Could potentially reload modules without container in future
           console.log(`Module detected but no container: ${url}`);
