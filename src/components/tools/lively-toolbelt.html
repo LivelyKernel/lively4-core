@@ -15,23 +15,34 @@
       pointer-events: none;
       
       --padding: 8px;
+      --accent-color: rgb(255 149 0);
+      --transition-time: 1300ms;
+      --transition-tween: ease;
     }
     
     #wrapper {
       /*   background: green; */
       pointer-events: auto;
-      
-      width: 300px;
+
       height: 50px;
-      display: inline-block;
       display: flex;
       justify-content: center;
       align-items: flex-end;
     }
     :host(:hover) #wrapper,
     :host(.pinned) #wrapper {
-      width: 400px;
       height: 70px;
+    }
+
+    /* Animated hover buffer flanking the container. The pseudo-elements are flex items
+       of #wrapper and inherit its pointer-events:auto, so they enlarge the hover catch
+       area (and the tinted background) by a dynamic, animated amount on each side.
+       With the wrapper no longer fixed-width, these pad widths define the buffer. */
+    #wrapper::before,
+    #wrapper::after {
+      content: '';
+      align-self: stretch;
+      width: 100px;
     }
     
     #container {
@@ -51,8 +62,6 @@
       border-radius: .8125rem;
       box-shadow: 0px 0px .5px rgba(0,0,0,.18);
       border: .1px solid color-mix(in rgba, lightgray 50%, transparent);
-      --transition-time: 300ms;
-      --transition-tween: ease;
       transition:
         width var(--transition-time) var(--transition-tween),
         height var(--transition-time) var(--transition-tween),
@@ -133,13 +142,42 @@
     }
 
     :host(.pinned) #pin {
-      background: rgb(255 149 0);
+      background: var(--accent-color);
       color: white;
+    }
+
+    /* Highlight the active mode with the same color as the pinned pin.
+       Normal mode is the default (no class); interactive creation mode is
+       active while the host carries .interactive-creation. */
+    #normal-mode {
+      background: var(--accent-color);
+      color: white;
+    }
+    :host(.interactive-creation) #normal-mode {
+      background: none;
+      color: #000000e5;
+    }
+    :host(.interactive-creation) #creation-mode {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    /* Hide the inner content while the toolbelt is minified (not hovered / pinned). */
+    #inner > * {
+      opacity: 0;
+      transition: opacity var(--transition-time) var(--transition-tween);
+    }
+    :host(:hover) #inner > *,
+    :host(.pinned) #inner > * {
+      opacity: 1;
     }
   </style>
   <div id='wrapper'>
     <div id='container'>
       <div id='inner'>
+        <button id="normal-mode" title='Normal Mode'><i class='fa fa-file-o'></i></button>
+        <button id="creation-mode" title='Interactive Creation Mode'><i class='fa fa-pencil'></i></button>
+        <span class='divider'></span>
         <button id="data-loader" title='Data Loader'><i class='fa fa-download'></i></button>
         <div class='tool-group'>
           <button id="viewer" title='V2 WebGPU Viewer'><i class='fa fa-desktop'></i></button>

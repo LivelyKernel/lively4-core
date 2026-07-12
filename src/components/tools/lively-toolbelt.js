@@ -27,6 +27,10 @@ export default class LivelyToolbelt extends Morph {
       this.style.setProperty('--h', `${Math.ceil(h)}px`)
     })
     ro.observe(inner)
+
+    // Enter the initial mode on startup / page reload so the matching callback fires.
+    if (this.mode === 'creation') this.enterInteractiveCreationMode()
+    else this.enterNormalMode()
   }
 
   /*MD ## Menu Entries MD*/
@@ -133,6 +137,54 @@ export default class LivelyToolbelt extends Morph {
 
   onPin(evt) {
     this.classList.toggle('pinned')
+  }
+
+  /*MD ## Modes MD*/
+  // 'normal' (document icon) is the default; 'creation' (pencil icon) is active
+  // while the host carries the .interactive-creation class, which this component toggles.
+  get mode() {
+    return this.classList.contains('interactive-creation') ? 'creation' : 'normal'
+  }
+
+  onNormalMode(evt) {
+    this.toggleMode('normal')
+  }
+
+  onCreationMode(evt) {
+    this.toggleMode('creation')
+  }
+
+  // Clicking the already-active mode switches back to normal mode.
+  toggleMode(mode) {
+    this.enterMode(this.mode === mode ? 'normal' : mode)
+  }
+
+  enterMode(mode) {
+    if (mode === this.mode) return
+
+    if (this.mode === 'normal') this.exitNormalMode()
+    else this.exitInteractiveCreationMode()
+
+    this.classList.toggle('interactive-creation', mode === 'creation')
+
+    if (mode === 'normal') this.enterNormalMode()
+    else this.enterInteractiveCreationMode()
+  }
+
+  enterNormalMode() {
+    lively.notify('Entered normal mode')
+  }
+
+  exitNormalMode() {
+    lively.notify('Exited normal mode')
+  }
+
+  enterInteractiveCreationMode() {
+    lively.notify('Entered interactive creation mode')
+  }
+
+  exitInteractiveCreationMode() {
+    lively.notify('Exited interactive creation mode')
   }
 
   async onMoreCode(e) {
