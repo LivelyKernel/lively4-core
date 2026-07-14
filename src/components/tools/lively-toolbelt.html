@@ -146,18 +146,28 @@
       color: white;
     }
 
-    /* Highlight the active mode with the same color as the pinned pin.
-       Normal mode is the default (no class); interactive creation mode is
-       active while the host carries .interactive-creation. */
-    #normal-mode {
+    /* Highlight the active mode with the same color as the pinned pin. The
+       active mode lives in the host's mode attribute (radio group); not set
+       means normal, so normal is lit whenever no drawing mode is active. */
+    #mode-normal {
       background: var(--accent-color);
       color: white;
     }
-    :host(.interactive-creation) #normal-mode {
+    :host([mode='freeform']) #mode-normal,
+    :host([mode='rectangle']) #mode-normal,
+    :host([mode='arrow']) #mode-normal,
+    :host([mode='eraser']) #mode-normal {
       background: none;
       color: #000000e5;
     }
-    :host(.interactive-creation) #creation-mode {
+
+    /* Active drawing mode + the independent audio toggle (.audio), which can
+       be lit at the same time as any mode. */
+    :host([mode='freeform']) #mode-freeform,
+    :host([mode='rectangle']) #mode-rectangle,
+    :host([mode='arrow']) #mode-arrow,
+    :host([mode='eraser']) #mode-eraser,
+    :host(.audio) #audio-mode {
       background: var(--accent-color);
       color: white;
     }
@@ -175,8 +185,14 @@
   <div id='wrapper'>
     <div id='container'>
       <div id='inner'>
-        <button id="normal-mode" title='Normal Mode'><i class='fa fa-file-o'></i></button>
-        <button id="creation-mode" title='Interactive Creation Mode'><i class='fa fa-pencil'></i></button>
+        <div class='tool-group modes'>
+          <button id="mode-normal" title='Normal Mode'><i class='fa fa-mouse-pointer'></i></button>
+          <button id="mode-freeform" title='Freeform Drawing'><i class='fa fa-pencil'></i></button>
+          <button id="mode-rectangle" title='Rectangle'><i class='fa fa-square-o'></i></button>
+          <button id="mode-arrow" title='Arrow'><i class='fa fa-long-arrow-right'></i></button>
+          <button id="mode-eraser" title='Eraser'><i class='fa fa-eraser'></i></button>
+        </div>
+        <button id="audio-mode" title='Audio Mode'><i class='fa fa-microphone'></i></button>
         <span class='divider'></span>
         <button id="data-loader" title='Data Loader'><i class='fa fa-download'></i></button>
         <div class='tool-group'>

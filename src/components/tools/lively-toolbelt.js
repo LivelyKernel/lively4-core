@@ -28,9 +28,10 @@ export default class LivelyToolbelt extends Morph {
     })
     ro.observe(inner)
 
-    // Enter the initial mode on startup / page reload so the matching callback fires.
-    if (this.mode === 'creation') this.enterInteractiveCreationMode()
-    else this.enterNormalMode()
+    // Re-apply the active mode on startup / reload so a persisted drawing mode
+    // loads its interaction layer. Normal needs nothing.
+    if (this.mode !== 'normal') this.applyMode(this.mode)
+    if (this.classList.contains('audio')) this.enterAudioMode()
   }
 
   /*MD ## Menu Entries MD*/
@@ -140,51 +141,74 @@ export default class LivelyToolbelt extends Morph {
   }
 
   /*MD ## Modes MD*/
-  // 'normal' (document icon) is the default; 'creation' (pencil icon) is active
-  // while the host carries the .interactive-creation class, which this component toggles.
+  // Mutually-exclusive drawing modes form a radio group; 'normal' (mouse cursor)
+  // is the default and needs no rendering. The active mode lives in the host's
+  // `mode` attribute (absent === 'normal'). Audio is an independent toggle
+  // handled separately below.
+  static get drawingModes() {
+    return ['freeform', 'rectangle', 'arrow', 'eraser']
+  }
+
   get mode() {
-    return this.classList.contains('interactive-creation') ? 'creation' : 'normal'
+    return this.getAttribute('mode') || 'normal'
   }
 
-  onNormalMode(evt) {
-    this.toggleMode('normal')
-  }
+  onModeNormal(evt) { this.selectMode('normal') }
+  onModeFreeform(evt) { this.selectMode('freeform') }
+  onModeRectangle(evt) { this.selectMode('rectangle') }
+  onModeArrow(evt) { this.selectMode('arrow') }
+  onModeEraser(evt) { this.selectMode('eraser') }
 
-  onCreationMode(evt) {
-    this.toggleMode('creation')
-  }
-
-  // Clicking the already-active mode switches back to normal mode.
-  toggleMode(mode) {
+  // Clicking the already-active mode switches back to normal.
+  selectMode(mode) {
     this.enterMode(this.mode === mode ? 'normal' : mode)
   }
 
-  enterMode(mode) {
+  async enterMode(mode) {
     if (mode === this.mode) return
-
-    if (this.mode === 'normal') this.exitNormalMode()
-    else this.exitInteractiveCreationMode()
-
-    this.classList.toggle('interactive-creation', mode === 'creation')
-
-    if (mode === 'normal') this.enterNormalMode()
-    else this.enterInteractiveCreationMode()
+    await this.leaveMode(this.mode)
+    // Not-set === normal, so drop the attribute rather than storing 'normal'.
+    if (mode === 'normal') this.removeAttribute('mode')
+    else this.setAttribute('mode', mode)
+    await this.applyMode(mode)
   }
 
-  enterNormalMode() {
-    lively.notify('Entered normal mode')
+  async applyMode(mode) {
+    if (LivelyToolbelt.drawingModes.includes(mode)) {
+      (await this.interaction()).activate(this, mode)
+    } else {
+      lively.notify(`Entered ${mode} mode`)
+    }
   }
 
-  exitNormalMode() {
-    lively.notify('Exited normal mode')
+  async leaveMode(mode) {
+    if (LivelyToolbelt.drawingModes.includes(mode)) {
+      (await this.interaction()).deactivate(this, mode)
+    }
   }
 
-  enterInteractiveCreationMode() {
-    lively.notify('Entered interactive creation mode')
+  // Load the rendering/interaction layer lazily — only once a drawing mode
+  // becomes active — and cache the promise so it loads at most once.
+  async interaction() {
+    const module = await (this._interactionPromise
+      ??= System.import('src/components/tools/lively-toolbelt-interaction.js'))
+    return module.default
   }
 
-  exitInteractiveCreationMode() {
-    lively.notify('Exited interactive creation mode')
+  /*MD ## Audio MD*/
+  // Independent toggle: coexists with whatever drawing mode is active.
+  onAudioMode(evt) {
+    this.classList.contains('audio') ? this.exitAudioMode() : this.enterAudioMode()
+  }
+
+  enterAudioMode() {
+    this.classList.add('audio')
+    lively.notify('Audio mode on')
+  }
+
+  exitAudioMode() {
+    this.classList.remove('audio')
+    lively.notify('Audio mode off')
   }
 
   async onMoreCode(e) {
