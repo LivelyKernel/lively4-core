@@ -69,6 +69,13 @@ class DrawingController {
     this.host = host
     this.mode = null
 
+    // Only one controller may own the global listeners/draft at a time. A
+    // toolbelt migration or module reload can leave older controllers behind;
+    // their stacked capture handlers would trap the mode and block clicks. Clear
+    // any before this one registers.
+    lively.removeEventListener('ToolbeltDrawing', document.documentElement)
+    document.querySelectorAll('#lively-toolbelt-draft').forEach(el => el.remove())
+
     // Style knobs (could later be driven by toolbelt UI).
     this.color = '#1b1b1b'
     this.baseWidth = 2.5
@@ -79,6 +86,10 @@ class DrawingController {
     // Clusters (lively-figures) and the most recently drawn-into one.
     this.clusters = []
     this.active = null
+
+    // Per-commit undo/redo history (this session only; restored shapes aren't in it).
+    this.undoStack = []
+    this.redoStack = []
 
     this.activePointerId = null
     this.current = null
@@ -237,6 +248,50 @@ class DrawingController {
     cluster.lastTime = performance.now()
     this.active = cluster
     this.layoutCluster(cluster)
+
+    // Record for undo; a fresh commit invalidates the redo branch.
+    this.undoStack.push({ shape, cluster })
+    this.redoStack = []
+    this.host.refreshDrawingButtons?.()
+  }
+
+  /*MD ## Undo / redo MD*/
+  undo() {
+    const action = this.undoStack.pop()
+    if (!action) return
+    const { shape, cluster } = action
+    const i = cluster.shapes.indexOf(shape)
+    if (i >= 0) cluster.shapes.splice(i, 1)
+    shape.el.remove()
+    if (cluster.shapes.length === 0) {
+      // The shape had created this cluster — drop the (now empty) figure.
+      cluster.figure.remove()
+      const ci = this.clusters.indexOf(cluster)
+      if (ci >= 0) this.clusters.splice(ci, 1)
+      if (this.active === cluster) this.active = null
+    } else {
+      this.layoutCluster(cluster)
+    }
+    this.redoStack.push(action)
+    this.host.refreshDrawingButtons?.()
+  }
+
+  redo() {
+    const action = this.redoStack.pop()
+    if (!action) return
+    const { shape, cluster } = action
+    if (!this.clusters.includes(cluster)) {
+      // Re-attach the figure this shape had created.
+      this.clusters.push(cluster)
+      document.body.appendChild(cluster.figure)
+    }
+    cluster.group.appendChild(shape.el)
+    cluster.shapes.push(shape)
+    renderShape(shape, this.baseWidth)
+    this.layoutCluster(cluster)
+    this.active = cluster
+    this.undoStack.push(action)
+    this.host.refreshDrawingButtons?.()
   }
 
   // Recent OR near, else a new cluster.

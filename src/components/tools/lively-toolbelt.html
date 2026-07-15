@@ -97,6 +97,66 @@
          container clips it to empty padding rather than revealing the icon glyphs. */
       align-self: flex-start;
     }
+    /* Vertical stack: secondary actions panel above the main bar. */
+    #stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    /* Secondary actions panel (undo/redo/…). Revealed only outside normal mode
+       (the `mode` attribute is unset in normal mode). grid-template-rows 0fr->1fr
+       animates the height smoothly to the real content size — max-height would
+       clip the content and make it pop in at the end. The inner panel fades and
+       slides in parallel. */
+    #actions {
+      display: grid;
+      grid-template-rows: 0fr;
+      margin-bottom: 0;
+      transition:
+        grid-template-rows var(--transition-time) var(--transition-tween),
+        margin-bottom var(--transition-time) var(--transition-tween);
+    }
+    .actions-clip {
+      overflow: hidden;
+      min-height: 0;
+    }
+    .actions-panel {
+      display: flex;
+      gap: .25rem;
+      padding: var(--padding);
+      opacity: 0;
+      transform: translateY(6px);
+      pointer-events: none;
+      background-color: white;
+      border-radius: .8125rem;
+      box-shadow: 0px 0px .5px rgba(0,0,0,.18), 0px 3px 8px rgba(0,0,0,.1), 0px 1px 3px rgba(0,0,0,.1);
+      border: .3px solid darkgray;
+      transition:
+        opacity var(--transition-time) var(--transition-tween),
+        transform var(--transition-time) var(--transition-tween);
+    }
+    :host([mode]:hover) #actions,
+    :host([mode].pinned) #actions {
+      grid-template-rows: 1fr;
+      margin-bottom: 8px;
+    }
+    :host([mode]:hover) .actions-panel,
+    :host([mode].pinned) .actions-panel {
+      opacity: 1;
+      transform: none;
+      pointer-events: auto;
+    }
+
+    button:disabled {
+      opacity: .35;
+      cursor: default;
+    }
+    button:disabled:hover {
+      background: none;
+    }
+
     .tool-group {
       display: flex;
       gap: 1px;
@@ -183,7 +243,21 @@
     }
   </style>
   <div id='wrapper'>
-    <div id='container'>
+    <div id='stack'>
+      <div id='actions'>
+        <div class='actions-clip'>
+          <div class='actions-panel'>
+            <button id="undo" title='Undo' disabled><i class='fa fa-undo'></i></button>
+            <button id="redo" title='Redo' disabled><i class='fa fa-repeat'></i></button>
+            <span class='divider'></span>
+            <button id="delete-selection" title='Delete (coming soon)' disabled><i class='fa fa-trash-o'></i></button>
+            <button id="duplicate-selection" title='Duplicate (coming soon)' disabled><i class='fa fa-clone'></i></button>
+            <span class='divider'></span>
+            <button id="more-actions" title='More (coming soon)' disabled><i class='fa fa-ellipsis-v'></i></button>
+          </div>
+        </div>
+      </div>
+      <div id='container'>
       <div id='inner'>
         <div class='tool-group modes'>
           <button id="mode-normal" title='Normal Mode'><i class='fa fa-mouse-pointer'></i></button>
@@ -211,6 +285,7 @@
         </div>
         <span class='divider'></span>
         <button id="pin" title='Pin Toolbelt'><i class='fa fa-thumb-tack'></i></button>
+      </div>
       </div>
     </div>
   </div>

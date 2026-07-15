@@ -32,6 +32,8 @@ export default class LivelyToolbelt extends Morph {
     // loads its interaction layer. Normal needs nothing.
     if (this.mode !== 'normal') this.applyMode(this.mode)
     if (this.classList.contains('audio')) this.enterAudioMode()
+
+    this.refreshDrawingButtons()
   }
 
   /*MD ## Menu Entries MD*/
@@ -193,6 +195,23 @@ export default class LivelyToolbelt extends Morph {
     const module = await (this._interactionPromise
       ??= System.import('src/components/tools/lively-toolbelt-interaction.js'))
     return module.default
+  }
+
+  /*MD ## Undo / redo MD*/
+  async onUndo(evt) { (await this.drawingController()).undo() }
+  async onRedo(evt) { (await this.drawingController()).redo() }
+
+  // The drawing controller (created + cached on the host, adopts existing drawings).
+  async drawingController() {
+    return (await this.interaction()).controllerFor(this)
+  }
+
+  // Enable/disable the history buttons from the controller's stacks.
+  refreshDrawingButtons() {
+    const c = this.__toolbeltDrawing
+    const undo = this.get('#undo'), redo = this.get('#redo')
+    if (undo) undo.disabled = !(c && c.undoStack && c.undoStack.length)
+    if (redo) redo.disabled = !(c && c.redoStack && c.redoStack.length)
   }
 
   /*MD ## Audio MD*/
