@@ -99,6 +99,10 @@ class DrawingController {
     // A pen/mouse tap is a draw AND emits a click; swallow that click while
     // drawing so it can't also select/grab the surrounding drawing.
     lively.addEventListener('ToolbeltDrawing', root, 'click', this.onClick, true)
+
+    // Rehydrate clusters from lively-figures that lively-content persistence
+    // restored, so new strokes can join drawings that survived a page reload.
+    this.adoptExistingClusters()
   }
 
   // Transient screen-fixed layer for the stroke being drawn — a reliable
@@ -253,6 +257,7 @@ class DrawingController {
   async createCluster(startWorld) {
     const figure = await lively.create('lively-figure')
     figure.classList.add('lively-content')
+    figure.setAttribute('data-toolbelt-cluster', '') // marker for rehydration after reload
     figure.style.position = 'absolute'
     const svg = svgEl('svg', { style: 'position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; pointer-events:none;' })
     svg.appendChild(this.arrowMarkerDefs())
@@ -265,6 +270,41 @@ class DrawingController {
     const cluster = { figure, svg, group, frame: { x: startWorld.x, y: startWorld.y }, shapes: [], lastTime: performance.now() }
     this.clusters.push(cluster)
     return cluster
+  }
+
+  // Rebuild the in-memory cluster model from lively-figures already in the DOM
+  // (restored by persistence). Reconstructs each cluster's frame from the
+  // figure's world position and content bounds so new strokes join correctly.
+  adoptExistingClusters() {
+    const figures = [...document.querySelectorAll('lively-figure')]
+      .filter(f => this.isDrawingFigure(f) && !this.clusters.some(c => c.figure === f))
+    for (const figure of figures) {
+      const svg = figure.querySelector('svg')
+      const group = svg && svg.querySelector('g')
+      if (!group) continue
+      const shapeEls = [...group.children].filter(el => /^(path|rect|line)$/i.test(el.tagName))
+      if (!shapeEls.length) continue
+
+      // points are unknown for restored shapes (only their SVG geometry survives);
+      // bounds/joining use getBBox, so an empty points array is fine.
+      const shapes = shapeEls.map(el => ({ type: shapeTypeOf(el), el, points: [], origin: null, restored: true }))
+      const cluster = { figure, svg, group, frame: { x: 0, y: 0 }, shapes, lastTime: 0 }
+      // figurePos === frame + localBounds.topLeft  =>  frame = figurePos - topLeft
+      const b = this.localBounds(cluster)
+      const wx = parseFloat(figure.style.left) || 0
+      const wy = parseFloat(figure.style.top) || 0
+      cluster.frame = { x: wx - (b ? b.x : 0), y: wy - (b ? b.y : 0) }
+      for (const s of shapes) s.origin = cluster.frame
+      this.clusters.push(cluster)
+    }
+  }
+
+  isDrawingFigure(figure) {
+    if (figure.hasAttribute('data-toolbelt-cluster')) return true
+    // Fallback for figures persisted before the marker: our structure is
+    // <lively-figure> … <svg><g>{path|rect|line}…</g></svg>.
+    const group = figure.querySelector('svg g')
+    return !!(group && [...group.children].some(el => /^(path|rect|line)$/i.test(el.tagName)))
   }
 
   // Position/size the figure to the union of its shapes and offset the group so
@@ -314,6 +354,11 @@ class DrawingController {
 /*MD ## Shape rendering MD*/
 // Elements are created once; renderShape redraws from the retained world-space
 // points, localized by shape.origin (the cluster frame, or the draft start).
+function shapeTypeOf(el) {
+  const t = el.tagName.toLowerCase()
+  return t === 'rect' ? 'rectangle' : t === 'line' ? 'arrow' : 'freeform'
+}
+
 function makeShapeEl(type, color) {
   if (type === 'freeform') {
     return svgEl('path', { fill: 'none', stroke: color, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
