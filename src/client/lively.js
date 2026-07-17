@@ -42,6 +42,7 @@ import Stack from 'src/client/utils/stack.js';
 /* expose external modules */
 // import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
+import 'src/components/tools/lively-toolbelt-input.js'; // must precede Selection/graffle so its pointer stubs register first
 import Selection from 'src/components/halo/lively-selection.js';
 import windows from "src/components/widgets/lively-window.js";
 

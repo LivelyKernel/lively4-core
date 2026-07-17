@@ -3,6 +3,7 @@ import ContextMenu from 'src/client/contextmenu.js'
 import Strings from "src/client/strings.js"
 
 import Morph from 'src/components/widgets/lively-morph.js'
+import interaction from 'src/components/tools/lively-toolbelt-interaction.js'
 
 /*
 document.body.append(await <lively-toolbelt></lively-toolbelt>)
@@ -166,44 +167,36 @@ export default class LivelyToolbelt extends Morph {
     this.enterMode(this.mode === mode ? 'normal' : mode)
   }
 
-  async enterMode(mode) {
+  enterMode(mode) {
     if (mode === this.mode) return
-    await this.leaveMode(this.mode)
+    this.leaveMode(this.mode)
     // Not-set === normal, so drop the attribute rather than storing 'normal'.
     if (mode === 'normal') this.removeAttribute('mode')
     else this.setAttribute('mode', mode)
-    await this.applyMode(mode)
+    this.applyMode(mode)
   }
 
-  async applyMode(mode) {
+  applyMode(mode) {
     if (LivelyToolbelt.drawingModes.includes(mode)) {
-      (await this.interaction()).activate(this, mode)
+      interaction.activate(this, mode)
     } else {
       lively.notify(`Entered ${mode} mode`)
     }
   }
 
-  async leaveMode(mode) {
+  leaveMode(mode) {
     if (LivelyToolbelt.drawingModes.includes(mode)) {
-      (await this.interaction()).deactivate(this, mode)
+      interaction.deactivate(this, mode)
     }
   }
 
-  // Load the rendering/interaction layer lazily — only once a drawing mode
-  // becomes active — and cache the promise so it loads at most once.
-  async interaction() {
-    const module = await (this._interactionPromise
-      ??= System.import('src/components/tools/lively-toolbelt-interaction.js'))
-    return module.default
-  }
-
   /*MD ## Undo / redo MD*/
-  async onUndo(evt) { (await this.drawingController()).undo() }
-  async onRedo(evt) { (await this.drawingController()).redo() }
+  onUndo(evt) { this.drawingController().undo() }
+  onRedo(evt) { this.drawingController().redo() }
 
   // The drawing controller (created + cached on the host, adopts existing drawings).
-  async drawingController() {
-    return (await this.interaction()).controllerFor(this)
+  drawingController() {
+    return interaction.controllerFor(this)
   }
 
   // Enable/disable the history buttons from the controller's stacks.

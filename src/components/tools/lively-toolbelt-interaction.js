@@ -15,13 +15,16 @@
  * cluster's last stroke) OR NEAR (its start point within JOIN_DIST of the
  * cluster's world bounds); otherwise it starts a new cluster.
  *
- * Input: global capture-phase pointer listeners on document.documentElement
- * (graffle's approach). They see input before page/components, so a claimed draw
- * gesture calls stopPropagation while non-draw gestures fall through to Lively
- * (world pan/nav, halos). `shouldDraw` is the routing seam (later: pen draws,
- * touch pans, palm rejected). Capture, crosshair cursor, and touch-action:none
- * all scope to documentElement. getCoalescedEvents() gives sub-frame freehand
- * density; pointer capture keeps a fast drag tracking off-element.
+ * Input: this controller does NOT own any pointer listeners. Permanent,
+ * first-in-line capture-phase stubs live in lively-toolbelt-input.js (installed at
+ * boot, before graffle/selection); this controller just registers its handlers
+ * into them via setToolbeltInputHandler. Because the stubs run first, a claimed
+ * draw gesture calls stopImmediatePropagation and graffle/selection never fire —
+ * no unregistering/restoring them. Non-draw gestures fall through to Lively (world
+ * pan/nav, halos). `shouldDraw` is the routing seam (later: pen draws, touch pans,
+ * palm rejected). Crosshair cursor and touch-action:none scope to documentElement.
+ * getCoalescedEvents() gives sub-frame freehand density; pointer capture keeps a
+ * fast drag tracking off-element.
  *
  *   - draftSvg : world-positioned SVG holding the in-progress stroke; on
  *                pointerup the shape is committed into its cluster figure.
@@ -36,7 +39,9 @@
  * outline brush.
  */
 
-import Selection from 'src/components/halo/lively-selection.js'
+lively.notify('reload interaction')
+
+import { setToolbeltInputHandler } from 'src/components/tools/lively-toolbelt-input.js'
 
 const SVGNS = 'http://www.w3.org/2000/svg'
 
@@ -69,11 +74,10 @@ class DrawingController {
     this.host = host
     this.mode = null
 
-    // Only one controller may own the global listeners/draft at a time. A
-    // toolbelt migration or module reload can leave older controllers behind;
-    // their stacked capture handlers would trap the mode and block clicks. Clear
-    // any before this one registers.
-    lively.removeEventListener('ToolbeltDrawing', document.documentElement)
+    // The pointer listeners are permanent stubs in lively-toolbelt-input.js; this
+    // controller only points them at itself (below). A migration/reload just
+    // overwrites the handler set, so older controllers go inert — no stacked
+    // listeners. Clear any draft a predecessor left behind.
     document.querySelectorAll('#lively-toolbelt-draft').forEach(el => el.remove())
 
     // Style knobs (could later be driven by toolbelt UI).
@@ -94,22 +98,21 @@ class DrawingController {
     this.activePointerId = null
     this.current = null
 
-    // Global capture-phase pointer listeners (graffle's approach): they see
-    // input before page/components, so a claimed draw gesture can stopPropagation
-    // while non-draw gestures (pan/nav, palm) fall through to Lively. Always
-    // registered; gated inside the handlers by `this.mode`.
+    // Point the permanent first-in-line stubs (lively-toolbelt-input.js) at this
+    // controller; overwriting the global handler set makes any older controller
+    // inert (self-healing by replacement). Handlers are gated by `this.mode`.
+    // pointercancel reuses onPointerUp; onClick swallows the click a tap emits.
     this.onPointerDown = this.onPointerDown.bind(this)
     this.onPointerMove = this.onPointerMove.bind(this)
     this.onPointerUp = this.onPointerUp.bind(this)
     this.onClick = this.onClick.bind(this)
-    const root = document.documentElement
-    lively.addEventListener('ToolbeltDrawing', root, 'pointerdown', this.onPointerDown, true)
-    lively.addEventListener('ToolbeltDrawing', root, 'pointermove', this.onPointerMove, true)
-    lively.addEventListener('ToolbeltDrawing', root, 'pointerup', this.onPointerUp, true)
-    lively.addEventListener('ToolbeltDrawing', root, 'pointercancel', this.onPointerUp, true)
-    // A pen/mouse tap is a draw AND emits a click; swallow that click while
-    // drawing so it can't also select/grab the surrounding drawing.
-    lively.addEventListener('ToolbeltDrawing', root, 'click', this.onClick, true)
+    setToolbeltInputHandler({
+      pointerdown: this.onPointerDown,
+      pointermove: this.onPointerMove,
+      pointerup: this.onPointerUp,
+      pointercancel: this.onPointerUp,
+      click: this.onClick,
+    })
 
     // Rehydrate clusters from lively-figures that lively-content persistence
     // restored, so new strokes can join drawings that survived a page reload.
@@ -146,17 +149,14 @@ class DrawingController {
     const drawing = !!mode
     // Cursor + gesture suppression scope live on the root (graffle sets
     // documentElement.style.touchAction); the page stays interactive otherwise.
+    // No need to unregister lively-selection here: our input stubs run BEFORE
+    // selection/graffle, so a claimed draw stopImmediatePropagation's them out.
     const root = document.documentElement
     root.style.cursor = drawing ? 'crosshair' : ''
     root.style.touchAction = drawing ? 'none' : ''
     // Stop pen/mouse from starting a text selection while drawing.
     root.style.userSelect = drawing ? 'none' : ''
     root.style.webkitUserSelect = drawing ? 'none' : ''
-    // Suppress Lively's world rubber-band selection while drawing: its
-    // capture-phase pointerdown (lively-selection.js) runs before ours, so
-    // stopPropagation can't stop it — unregister it and restore on exit.
-    if (drawing) lively.removeEventListener('Selection', document.documentElement)
-    else Selection.current?.registerOn(document.documentElement)
     if (!drawing) this.abortStroke()
   }
 
@@ -177,8 +177,9 @@ class DrawingController {
     this.activePointerId = evt.pointerId
     try { document.documentElement.setPointerCapture(evt.pointerId) } catch (e) { /* ignore */ }
     // Claim the gesture: keep it from page/components/world-nav during the draw.
-    // stopImmediatePropagation (not just stopPropagation) also blocks the Lively
-    // pointerdown handlers registered AFTER ours on the same element (Hand, ViewNav).
+    // Our stubs run first, so stopImmediatePropagation (not just stopPropagation)
+    // blocks every other pointerdown handler on the same element — graffle,
+    // selection, Hand, ViewNav — none of which have run yet.
     evt.preventDefault()
     evt.stopImmediatePropagation()
     window.getSelection?.()?.removeAllRanges() // pen can otherwise start a selection
