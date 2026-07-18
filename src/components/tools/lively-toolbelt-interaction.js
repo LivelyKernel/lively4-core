@@ -1,7 +1,6 @@
 /*
  * Rendering/interaction layer for lively-toolbelt's drawing modes
- * (freeform, rectangle, arrow, eraser). Loaded lazily by lively-toolbelt the
- * first time a drawing mode is entered — never at boot.
+ * (freeform, rectangle, arrow, eraser). Statically imported by lively-toolbelt.
  *
  * WORLD-SPACE, CLUSTERED (P1)
  * ---------------------------
@@ -33,13 +32,19 @@
  * coords even for far-away clusters → no SVG float jitter); the figure is
  * positioned/sized to the union bounds via a <g> transform as the cluster grows.
  *
- * HIGH-QUALITY FREEFORM (planned — see renderShape 'freeform' branch): keep this
- * capture/commit/cluster structure; swap freehand rendering to a hybrid canvas
- * live layer + predicted events + a pressure/velocity/taper variable-width
- * outline brush.
+ * HYBRID LIVE FREEFORM (P4): the freeform preview no longer rewrites an SVG
+ * path each move. It renders on two screen-fixed canvases — a persistent
+ * `confirmedCanvas` (append-only: finalized quad segments, full opacity) and a
+ * `predictCanvas` cleared every frame (the wet real tail at full opacity, then
+ * getPredictedEvents() extrapolation dimmed). Painting is rAF-batched. On
+ * pointerup the stroke commits into its world-space SVG cluster exactly as
+ * before. Rectangle/arrow still preview on `draftSvg` (SVG). Stroke width is
+ * frozen once at pointerdown and reused on commit, so nothing snaps.
+ *
+ * HIGH-QUALITY FREEFORM (planned — P5, at the renderShape 'freeform' #Swap seam
+ * and the canvas stroke call): swap the constant per-stroke width for a
+ * pressure/velocity/taper variable-width outline brush.
  */
-
-lively.notify('reload interaction')
 
 import { setToolbeltInputHandler } from 'src/components/tools/lively-toolbelt-input.js'
 
@@ -77,15 +82,24 @@ class DrawingController {
     // The pointer listeners are permanent stubs in lively-toolbelt-input.js; this
     // controller only points them at itself (below). A migration/reload just
     // overwrites the handler set, so older controllers go inert — no stacked
-    // listeners. Clear any draft a predecessor left behind.
-    document.querySelectorAll('#lively-toolbelt-draft').forEach(el => el.remove())
+    // listeners. Clear any live-layer a predecessor left behind.
+    document.querySelectorAll('#lively-toolbelt-draft, #lively-toolbelt-confirmed, #lively-toolbelt-predict')
+      .forEach(el => el.remove())
 
     // Style knobs (could later be driven by toolbelt UI).
     this.color = '#1b1b1b'
     this.baseWidth = 2.5
 
+    // Rectangle/arrow live preview stays on this screen-fixed SVG.
     this.draftSvg = this.createDraftSvg()
     document.body.appendChild(this.draftSvg)
+
+    // Freeform live preview: persistent confirmed ink + a per-frame predict overlay.
+    this.confirmedCanvas = this.createCanvas('lively-toolbelt-confirmed', '1000')
+    this.predictCanvas = this.createCanvas('lively-toolbelt-predict', '1001')
+    document.body.appendChild(this.confirmedCanvas)
+    document.body.appendChild(this.predictCanvas)
+    this.rafId = null
 
     // Clusters (lively-figures) and the most recently drawn-into one.
     this.clusters = []
@@ -130,6 +144,50 @@ class DrawingController {
     })
     svg.appendChild(this.arrowMarkerDefs())
     return svg
+  }
+
+  // Screen-fixed, non-interactive canvas covering the viewport. Backing-store
+  // resolution is set to match device pixels at stroke start (ensureCanvasSize).
+  createCanvas(id, zIndex) {
+    const canvas = document.createElement('canvas')
+    canvas.id = id
+    Object.assign(canvas.style, {
+      position: 'fixed', inset: '0', width: '100%', height: '100%',
+      pointerEvents: 'none', zIndex,
+    })
+    return canvas
+  }
+
+  // Size both canvases from the canvas's ACTUAL rendered rect (getBoundingClientRect,
+  // which excludes scrollbars) — not window.innerWidth. innerWidth includes the
+  // scrollbar, so a `width:100%` canvas backing store sized to innerWidth is squeezed
+  // into a slightly smaller CSS box, scaling all drawing about the top-left corner.
+  // backing = renderedCSS × dpr keeps the preview crisp and positionally exact.
+  // Resizing clears the canvas, so this runs at freeform pointerdown, never mid-stroke.
+  ensureCanvasSize() {
+    const dpr = window.devicePixelRatio || 1
+    const rect = this.confirmedCanvas.getBoundingClientRect()
+    this.canvasOffset = { x: rect.left, y: rect.top } // usually (0,0) for a fixed layer
+    const w = Math.round(rect.width * dpr)
+    const h = Math.round(rect.height * dpr)
+    for (const canvas of [this.confirmedCanvas, this.predictCanvas]) {
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w
+        canvas.height = h
+      } else {
+        canvas.getContext('2d').clearRect(0, 0, w, h)
+      }
+      const ctx = canvas.getContext('2d')
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0) // draw in CSS pixels
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+    }
+  }
+
+  clearCanvases() {
+    for (const canvas of [this.confirmedCanvas, this.predictCanvas]) {
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+    }
   }
 
   arrowMarkerDefs() {
@@ -185,34 +243,138 @@ class DrawingController {
     window.getSelection?.()?.removeAllRanges() // pen can otherwise start a selection
 
     const p = this.worldPoint(evt)
-    // Preview renders on the screen-fixed draft layer in CLIENT coords, so it is
-    // reliable regardless of world position. origin = -bodyOrigin maps world
-    // samples back to client space; committed geometry is re-localized on up.
+    // Live preview renders in CLIENT coords (screen-fixed layers), so it is
+    // reliable regardless of world position. origin = -bodyOrigin maps stored
+    // world samples back to client space; committed geometry is re-localized on up.
     const bo = lively.getClientPosition(document.body)
     const el = makeShapeEl(this.mode, this.color)
-    this.draftSvg.appendChild(el)
-    this.current = { type: this.mode, el, points: [p], origin: { x: -bo.x, y: -bo.y } }
-    renderShape(this.current, this.baseWidth)
+    // P4: one flat width for the whole stroke, shared by the live canvas and the
+    // commit so nothing snaps. Per-point pressure/velocity width is P5 (pen
+    // touchdown pressure is ~0, so freezing at the first sample would render every
+    // pen stroke thin — a flat width is the honest P4 baseline).
+    const width = this.baseWidth
+    this.current = { type: this.mode, el, points: [p], origin: { x: -bo.x, y: -bo.y }, width }
+
+    if (this.mode === 'freeform') {
+      // Freeform previews on the canvases; the SVG el stays detached until commit.
+      this.ensureCanvasSize()
+      this.current.predicted = []
+      this.current.drawnUpTo = 0
+      this.paintFreeform()
+    } else {
+      // Rectangle/arrow preview on the SVG draft layer.
+      this.draftSvg.appendChild(el)
+      renderShape(this.current, this.baseWidth)
+    }
   }
 
   onPointerMove(evt) {
     if (evt.pointerId !== this.activePointerId || !this.current) return
     evt.preventDefault()
     evt.stopImmediatePropagation()
-    const samples = this.current.type === 'freeform' && evt.getCoalescedEvents
-      ? evt.getCoalescedEvents()
-      : [evt]
-    for (const s of samples) this.current.points.push(this.worldPoint(s))
-    renderShape(this.current, this.baseWidth)
+    const s = this.current
+    if (s.type === 'freeform') {
+      const samples = evt.getCoalescedEvents ? evt.getCoalescedEvents() : [evt]
+      for (const c of samples) s.points.push(this.worldPoint(c))
+      // Speculative future samples; overwritten each move, never committed.
+      s.predicted = evt.getPredictedEvents ? evt.getPredictedEvents().map(pe => this.worldPoint(pe)) : []
+      this.scheduleFreeformPaint()
+    } else {
+      s.points.push(this.worldPoint(evt))
+      renderShape(s, this.baseWidth)
+    }
   }
 
   async onPointerUp(evt) {
     if (evt.pointerId !== this.activePointerId) return
     evt.stopImmediatePropagation()
-    if (evt.type !== 'pointercancel') this.current.points.push(this.worldPoint(evt))
     const shape = this.current
+    if (evt.type !== 'pointercancel') shape.points.push(this.worldPoint(evt))
+    if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null }
+    if (shape.type === 'freeform') { shape.predicted = []; this.clearCanvases() }
     this.endStroke(evt.pointerId)
     await this.commit(shape)
+  }
+
+  // Paint the in-progress freeform stroke at most once per frame.
+  scheduleFreeformPaint() {
+    if (this.rafId != null) return
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null
+      this.paintFreeform()
+    })
+  }
+
+  // Two-layer render of the current freeform stroke:
+  //  - confirmedCanvas: append the quad segments that just became final (a segment
+  //    is final once its following sample exists), never cleared during the stroke;
+  //  - predictCanvas: cleared every frame, redrawing the short wet tail at full
+  //    opacity and the getPredictedEvents() extrapolation dimmed.
+  paintFreeform() {
+    const s = this.current
+    if (!s || s.type !== 'freeform') return
+    const P = s.points.map(p => this.toClient(p, s.origin))
+
+    // Confirmed ink: quad i (control P[i], from mid(P[i-1],P[i]) to mid(P[i],P[i+1]))
+    // is final once P[i+1] exists, i.e. for i up to P.length-2.
+    const lastFinal = P.length - 2
+    if (lastFinal >= 1 && lastFinal > s.drawnUpTo) {
+      const ctx = this.confirmedCanvas.getContext('2d')
+      ctx.strokeStyle = this.color
+      ctx.lineWidth = s.width
+      ctx.beginPath()
+      const first = s.drawnUpTo + 1
+      const start = first === 1 ? P[0] : mid(P[first - 1], P[first])
+      ctx.moveTo(start.x, start.y)
+      for (let i = first; i <= lastFinal; i++) {
+        const m = mid(P[i], P[i + 1])
+        ctx.quadraticCurveTo(P[i].x, P[i].y, m.x, m.y)
+      }
+      ctx.stroke()
+      s.drawnUpTo = lastFinal
+    }
+
+    // Predict overlay.
+    const ctx = this.predictCanvas.getContext('2d')
+    ctx.clearRect(0, 0, this.predictCanvas.width, this.predictCanvas.height)
+    ctx.strokeStyle = this.color
+    ctx.fillStyle = this.color
+    ctx.lineWidth = s.width
+    const n = P.length
+    if (n === 1) {
+      ctx.beginPath()
+      ctx.arc(P[0].x, P[0].y, s.width / 2, 0, 2 * Math.PI)
+      ctx.fill()
+    } else {
+      // Wet real tail: from the last confirmed endpoint straight to the last sample
+      // (mirrors smoothPath's closing `L`).
+      const tailStart = s.drawnUpTo >= 1 ? mid(P[s.drawnUpTo], P[s.drawnUpTo + 1]) : P[0]
+      ctx.beginPath()
+      ctx.moveTo(tailStart.x, tailStart.y)
+      ctx.lineTo(P[n - 1].x, P[n - 1].y)
+      ctx.stroke()
+    }
+    // Dimmed predicted continuation.
+    if (s.predicted && s.predicted.length) {
+      ctx.save()
+      ctx.globalAlpha = 0.4
+      ctx.beginPath()
+      ctx.moveTo(P[n - 1].x, P[n - 1].y)
+      for (const pp of s.predicted) {
+        const c = this.toClient(pp, s.origin)
+        ctx.lineTo(c.x, c.y)
+      }
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+
+  // Stored world point -> canvas-local (CSS-pixel) space. p.x - origin.x recovers
+  // the viewport client coord; subtracting the canvas rect offset makes it local to
+  // the canvas (a no-op while the layer sits at the viewport origin).
+  toClient(p, origin) {
+    const o = this.canvasOffset || { x: 0, y: 0 }
+    return { x: p.x - origin.x - o.x, y: p.y - origin.y - o.y }
   }
 
   // Swallow the click a tap emits while drawing (except on the toolbelt, whose
@@ -225,9 +387,11 @@ class DrawingController {
   }
 
   abortStroke() {
+    if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null }
     if (this.activePointerId !== null) this.endStroke(this.activePointerId)
     // Drop an unfinished draft shape.
     if (this.current) { this.current.el.remove(); this.current = null }
+    this.clearCanvases()
   }
 
   endStroke(pointerId) {
@@ -431,9 +595,11 @@ function renderShape(shape, baseWidth) {
   const { type, el, points, origin } = shape
   const P = points.map(p => ({ x: p.x - origin.x, y: p.y - origin.y, pressure: p.pressure }))
   if (type === 'freeform') {
-    // #Swap seam: HQ variant replaces this with a variable-width outline.
-    const avg = P.reduce((s, p) => s + p.pressure, 0) / P.length
-    el.setAttribute('stroke-width', baseWidth * (0.5 + avg))
+    // #Swap seam: HQ variant (P5) replaces this with a variable-width outline.
+    // Width is frozen per stroke at pointerdown (matches the live canvas, no snap);
+    // the pressure-average is a fallback for shapes lacking a stored width.
+    const avg = P.length ? P.reduce((s, p) => s + p.pressure, 0) / P.length : 0.5
+    el.setAttribute('stroke-width', shape.width ?? baseWidth * (0.5 + avg))
     el.setAttribute('d', smoothPath(P))
   } else if (type === 'rectangle') {
     const a = P[0], b = P[P.length - 1]
@@ -464,6 +630,11 @@ function smoothPath(points) {
   const last = points[points.length - 1]
   d += ` L ${last.x} ${last.y}`
   return d
+}
+
+// Midpoint of two {x,y} points.
+function mid(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
 // Euclidean distance from a point to a rectangle (0 if inside).
