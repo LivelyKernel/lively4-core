@@ -32,27 +32,29 @@
  * coords even for far-away clusters → no SVG float jitter); the figure is
  * positioned/sized to the union bounds via a <g> transform as the cluster grows.
  *
- * HYBRID LIVE FREEFORM (P4): the freeform preview no longer rewrites an SVG
- * path each move. It renders on two screen-fixed canvases — a persistent
- * `confirmedCanvas` (append-only: finalized quad segments, full opacity) and a
- * `predictCanvas` cleared every frame (the wet real tail at full opacity, then
- * getPredictedEvents() extrapolation dimmed). Painting is rAF-batched. On
- * pointerup the stroke commits into its world-space SVG cluster exactly as
- * before. Rectangle/arrow still preview on `draftSvg` (SVG). Stroke width is
- * frozen once at pointerdown and reused on commit, so nothing snaps.
- *
- * HIGH-QUALITY FREEFORM (planned — P5, at the renderShape 'freeform' #Swap seam
- * and the canvas stroke call): swap the constant per-stroke width for a
- * pressure/velocity/taper variable-width outline brush.
+ * HYBRID LIVE FREEFORM (P4) + VARIABLE-WIDTH BRUSH (P5): the freeform preview
+ * renders on a screen-fixed `liveCanvas`, rAF-batched, using getPredictedEvents()
+ * for a low-latency dimmed tip. Freeform commits as a FILLED, tapered outline (not a
+ * stroked centerline): lively-toolbelt-brush.js turns the point list into that
+ * outline via perfect-freehand, driven by a dynamics layer (pressure + velocity +
+ * taper). The live canvas fills the SAME brush path each frame — confirmed+predicted
+ * dimmed underneath, confirmed solid on top — so live == commit and nothing snaps.
+ * Rectangle/arrow still preview on `draftSvg` (SVG) and commit unchanged.
  */
 
 import { setToolbeltInputHandler } from 'src/components/tools/lively-toolbelt-input.js'
+import { strokePath, DEFAULT_BRUSH, BRUSH_PRESETS } from 'src/components/tools/lively-toolbelt-brush.js'
 
 const SVGNS = 'http://www.w3.org/2000/svg'
 
 // Clustering thresholds (tunable).
 const JOIN_MS = 1500   // temporal: join the active cluster within this window
 const JOIN_DIST = 80   // spatial: join a cluster whose world bounds are this near
+
+// Touch contact patch (px) above which a touch is treated as a palm, not a finger —
+// rejected only when BOTH dimensions exceed it. Set generously: fingers press larger
+// than expected, and drawing must not be blocked. Tune from measured finger sizes.
+const PALM_CONTACT = 80
 
 function svgEl(tag, attrs = {}) {
   const el = document.createElementNS(SVGNS, tag)
@@ -83,22 +85,24 @@ class DrawingController {
     // controller only points them at itself (below). A migration/reload just
     // overwrites the handler set, so older controllers go inert — no stacked
     // listeners. Clear any live-layer a predecessor left behind.
-    document.querySelectorAll('#lively-toolbelt-draft, #lively-toolbelt-confirmed, #lively-toolbelt-predict')
+    document.querySelectorAll('#lively-toolbelt-draft, #lively-toolbelt-confirmed, #lively-toolbelt-predict, #lively-toolbelt-live')
       .forEach(el => el.remove())
 
     // Style knobs (could later be driven by toolbelt UI).
     this.color = '#1b1b1b'
     this.baseWidth = 2.5
+    // Variable-width brush config; the chosen preset persists on the host attribute
+    // (survives controller recreation / reload). See lively-toolbelt-brush.js.
+    this.brush = BRUSH_PRESETS[host.getAttribute && host.getAttribute('brush-preset')] || DEFAULT_BRUSH
 
     // Rectangle/arrow live preview stays on this screen-fixed SVG.
     this.draftSvg = this.createDraftSvg()
     document.body.appendChild(this.draftSvg)
 
-    // Freeform live preview: persistent confirmed ink + a per-frame predict overlay.
-    this.confirmedCanvas = this.createCanvas('lively-toolbelt-confirmed', '1000')
-    this.predictCanvas = this.createCanvas('lively-toolbelt-predict', '1001')
-    document.body.appendChild(this.confirmedCanvas)
-    document.body.appendChild(this.predictCanvas)
+    // Freeform live preview: one canvas, fully redrawn each frame (the brush outline
+    // is reprocessed globally, so P4's append-only confirmed layer no longer applies).
+    this.liveCanvas = this.createCanvas('lively-toolbelt-live', '1000')
+    document.body.appendChild(this.liveCanvas)
     this.rafId = null
 
     // Clusters (lively-figures) and the most recently drawn-into one.
@@ -158,7 +162,7 @@ class DrawingController {
     return canvas
   }
 
-  // Size both canvases from the canvas's ACTUAL rendered rect (getBoundingClientRect,
+  // Size the live canvas from its ACTUAL rendered rect (getBoundingClientRect,
   // which excludes scrollbars) — not window.innerWidth. innerWidth includes the
   // scrollbar, so a `width:100%` canvas backing store sized to innerWidth is squeezed
   // into a slightly smaller CSS box, scaling all drawing about the top-left corner.
@@ -166,28 +170,24 @@ class DrawingController {
   // Resizing clears the canvas, so this runs at freeform pointerdown, never mid-stroke.
   ensureCanvasSize() {
     const dpr = window.devicePixelRatio || 1
-    const rect = this.confirmedCanvas.getBoundingClientRect()
+    const canvas = this.liveCanvas
+    const rect = canvas.getBoundingClientRect()
     this.canvasOffset = { x: rect.left, y: rect.top } // usually (0,0) for a fixed layer
     const w = Math.round(rect.width * dpr)
     const h = Math.round(rect.height * dpr)
-    for (const canvas of [this.confirmedCanvas, this.predictCanvas]) {
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w
-        canvas.height = h
-      } else {
-        canvas.getContext('2d').clearRect(0, 0, w, h)
-      }
-      const ctx = canvas.getContext('2d')
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0) // draw in CSS pixels
-      ctx.lineCap = 'round'
-      ctx.lineJoin = 'round'
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w
+      canvas.height = h
+    } else {
+      canvas.getContext('2d').clearRect(0, 0, w, h)
     }
+    const ctx = canvas.getContext('2d')
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0) // draw in CSS pixels
   }
 
   clearCanvases() {
-    for (const canvas of [this.confirmedCanvas, this.predictCanvas]) {
-      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-    }
+    const ctx = this.liveCanvas.getContext('2d')
+    ctx.clearRect(0, 0, this.liveCanvas.width, this.liveCanvas.height)
   }
 
   arrowMarkerDefs() {
@@ -220,18 +220,32 @@ class DrawingController {
 
   // Whether this pointer should draw (vs. fall through to Lively for pan/nav).
   // P1: primary button in a drawing mode, not on the toolbelt. Seam for later
-  // pen-vs-touch-vs-palm routing (pen -> draw; touch -> pan; palm rejected via
-  // width/height/isPrimary or while a pen pointer is active).
+  // A pointer is over toolbelt UI (the toolbelt itself, or a popup menu tagged with
+  // .lively-toolbelt-ui) — such gestures interact with the UI, they never draw. This
+  // is what makes the brush-preset menu touchable while in a drawing mode.
+  isUiTarget(evt) {
+    return evt.composedPath().some(el =>
+      el === this.host || (el.classList && el.classList.contains('lively-toolbelt-ui')))
+  }
+
+  // Pen/mouse always draw; a finger may draw; a PALM is rejected by its contact patch.
+  // Measured: pen reports 1×1, a palm reports ~50–110px in BOTH dimensions. Requiring
+  // both dims large (not either) keeps an elongated finger from being mistaken for a
+  // palm. (The `activePointerId` guard only rejects a second pointer once one is
+  // already drawing, so it can't catch a palm that lands first — hence the size test.)
   shouldDraw(evt) {
     if (!this.mode || this.activePointerId !== null || evt.button !== 0) return false
-    // Clicks on the toolbelt switch/exit the mode — never draw there.
-    if (evt.composedPath().includes(this.host)) return false
+    if (this.isUiTarget(evt)) return false
+    if (evt.pointerType === 'touch' && evt.width > PALM_CONTACT && evt.height > PALM_CONTACT) return false
     return true
   }
 
   /*MD ## Pointer handling MD*/
   onPointerDown(evt) {
     if (!this.shouldDraw(evt)) return // let Lively handle non-draw gestures
+    // Starting a stroke (outside any menu — shouldDraw excludes UI) closes an open
+    // toolbelt popup, so the brush menu doesn't linger while you draw.
+    document.querySelectorAll('lively-menu.lively-toolbelt-ui').forEach(m => m.remove())
     this.activePointerId = evt.pointerId
     try { document.documentElement.setPointerCapture(evt.pointerId) } catch (e) { /* ignore */ }
     // Claim the gesture: keep it from page/components/world-nav during the draw.
@@ -248,18 +262,15 @@ class DrawingController {
     // world samples back to client space; committed geometry is re-localized on up.
     const bo = lively.getClientPosition(document.body)
     const el = makeShapeEl(this.mode, this.color)
-    // P4: one flat width for the whole stroke, shared by the live canvas and the
-    // commit so nothing snaps. Per-point pressure/velocity width is P5 (pen
-    // touchdown pressure is ~0, so freezing at the first sample would render every
-    // pen stroke thin — a flat width is the honest P4 baseline).
-    const width = this.baseWidth
-    this.current = { type: this.mode, el, points: [p], origin: { x: -bo.x, y: -bo.y }, width }
+    // Live and commit derive identical geometry from the same points + brush (P5),
+    // so nothing snaps — no per-stroke frozen width needed. brush stays on the shape
+    // so commit/undo/redo re-render with the same settings.
+    this.current = { type: this.mode, el, points: [p], origin: { x: -bo.x, y: -bo.y }, brush: this.brush }
 
     if (this.mode === 'freeform') {
-      // Freeform previews on the canvases; the SVG el stays detached until commit.
+      // Freeform previews on the canvas; the SVG el stays detached until commit.
       this.ensureCanvasSize()
       this.current.predicted = []
-      this.current.drawnUpTo = 0
       this.paintFreeform()
     } else {
       // Rectangle/arrow preview on the SVG draft layer.
@@ -305,83 +316,46 @@ class DrawingController {
     })
   }
 
-  // Two-layer render of the current freeform stroke:
-  //  - confirmedCanvas: append the quad segments that just became final (a segment
-  //    is final once its following sample exists), never cleared during the stroke;
-  //  - predictCanvas: cleared every frame, redrawing the short wet tail at full
-  //    opacity and the getPredictedEvents() extrapolation dimmed.
+  // Fill the brush outline each frame (client space, via Path2D so live == commit):
+  // the confirmed+predicted outline dimmed underneath, then the confirmed-only
+  // outline solid on top — so the speculative tip reads faint. One canvas, full
+  // redraw (perfect-freehand reprocesses the whole stroke, so no incremental append).
   paintFreeform() {
     const s = this.current
     if (!s || s.type !== 'freeform') return
-    const P = s.points.map(p => this.toClient(p, s.origin))
+    const confirmed = s.points.map(p => this.toBrushPoint(p, s.origin))
+    const predicted = (s.predicted || []).map(p => this.toBrushPoint(p, s.origin))
 
-    // Confirmed ink: quad i (control P[i], from mid(P[i-1],P[i]) to mid(P[i],P[i+1]))
-    // is final once P[i+1] exists, i.e. for i up to P.length-2.
-    const lastFinal = P.length - 2
-    if (lastFinal >= 1 && lastFinal > s.drawnUpTo) {
-      const ctx = this.confirmedCanvas.getContext('2d')
-      ctx.strokeStyle = this.color
-      ctx.lineWidth = s.width
-      ctx.beginPath()
-      const first = s.drawnUpTo + 1
-      const start = first === 1 ? P[0] : mid(P[first - 1], P[first])
-      ctx.moveTo(start.x, start.y)
-      for (let i = first; i <= lastFinal; i++) {
-        const m = mid(P[i], P[i + 1])
-        ctx.quadraticCurveTo(P[i].x, P[i].y, m.x, m.y)
-      }
-      ctx.stroke()
-      s.drawnUpTo = lastFinal
-    }
-
-    // Predict overlay.
-    const ctx = this.predictCanvas.getContext('2d')
-    ctx.clearRect(0, 0, this.predictCanvas.width, this.predictCanvas.height)
-    ctx.strokeStyle = this.color
+    const ctx = this.liveCanvas.getContext('2d')
+    ctx.clearRect(0, 0, this.liveCanvas.width, this.liveCanvas.height)
     ctx.fillStyle = this.color
-    ctx.lineWidth = s.width
-    const n = P.length
-    if (n === 1) {
-      ctx.beginPath()
-      ctx.arc(P[0].x, P[0].y, s.width / 2, 0, 2 * Math.PI)
-      ctx.fill()
-    } else {
-      // Wet real tail: from the last confirmed endpoint straight to the last sample
-      // (mirrors smoothPath's closing `L`).
-      const tailStart = s.drawnUpTo >= 1 ? mid(P[s.drawnUpTo], P[s.drawnUpTo + 1]) : P[0]
-      ctx.beginPath()
-      ctx.moveTo(tailStart.x, tailStart.y)
-      ctx.lineTo(P[n - 1].x, P[n - 1].y)
-      ctx.stroke()
-    }
-    // Dimmed predicted continuation.
-    if (s.predicted && s.predicted.length) {
+
+    if (predicted.length) {
       ctx.save()
       ctx.globalAlpha = 0.4
-      ctx.beginPath()
-      ctx.moveTo(P[n - 1].x, P[n - 1].y)
-      for (const pp of s.predicted) {
-        const c = this.toClient(pp, s.origin)
-        ctx.lineTo(c.x, c.y)
-      }
-      ctx.stroke()
+      ctx.fill(new Path2D(strokePath(confirmed.concat(predicted), s.brush, { last: false })))
       ctx.restore()
+    }
+    ctx.fill(new Path2D(strokePath(confirmed, s.brush, { last: false })))
+  }
+
+  // Stored world point -> canvas-local (CSS-pixel) brush point. p.x - origin.x
+  // recovers the viewport client coord; subtracting the canvas rect offset makes it
+  // local to the canvas (a no-op while the layer sits at the viewport origin). Carries
+  // the dynamics channels the brush needs (pressure, timestamp, pointerType).
+  toBrushPoint(p, origin) {
+    const o = this.canvasOffset || { x: 0, y: 0 }
+    return {
+      x: p.x - origin.x - o.x, y: p.y - origin.y - o.y,
+      pressure: p.pressure, t: p.t, altitude: p.altitude, pointerType: p.pointerType,
     }
   }
 
-  // Stored world point -> canvas-local (CSS-pixel) space. p.x - origin.x recovers
-  // the viewport client coord; subtracting the canvas rect offset makes it local to
-  // the canvas (a no-op while the layer sits at the viewport origin).
-  toClient(p, origin) {
-    const o = this.canvasOffset || { x: 0, y: 0 }
-    return { x: p.x - origin.x - o.x, y: p.y - origin.y - o.y }
-  }
-
-  // Swallow the click a tap emits while drawing (except on the toolbelt, whose
-  // clicks switch/exit the mode) so it can't select/grab the surrounding drawing.
+  // Swallow the click a tap emits while drawing (except over toolbelt UI, whose
+  // clicks switch modes / pick menu items) so it can't select/grab a drawing.
   onClick(evt) {
     if (!this.mode) return
-    if (evt.composedPath().includes(this.host)) return
+    if (this.isUiTarget(evt)) return
     evt.preventDefault()
     evt.stopImmediatePropagation()
   }
@@ -566,6 +540,11 @@ class DrawingController {
       pressure: evt.pressure || 0.5,
       tiltX: evt.tiltX || 0,
       tiltY: evt.tiltY || 0,
+      // altitudeAngle (rad, π/2 = upright) for tilt→width; fall back from tilt if absent.
+      altitude: evt.altitudeAngle != null
+        ? evt.altitudeAngle
+        : (Math.PI / 2 - Math.hypot(evt.tiltX || 0, evt.tiltY || 0) * Math.PI / 180),
+      t: evt.timeStamp, // for velocity dynamics (P5)
       pointerType: evt.pointerType,
     }
   }
@@ -581,7 +560,8 @@ function shapeTypeOf(el) {
 
 function makeShapeEl(type, color) {
   if (type === 'freeform') {
-    return svgEl('path', { fill: 'none', stroke: color, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
+    // Filled variable-width outline (P5), not a stroked centerline.
+    return svgEl('path', { fill: color, stroke: 'none' })
   }
   if (type === 'rectangle') {
     return svgEl('rect', { fill: 'none', stroke: color })
@@ -593,14 +573,14 @@ function makeShapeEl(type, color) {
 
 function renderShape(shape, baseWidth) {
   const { type, el, points, origin } = shape
-  const P = points.map(p => ({ x: p.x - origin.x, y: p.y - origin.y, pressure: p.pressure }))
+  const P = points.map(p => ({
+    x: p.x - origin.x, y: p.y - origin.y,
+    pressure: p.pressure, t: p.t, altitude: p.altitude, pointerType: p.pointerType,
+  }))
   if (type === 'freeform') {
-    // #Swap seam: HQ variant (P5) replaces this with a variable-width outline.
-    // Width is frozen per stroke at pointerdown (matches the live canvas, no snap);
-    // the pressure-average is a fallback for shapes lacking a stored width.
-    const avg = P.length ? P.reduce((s, p) => s + p.pressure, 0) / P.length : 0.5
-    el.setAttribute('stroke-width', shape.width ?? baseWidth * (0.5 + avg))
-    el.setAttribute('d', smoothPath(P))
+    // #Swap seam (P5): variable-width filled outline via the brush. Same points +
+    // brush as the live canvas, finalized (last:true adds the end taper).
+    el.setAttribute('d', strokePath(P, shape.brush ?? DEFAULT_BRUSH, { last: true }))
   } else if (type === 'rectangle') {
     const a = P[0], b = P[P.length - 1]
     el.setAttribute('stroke-width', baseWidth)
@@ -614,27 +594,6 @@ function renderShape(shape, baseWidth) {
     el.setAttribute('x1', a.x); el.setAttribute('y1', a.y)
     el.setAttribute('x2', b.x); el.setAttribute('y2', b.y)
   }
-}
-
-// Quadratic-midpoint smoothing: each segment is a Q curve whose control point is
-// the raw sample and whose endpoint is the midpoint to the next — cheap, removes
-// polyline faceting.
-function smoothPath(points) {
-  if (points.length < 2) return `M ${points[0].x} ${points[0].y}`
-  let d = `M ${points[0].x} ${points[0].y}`
-  for (let i = 1; i < points.length - 1; i++) {
-    const mx = (points[i].x + points[i + 1].x) / 2
-    const my = (points[i].y + points[i + 1].y) / 2
-    d += ` Q ${points[i].x} ${points[i].y} ${mx} ${my}`
-  }
-  const last = points[points.length - 1]
-  d += ` L ${last.x} ${last.y}`
-  return d
-}
-
-// Midpoint of two {x,y} points.
-function mid(a, b) {
-  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
 // Euclidean distance from a point to a rectangle (0 if inside).

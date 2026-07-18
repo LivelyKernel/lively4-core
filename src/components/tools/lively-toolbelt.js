@@ -4,6 +4,7 @@ import Strings from "src/client/strings.js"
 
 import Morph from 'src/components/widgets/lively-morph.js'
 import interaction from 'src/components/tools/lively-toolbelt-interaction.js'
+import { BRUSH_PRESETS } from 'src/components/tools/lively-toolbelt-brush.js'
 
 /*
 document.body.append(await <lively-toolbelt></lively-toolbelt>)
@@ -35,6 +36,7 @@ export default class LivelyToolbelt extends Morph {
     if (this.classList.contains('audio')) this.enterAudioMode()
 
     this.refreshDrawingButtons()
+    this.updateBrushButtonIcon()
   }
 
   /*MD ## Menu Entries MD*/
@@ -158,6 +160,44 @@ export default class LivelyToolbelt extends Morph {
 
   onModeNormal(evt) { this.selectMode('normal') }
   onModeFreeform(evt) { this.selectMode('freeform') }
+
+  // Brush-preset picker for freeform. Styled like the world's enum Preferences: a
+  // radio indicator on the left (mutually-exclusive presets), each preset's own icon
+  // in the name, updated in place. The menu is tagged .lively-toolbelt-ui so the
+  // drawing controller treats touches on it as UI (not draw) — usable mid-drawing.
+  get brushPreset() { return this.getAttribute('brush-preset') || 'balanced' }
+
+  // Reflect the active preset on the freeform (main) button's icon.
+  updateBrushButtonIcon() {
+    const preset = BRUSH_PRESETS[this.brushPreset]
+    const icon = this.get('#mode-freeform i')
+    if (icon && preset && preset.icon) icon.className = 'fa ' + preset.icon
+  }
+
+  async onMoreBrush(e) {
+    const controller = this.drawingController()
+    const chosen = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>'
+    const unchosen = '<i class="fa fa-circle-o" aria-hidden="true"></i>'
+    const entries = Object.entries(BRUSH_PRESETS).map(([name, preset]) => [
+      <span><i class={'fa ' + preset.icon}></i>{' '}{Strings.toUpperCaseFirst(name)}</span>,
+      () => {
+        menuElement?.remove?.() // close on selection
+        this.setAttribute('brush-preset', name) // persists across reload / migration
+        controller.brush = preset
+        this.updateBrushButtonIcon()
+        // A brush is a freeform concept — selecting one switches to freeform from any
+        // other mode (normal, rectangle, …); if already in freeform, this is a no-op.
+        if (this.mode !== 'freeform') this.enterMode('freeform')
+        lively.notify(`Brush: ${name}`)
+      },
+      '',
+      name === this.brushPreset ? chosen : unchosen,
+    ])
+    const menu = new ContextMenu(this, entries)
+    var menuElement = await menu.openIn(document.body, e, this)
+    menuElement.classList.add('lively-toolbelt-ui')
+  }
+
   onModeRectangle(evt) { this.selectMode('rectangle') }
   onModeArrow(evt) { this.selectMode('arrow') }
   onModeEraser(evt) { this.selectMode('eraser') }
@@ -221,6 +261,13 @@ export default class LivelyToolbelt extends Morph {
   exitAudioMode() {
     this.classList.remove('audio')
     lively.notify('Audio mode off')
+  }
+
+  /*MD ## AI MD*/
+  // Opens the AI workspace. (Action is a sensible default — say the word to rewire it
+  // to opencode, the realtime chat, or a toggle.)
+  onAi(evt) {
+    lively.openComponentInWindow('lively-ai-workspace', undefined, lively.pt(900, 700))
   }
 
   async onMoreCode(e) {
