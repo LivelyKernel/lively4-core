@@ -5,11 +5,31 @@ import Strings from "src/client/strings.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import interaction from 'src/components/tools/lively-toolbelt-interaction.js'
 import { BRUSH_PRESETS } from 'src/components/tools/lively-toolbelt-brush.js'
+import { SELECT_SHAPES } from 'src/components/tools/lively-toolbelt-select.js'
 
 /*
 document.body.append(await <lively-toolbelt></lively-toolbelt>)
 */
 export default class LivelyToolbelt extends Morph {
+  // The mode buttons show the active preset's icon, and the preset itself lives in an
+  // attribute — so the attribute is the truth and the icon must follow it, whoever sets
+  // it (menu, migration, restore, a direct setAttribute).
+  //
+  // Deliberately a MutationObserver rather than observedAttributes: the browser reads
+  // observedAttributes ONCE, at customElements.define() time, so an attribute added to
+  // that list later never fires under Lively's module reloading — the callback sits
+  // there looking correct and is simply never called. This has no such dependency.
+  observeIconAttributes() {
+    this.__iconObserver?.disconnect()
+    this.__iconObserver = new MutationObserver(records => {
+      for (const r of records) {
+        if (r.attributeName === 'select-shape') this.updateSelectButtonIcon()
+        if (r.attributeName === 'brush-preset') this.updateBrushButtonIcon()
+      }
+    })
+    this.__iconObserver.observe(this, { attributes: true, attributeFilter: ['select-shape', 'brush-preset'] })
+  }
+
   async initialize() {
     this.windowTitle = "LivelyToolbelt"
 
@@ -37,6 +57,8 @@ export default class LivelyToolbelt extends Morph {
 
     this.refreshDrawingButtons()
     this.updateBrushButtonIcon()
+    this.updateSelectButtonIcon()
+    this.observeIconAttributes()
   }
 
   /*MD ## Menu Entries MD*/
@@ -151,7 +173,7 @@ export default class LivelyToolbelt extends Morph {
   // `mode` attribute (absent === 'normal'). Audio is an independent toggle
   // handled separately below.
   static get drawingModes() {
-    return ['freeform', 'rectangle', 'arrow', 'eraser']
+    return ['freeform', 'rectangle', 'arrow', 'eraser', 'select']
   }
 
   get mode() {
@@ -201,6 +223,39 @@ export default class LivelyToolbelt extends Morph {
   onModeRectangle(evt) { this.selectMode('rectangle') }
   onModeArrow(evt) { this.selectMode('arrow') }
   onModeEraser(evt) { this.selectMode('eraser') }
+  onModeSelect(evt) { this.selectMode('select') }
+
+  // Marquee-shape picker, built exactly like the brush menu above: radio indicator on
+  // the left, the shape's own icon in the name, persisted on an attribute.
+  get selectShape() { return this.getAttribute('select-shape') || 'lasso' }
+
+  updateSelectButtonIcon() {
+    const shape = SELECT_SHAPES[this.selectShape]
+    const icon = this.get('#mode-select i')
+    if (icon && shape && shape.icon) icon.className = 'fa ' + shape.icon
+  }
+
+  async onMoreSelect(e) {
+    const chosen = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>'
+    const unchosen = '<i class="fa fa-circle-o" aria-hidden="true"></i>'
+    const entries = Object.entries(SELECT_SHAPES).map(([name, shape]) => [
+      <span><i class={'fa ' + shape.icon}></i>{' '}{Strings.toUpperCaseFirst(name)}</span>,
+      () => {
+        menuElement?.remove?.() // close on selection
+        this.setAttribute('select-shape', name) // persists across reload / migration
+        this.updateSelectButtonIcon()
+        // A marquee shape is a select-mode concept — picking one switches to select
+        // from any other mode; if already in select, this is a no-op.
+        if (this.mode !== 'select') this.enterMode('select')
+        lively.notify(`Selection: ${name}`)
+      },
+      '',
+      name === this.selectShape ? chosen : unchosen,
+    ])
+    const menu = new ContextMenu(this, entries)
+    var menuElement = await menu.openIn(document.body, e, this)
+    menuElement.classList.add('lively-toolbelt-ui')
+  }
 
   // Clicking the already-active mode switches back to normal.
   selectMode(mode) {
@@ -233,6 +288,7 @@ export default class LivelyToolbelt extends Morph {
   /*MD ## Undo / redo MD*/
   onUndo(evt) { this.drawingController().undo() }
   onRedo(evt) { this.drawingController().redo() }
+  onDeleteSelection(evt) { this.drawingController().deleteSelection() }
 
   // The drawing controller (created + cached on the host, adopts existing drawings).
   drawingController() {
@@ -245,6 +301,11 @@ export default class LivelyToolbelt extends Morph {
     const undo = this.get('#undo'), redo = this.get('#redo')
     if (undo) undo.disabled = !(c && c.undoStack && c.undoStack.length)
     if (redo) redo.disabled = !(c && c.redoStack && c.redoStack.length)
+    const del = this.get('#delete-selection')
+    if (del) {
+      del.disabled = !(c && c.selection && !c.selection.isEmpty)
+      del.title = del.disabled ? 'Delete (select something first)' : 'Delete selection'
+    }
   }
 
   /*MD ## Audio MD*/

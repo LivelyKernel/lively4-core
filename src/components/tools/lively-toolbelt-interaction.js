@@ -1,6 +1,6 @@
 /*
  * Rendering/interaction layer for lively-toolbelt's drawing modes
- * (freeform, rectangle, arrow, eraser). Statically imported by lively-toolbelt.
+ * (freeform, rectangle, arrow, eraser, select). Statically imported by lively-toolbelt.
  *
  * WORLD-SPACE, CLUSTERED (P1)
  * ---------------------------
@@ -8,7 +8,7 @@
  * with the world. Finished shapes are grouped into CLUSTERS: each cluster is a
  * `lively-figure` (class lively-content) positioned in the world, holding its
  * shapes as SVG children. The figure is the unit Lively moves/selects/persists
- * (halos come for free); individual-shape editing is a later refinement.
+ * (halos come for free); individual-shape editing is P6, below.
  *
  * A freshly drawn shape joins a cluster when it is RECENT (within JOIN_MS of the
  * cluster's last stroke) OR NEAR (its start point within JOIN_DIST of the
@@ -18,12 +18,11 @@
  * first-in-line capture-phase stubs live in lively-toolbelt-input.js (installed at
  * boot, before graffle/selection); this controller just registers its handlers
  * into them via setToolbeltInputHandler. Because the stubs run first, a claimed
- * draw gesture calls stopImmediatePropagation and graffle/selection never fire —
- * no unregistering/restoring them. Non-draw gestures fall through to Lively (world
- * pan/nav, halos). `shouldDraw` is the routing seam (later: pen draws, touch pans,
- * palm rejected). Crosshair cursor and touch-action:none scope to documentElement.
- * getCoalescedEvents() gives sub-frame freehand density; pointer capture keeps a
- * fast drag tracking off-element.
+ * gesture calls stopImmediatePropagation and graffle/selection never fire — no
+ * unregistering/restoring them. Non-claimed gestures fall through to Lively (world
+ * pan/nav, halos). `shouldDraw` is the routing seam. Crosshair cursor and
+ * touch-action:none scope to documentElement. getCoalescedEvents() gives sub-frame
+ * freehand density; pointer capture keeps a fast drag tracking off-element.
  *
  *   - draftSvg : world-positioned SVG holding the in-progress stroke; on
  *                pointerup the shape is committed into its cluster figure.
@@ -40,12 +39,28 @@
  * taper). The live canvas fills the SAME brush path each frame — confirmed+predicted
  * dimmed underneath, confirmed solid on top — so live == commit and nothing snaps.
  * Rectangle/arrow still preview on `draftSvg` (SVG) and commit unchanged.
+ *
+ * SELECTION + SUB-STROKE ERASER (P6): individual strokes (not just whole cluster
+ * figures, which Lively's halos already handle) can be picked with a lasso or rect
+ * marquee, moved, uniformly resized and deleted; the eraser CUTS strokes rather than
+ * deleting them whole. All of that needs a stroke's centerline, so committed shapes
+ * now PERSIST their point list in `data-points` (see persistShape/parsePoints) —
+ * `adoptExistingClusters` reads it back, making restored shapes first-class. Strokes
+ * committed before P6 have no such attribute: they stay selectable and deletable but
+ * cannot be split or transformed. Undo entries are typed actions (draw/erase/move/
+ * resize) so every one of these operations is reversible.
  */
 
 import { setToolbeltInputHandler } from 'src/components/tools/lively-toolbelt-input.js'
 import { strokePath, DEFAULT_BRUSH, BRUSH_PRESETS } from 'src/components/tools/lively-toolbelt-brush.js'
+import { pt, rect } from 'src/client/graphics.js'
+import Selection, { pickShapes, pickShapeAt, worldOutline } from 'src/components/tools/lively-toolbelt-select.js'
+import {
+  boundsOf, splitStroke, polylineNearPolyline, translatePoints, scalePoints, rectsOverlap,
+} from 'src/components/tools/lively-toolbelt-geometry.js'
 
 const SVGNS = 'http://www.w3.org/2000/svg'
+const HALF_PI = Math.PI / 2
 
 // Clustering thresholds (tunable).
 const JOIN_MS = 1500   // temporal: join the active cluster within this window
@@ -56,10 +71,58 @@ const JOIN_DIST = 80   // spatial: join a cluster whose world bounds are this ne
 // than expected, and drawing must not be blocked. Tune from measured finger sizes.
 const PALM_CONTACT = 80
 
+const ERASER_RADIUS = 20
+
+// Pointer travel (px) below which a select gesture counts as a click, not a marquee.
+const CLICK_SLOP = 4
+
+// Cursor shown per corner handle while hovering it.
+const HANDLE_CURSOR = {
+  topLeft: 'nwse-resize', bottomRight: 'nwse-resize',
+  topRight: 'nesw-resize', bottomLeft: 'nesw-resize',
+}
+
 function svgEl(tag, attrs = {}) {
   const el = document.createElementNS(SVGNS, tag)
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
   return el
+}
+
+// Sub-frame pointer samples. A real move always reports at least itself, but a
+// synthetic (untrusted) event returns an EMPTY list — which would silently drop the
+// whole move — so fall back to the event itself rather than trusting the length.
+function coalescedSamples(evt) {
+  const coalesced = evt.getCoalescedEvents ? evt.getCoalescedEvents() : []
+  return coalesced.length ? coalesced : [evt]
+}
+
+const round = (v, digits) => {
+  const f = 10 ** digits
+  return Math.round(v * f) / f
+}
+
+/*MD ## Point persistence MD*/
+// Frame-local `x,y,pressure,dt,altitude` per point, space separated. dt is ms since
+// the stroke's first sample: absolute timestamps are never needed, because the
+// velocity dynamic only ever reads deltas — and relative values stay small.
+function serializePoints(points, origin) {
+  if (!points || !points.length) return ''
+  const t0 = points[0].t || 0
+  return points.map(p => [
+    round(p.x - origin.x, 1),
+    round(p.y - origin.y, 1),
+    round(p.pressure == null ? 0.5 : p.pressure, 2),
+    Math.round((p.t || 0) - t0),
+    round(p.altitude == null ? HALF_PI : p.altitude, 2),
+  ].join(',')).join(' ')
+}
+
+function parsePoints(str, frame, pointerType) {
+  if (!str) return []
+  return str.trim().split(' ').filter(Boolean).map(chunk => {
+    const [x, y, pressure, dt, altitude] = chunk.split(',').map(Number)
+    return { x: x + frame.x, y: y + frame.y, pressure, t: dt, altitude, pointerType }
+  })
 }
 
 export default class ToolbeltInteraction {
@@ -93,7 +156,8 @@ class DrawingController {
     this.baseWidth = 2.5
     // Variable-width brush config; the chosen preset persists on the host attribute
     // (survives controller recreation / reload). See lively-toolbelt-brush.js.
-    this.brush = BRUSH_PRESETS[host.getAttribute && host.getAttribute('brush-preset')] || DEFAULT_BRUSH
+    this.brushName = (host.getAttribute && host.getAttribute('brush-preset')) || 'balanced'
+    this.brush = BRUSH_PRESETS[this.brushName] || DEFAULT_BRUSH
 
     // Rectangle/arrow live preview stays on this screen-fixed SVG.
     this.draftSvg = this.createDraftSvg()
@@ -105,6 +169,9 @@ class DrawingController {
     document.body.appendChild(this.liveCanvas)
     this.rafId = null
 
+    // Selection state + its world-space overlay (P6).
+    this.selection = new Selection()
+
     // Clusters (lively-figures) and the most recently drawn-into one.
     this.clusters = []
     this.active = null
@@ -114,7 +181,7 @@ class DrawingController {
     this.redoStack = []
 
     this.activePointerId = null
-    this.current = null
+    this.gesture = null
 
     // Point the permanent first-in-line stubs (lively-toolbelt-input.js) at this
     // controller; overwriting the global handler set makes any older controller
@@ -131,6 +198,16 @@ class DrawingController {
       pointercancel: this.onPointerUp,
       click: this.onClick,
     })
+
+    // Escape-to-abort. keydown isn't part of the pointer stub set, so it is registered
+    // directly — through a single window slot so that a migrated/reloaded controller
+    // removes its predecessor's listener rather than stacking (self-healing by
+    // replacement, same principle as the pointer handler set above). Capture phase so it
+    // can pre-empt other Escape handlers while a gesture is live.
+    this.onKeyDown = this.onKeyDown.bind(this)
+    if (window.__toolbeltKeydown) document.removeEventListener('keydown', window.__toolbeltKeydown, true)
+    window.__toolbeltKeydown = this.onKeyDown
+    document.addEventListener('keydown', window.__toolbeltKeydown, true)
 
     // Rehydrate clusters from lively-figures that lively-content persistence
     // restored, so new strokes can join drawings that survived a page reload.
@@ -204,22 +281,38 @@ class DrawingController {
 
   setMode(mode) {
     this.mode = mode
-    const drawing = !!mode
+    const active = !!mode
     // Cursor + gesture suppression scope live on the root (graffle sets
     // documentElement.style.touchAction); the page stays interactive otherwise.
     // No need to unregister lively-selection here: our input stubs run BEFORE
-    // selection/graffle, so a claimed draw stopImmediatePropagation's them out.
+    // selection/graffle, so a claimed gesture stopImmediatePropagation's them out.
     const root = document.documentElement
-    root.style.cursor = drawing ? 'crosshair' : ''
-    root.style.touchAction = drawing ? 'none' : ''
+    root.style.touchAction = active ? 'none' : ''
     // Stop pen/mouse from starting a text selection while drawing.
-    root.style.userSelect = drawing ? 'none' : ''
-    root.style.webkitUserSelect = drawing ? 'none' : ''
-    if (!drawing) this.abortStroke()
+    root.style.userSelect = active ? 'none' : ''
+    root.style.webkitUserSelect = active ? 'none' : ''
+    this.updateCursor()
+    if (mode !== 'eraser') this.selection.hideEraserCursor()
+    // The selection is a select-mode concept; leaving the mode drops it (and with it
+    // the tint class, which must never linger into persisted content).
+    if (mode !== 'select') this.selection.clear()
+    if (!active) this.abortGesture()
+    this.host.refreshDrawingButtons?.()
   }
 
-  // Whether this pointer should draw (vs. fall through to Lively for pan/nav).
-  // P1: primary button in a drawing mode, not on the toolbelt. Seam for later
+  // Crosshair while drawing; over a selection, the cursor previews what a drag does.
+  updateCursor(worldPt) {
+    const root = document.documentElement
+    if (!this.mode) return void (root.style.cursor = '')
+    if (this.mode === 'eraser') return void (root.style.cursor = 'none')
+    if (this.mode === 'select' && worldPt && !this.selection.isEmpty) {
+      const handle = this.selection.handleAt(worldPt)
+      if (handle) return void (root.style.cursor = HANDLE_CURSOR[handle])
+      if (this.selection.containsPoint(worldPt)) return void (root.style.cursor = 'move')
+    }
+    root.style.cursor = 'crosshair'
+  }
+
   // A pointer is over toolbelt UI (the toolbelt itself, or a popup menu tagged with
   // .lively-toolbelt-ui) — such gestures interact with the UI, they never draw. This
   // is what makes the brush-preset menu touchable while in a drawing mode.
@@ -228,13 +321,21 @@ class DrawingController {
       el === this.host || (el.classList && el.classList.contains('lively-toolbelt-ui')))
   }
 
-  // Pen/mouse always draw; a finger may draw; a PALM is rejected by its contact patch.
+  // The pen's ERASER TIP reports button 5 / buttons 32. Flipping the pen erases
+  // regardless of which mode is active, and leaves that mode unchanged afterwards.
+  effectiveMode(evt) {
+    if (evt.button === 5 || (evt.buttons & 32)) return 'eraser'
+    return this.mode
+  }
+
+  // Pen/mouse always act; a finger may act; a PALM is rejected by its contact patch.
   // Measured: pen reports 1×1, a palm reports ~50–110px in BOTH dimensions. Requiring
   // both dims large (not either) keeps an elongated finger from being mistaken for a
   // palm. (The `activePointerId` guard only rejects a second pointer once one is
-  // already drawing, so it can't catch a palm that lands first — hence the size test.)
+  // already active, so it can't catch a palm that lands first — hence the size test.)
   shouldDraw(evt) {
-    if (!this.mode || this.activePointerId !== null || evt.button !== 0) return false
+    if (!this.mode || this.activePointerId !== null) return false
+    if (evt.button !== 0 && evt.button !== 5) return false
     if (this.isUiTarget(evt)) return false
     if (evt.pointerType === 'touch' && evt.width > PALM_CONTACT && evt.height > PALM_CONTACT) return false
     return true
@@ -242,69 +343,112 @@ class DrawingController {
 
   /*MD ## Pointer handling MD*/
   onPointerDown(evt) {
-    if (!this.shouldDraw(evt)) return // let Lively handle non-draw gestures
-    // Starting a stroke (outside any menu — shouldDraw excludes UI) closes an open
+    if (!this.shouldDraw(evt)) return // let Lively handle non-claimed gestures
+    // Starting a gesture (outside any menu — shouldDraw excludes UI) closes an open
     // toolbelt popup, so the brush menu doesn't linger while you draw.
     document.querySelectorAll('lively-menu.lively-toolbelt-ui').forEach(m => m.remove())
+    // Anything may have been deleted via halos since the last gesture.
+    this.syncWithDom()
     this.activePointerId = evt.pointerId
     try { document.documentElement.setPointerCapture(evt.pointerId) } catch (e) { /* ignore */ }
-    // Claim the gesture: keep it from page/components/world-nav during the draw.
-    // Our stubs run first, so stopImmediatePropagation (not just stopPropagation)
-    // blocks every other pointerdown handler on the same element — graffle,
-    // selection, Hand, ViewNav — none of which have run yet.
+    // Claim the gesture: keep it from page/components/world-nav. Our stubs run first,
+    // so stopImmediatePropagation (not just stopPropagation) blocks every other
+    // pointerdown handler on the same element — graffle, selection, Hand, ViewNav.
     evt.preventDefault()
     evt.stopImmediatePropagation()
     window.getSelection?.()?.removeAllRanges() // pen can otherwise start a selection
 
+    const mode = this.effectiveMode(evt)
     const p = this.worldPoint(evt)
-    // Live preview renders in CLIENT coords (screen-fixed layers), so it is
-    // reliable regardless of world position. origin = -bodyOrigin maps stored
-    // world samples back to client space; committed geometry is re-localized on up.
-    const bo = lively.getClientPosition(document.body)
-    const el = makeShapeEl(this.mode, this.color)
-    // Live and commit derive identical geometry from the same points + brush (P5),
-    // so nothing snaps — no per-stroke frozen width needed. brush stays on the shape
-    // so commit/undo/redo re-render with the same settings.
-    this.current = { type: this.mode, el, points: [p], origin: { x: -bo.x, y: -bo.y }, brush: this.brush }
-
-    if (this.mode === 'freeform') {
-      // Freeform previews on the canvas; the SVG el stays detached until commit.
-      this.ensureCanvasSize()
-      this.current.predicted = []
-      this.paintFreeform()
-    } else {
-      // Rectangle/arrow preview on the SVG draft layer.
-      this.draftSvg.appendChild(el)
-      renderShape(this.current, this.baseWidth)
-    }
+    if (mode === 'select') return this.beginSelectGesture(evt, p)
+    if (mode === 'eraser') return this.beginEraseGesture(p)
+    this.beginDrawGesture(mode, p)
   }
 
   onPointerMove(evt) {
-    if (evt.pointerId !== this.activePointerId || !this.current) return
+    // Hover (no active gesture): only update cursors/affordances, never claim. Limited
+    // to the two modes that have hover affordances — the drawing modes would otherwise
+    // pay for a world-coordinate conversion on every mousemove across the page.
+    if (evt.pointerId !== this.activePointerId || !this.gesture) {
+      if (this.activePointerId !== null) return
+      if (this.mode !== 'select' && this.mode !== 'eraser') return
+      const p = this.worldPoint(evt)
+      if (this.mode === 'eraser') this.selection.showEraserCursor(pt(p.x, p.y), ERASER_RADIUS)
+      else this.updateCursor(pt(p.x, p.y))
+      return
+    }
     evt.preventDefault()
     evt.stopImmediatePropagation()
-    const s = this.current
-    if (s.type === 'freeform') {
-      const samples = evt.getCoalescedEvents ? evt.getCoalescedEvents() : [evt]
-      for (const c of samples) s.points.push(this.worldPoint(c))
-      // Speculative future samples; overwritten each move, never committed.
-      s.predicted = evt.getPredictedEvents ? evt.getPredictedEvents().map(pe => this.worldPoint(pe)) : []
-      this.scheduleFreeformPaint()
-    } else {
-      s.points.push(this.worldPoint(evt))
-      renderShape(s, this.baseWidth)
-    }
+    const g = this.gesture
+    if (g.kind === 'draw') return this.moveDrawGesture(evt, g)
+    if (g.kind === 'erase') return this.moveEraseGesture(evt, g)
+    this.moveSelectGesture(evt, g)
   }
 
   async onPointerUp(evt) {
     if (evt.pointerId !== this.activePointerId) return
     evt.stopImmediatePropagation()
-    const shape = this.current
-    if (evt.type !== 'pointercancel') shape.points.push(this.worldPoint(evt))
+    const g = this.gesture
+    this.gesture = null
     if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null }
-    if (shape.type === 'freeform') { shape.predicted = []; this.clearCanvases() }
     this.endStroke(evt.pointerId)
-    await this.commit(shape)
+    if (!g) return
+    if (g.kind === 'draw') {
+      if (evt.type !== 'pointercancel') g.shape.points.push(this.worldPoint(evt))
+      if (g.shape.type === 'freeform') { g.shape.predicted = []; this.clearCanvases() }
+      await this.commit(g.shape)
+    } else if (g.kind === 'erase') {
+      this.commitErase(g)
+    } else {
+      this.finishSelectGesture(g)
+    }
+  }
+
+  /*MD ## Drawing gesture MD*/
+  beginDrawGesture(mode, p) {
+    // Live preview renders in CLIENT coords (screen-fixed layers), so it is
+    // reliable regardless of world position. origin = -bodyOrigin maps stored
+    // world samples back to client space; committed geometry is re-localized on up.
+    const bo = lively.getClientPosition(document.body)
+    const shape = {
+      type: mode,
+      el: makeShapeEl(mode, this.color),
+      points: [p],
+      origin: { x: -bo.x, y: -bo.y },
+      // Live and commit derive identical geometry from the same points + brush (P5),
+      // so nothing snaps. brush/color/width stay on the shape so commit, undo, split
+      // and rescale all re-render with the same settings.
+      brush: this.brush,
+      brushName: this.brushName,
+      color: this.color,
+      strokeWidth: this.baseWidth,
+      pointerType: p.pointerType,
+    }
+    this.gesture = { kind: 'draw', shape }
+
+    if (mode === 'freeform') {
+      // Freeform previews on the canvas; the SVG el stays detached until commit.
+      this.ensureCanvasSize()
+      shape.predicted = []
+      this.paintFreeform()
+    } else {
+      // Rectangle/arrow preview on the SVG draft layer.
+      this.draftSvg.appendChild(shape.el)
+      renderShape(shape)
+    }
+  }
+
+  moveDrawGesture(evt, g) {
+    const s = g.shape
+    if (s.type === 'freeform') {
+      for (const c of coalescedSamples(evt)) s.points.push(this.worldPoint(c))
+      // Speculative future samples; overwritten each move, never committed.
+      s.predicted = evt.getPredictedEvents ? evt.getPredictedEvents().map(pe => this.worldPoint(pe)) : []
+      this.scheduleFreeformPaint()
+    } else {
+      s.points.push(this.worldPoint(evt))
+      renderShape(s)
+    }
   }
 
   // Paint the in-progress freeform stroke at most once per frame.
@@ -321,7 +465,7 @@ class DrawingController {
   // outline solid on top — so the speculative tip reads faint. One canvas, full
   // redraw (perfect-freehand reprocesses the whole stroke, so no incremental append).
   paintFreeform() {
-    const s = this.current
+    const s = this.gesture && this.gesture.kind === 'draw' ? this.gesture.shape : null
     if (!s || s.type !== 'freeform') return
     const confirmed = s.points.map(p => this.toBrushPoint(p, s.origin))
     const predicted = (s.predicted || []).map(p => this.toBrushPoint(p, s.origin))
@@ -351,8 +495,297 @@ class DrawingController {
     }
   }
 
-  // Swallow the click a tap emits while drawing (except over toolbelt UI, whose
-  // clicks switch modes / pick menu items) so it can't select/grab a drawing.
+  /*MD ## Select gesture MD*/
+  // Dispatch order matters: handles sit ON the bounds edge, so they must win over the
+  // move test, which in turn must win over starting a fresh marquee.
+  beginSelectGesture(evt, p) {
+    const worldPt = pt(p.x, p.y)
+    const handle = this.selection.handleAt(worldPt)
+    if (handle) {
+      this.gesture = {
+        kind: 'resize', handle, anchor: this.selection.anchorFor(handle),
+        start: worldPt, scale: 1, startBounds: this.selection.bounds(),
+        entries: this.transformSnapshot(),
+      }
+      return
+    }
+    if (this.selection.containsPoint(worldPt)) {
+      this.gesture = {
+        kind: 'move', start: worldPt, delta: pt(0, 0),
+        startBounds: this.selection.bounds(), entries: this.transformSnapshot(),
+      }
+      return
+    }
+    const useRect = (this.host.getAttribute && this.host.getAttribute('select-shape')) === 'rectangle'
+    // Starting a fresh marquee drops the previous selection immediately, rather than at
+    // pointerup — otherwise the old strokes stay lit while you draw the new region.
+    const additive = evt.shiftKey
+    const base = additive ? [...this.selection.shapes] : []
+    if (!additive) this.selection.clear()
+    this.gesture = { kind: 'marquee', useRect, start: worldPt, points: [worldPt], additive, base }
+  }
+
+  // Re-pick at most once per frame while the marquee is being dragged, so the strokes
+  // you are about to select light up as you go instead of only on release.
+  scheduleMarqueePick() {
+    if (this.rafId != null) return
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null
+      const g = this.gesture
+      if (!g || g.kind !== 'marquee') return
+      this.selection.setPreview([...g.base, ...pickShapes(this.allShapes(), this.marqueeRegion(g))])
+    })
+  }
+
+  moveSelectGesture(evt, g) {
+    const p = this.worldPoint(evt)
+    const worldPt = pt(p.x, p.y)
+    if (g.kind === 'marquee') {
+      g.points = g.useRect ? [g.start, worldPt] : [...g.points, worldPt]
+      this.selection.renderMarquee(this.marqueeRegion(g), g.start)
+      this.scheduleMarqueePick()
+      return
+    }
+    // Move/resize preview as an element transform: cheap (no re-render per frame) and
+    // for scaling it previews exactly what baking produces, since a transform scales
+    // the filled outline the same way a larger brush.size does.
+    if (g.kind === 'move') {
+      g.delta = worldPt.subPt(g.start)
+      const t = `translate(${g.delta.x} ${g.delta.y})`
+      for (const e of g.entries) e.shape.el.setAttribute('transform', t)
+      this.selection.renderChromeAt(g.startBounds.translatedBy(g.delta))
+    } else {
+      const startLen = g.start.subPt(g.anchor).magnitude()
+      g.scale = startLen < 1 ? 1 : Math.max(0.05, worldPt.subPt(g.anchor).magnitude() / startLen)
+      this.previewResize(g)
+      this.selection.renderChromeAt(g.startBounds.scaleScalarFromAbsOrigin(g.scale, g.anchor))
+    }
+  }
+
+  // The anchor is a WORLD point, but each element's coordinates are LOCAL to its
+  // cluster frame. A pure translate survives that change of basis unchanged — which is
+  // why the move preview can use world deltas directly — but a scale ABOUT A POINT does
+  // not: feeding it the world anchor displaces every stroke by frame x (1 - scale),
+  // i.e. further the further its cluster sits from the world origin. So the anchor has
+  // to be localised per shape.
+  previewResize(g) {
+    for (const e of g.entries) {
+      const o = e.shape.origin
+      const ax = g.anchor.x - o.x, ay = g.anchor.y - o.y
+      e.shape.el.setAttribute('transform',
+        `translate(${ax} ${ay}) scale(${g.scale}) translate(${-ax} ${-ay})`)
+    }
+  }
+
+  marqueeRegion(g) {
+    if (g.useRect) {
+      const [a, b] = [g.start, g.points[g.points.length - 1]]
+      return { rect: rect(pt(Math.min(a.x, b.x), Math.min(a.y, b.y)), pt(Math.max(a.x, b.x), Math.max(a.y, b.y))) }
+    }
+    return { polygon: g.points }
+  }
+
+  async finishSelectGesture(g) {
+    if (g.kind === 'marquee') {
+      this.selection.clearMarquee()
+      // Barely moved? That was a click, not a marquee: take the stroke under the
+      // pointer. Clicking empty space still picks nothing, so it clears the selection.
+      const moved = g.points[g.points.length - 1].dist(g.start)
+      const picked = moved <= CLICK_SLOP
+        ? [pickShapeAt(this.allShapes(), g.start)].filter(Boolean)
+        : pickShapes(this.allShapes(), this.marqueeRegion(g))
+      this.selection.set([...g.base, ...picked])
+      this.host.refreshDrawingButtons?.()
+      return
+    }
+    await this.bakeTransform(g)
+  }
+
+  // Shapes whose centerline is unknown (committed before P6) cannot be transformed:
+  // there is nothing to translate or scale, and their filled outline can't be turned
+  // back into points. They stay selectable and deletable.
+  transformSnapshot() {
+    return this.selection.shapes
+      .filter(s => s.points && s.points.length >= 2)
+      .map(s => ({
+        shape: s,
+        fromPoints: s.points,
+        fromCluster: s.cluster,
+        fromBrushSize: s.brush ? s.brush.size : null,
+        fromStrokeWidth: s.strokeWidth,
+      }))
+  }
+
+  async bakeTransform(g) {
+    const entries = g.entries
+    for (const e of entries) e.shape.el.removeAttribute('transform')
+    if (!entries.length) return
+    const isMove = g.kind === 'move'
+    if (isMove && g.delta.x === 0 && g.delta.y === 0) return
+    if (!isMove && g.scale === 1) return
+
+    for (const e of entries) {
+      if (isMove) {
+        e.toPoints = translatePoints(e.fromPoints, g.delta)
+        e.toBrushSize = e.fromBrushSize
+        e.toStrokeWidth = e.fromStrokeWidth
+      } else {
+        e.toPoints = scalePoints(e.fromPoints, g.scale, g.anchor)
+        e.toBrushSize = e.fromBrushSize == null ? null : e.fromBrushSize * g.scale
+        e.toStrokeWidth = e.fromStrokeWidth * g.scale
+      }
+    }
+    // Where the moved shapes land decides their cluster. Resolved once, from the
+    // selection's new top-left, so a multi-stroke selection stays together.
+    const landing = boundsOf(entries.flatMap(e => e.toPoints))
+    const target = await this.resolveClusterAt(landing.topLeft())
+    for (const e of entries) e.toCluster = target
+
+    const action = { type: g.kind, entries }
+    this.applyAction(action)
+    this.undoStack.push(action)
+    this.redoStack = []
+    this.selection.refresh()
+    this.host.refreshDrawingButtons?.()
+  }
+
+  /*MD ## Eraser gesture MD*/
+  // The eraser is a PREVIEW-then-commit gesture, not destructive per frame. Nothing is
+  // cut until pointerup: while you sweep, the material that would be erased is greyed
+  // and the surviving structure is drawn on top, and Escape aborts back to the untouched
+  // state. Deferring the split to commit also means it happens ONCE over the whole
+  // sweep — so there are no intermediate fragments to net out of the undo entry, which
+  // is what the frame-by-frame version had to guard against.
+  beginEraseGesture(p) {
+    const worldPt = pt(p.x, p.y)
+    this.gesture = { kind: 'erase', sweep: [worldPt], dimmed: [] }
+    this.selection.showEraserCursor(worldPt, ERASER_RADIUS)
+    this.scheduleErase()
+  }
+
+  moveEraseGesture(evt, g) {
+    for (const c of coalescedSamples(evt)) {
+      const p = this.worldPoint(c)
+      g.sweep.push(pt(p.x, p.y))
+    }
+    this.selection.showEraserCursor(g.sweep[g.sweep.length - 1], ERASER_RADIUS)
+    this.scheduleErase()
+  }
+
+  scheduleErase() {
+    if (this.rafId != null) return
+    this.rafId = requestAnimationFrame(() => {
+      this.rafId = null
+      if (this.gesture && this.gesture.kind === 'erase') this.previewErase(this.gesture)
+    })
+  }
+
+  // Which shapes the sweep would touch, and what survives each. Non-destructive:
+  // returns { shape, runs } per affected shape (runs = [] means the whole shape goes,
+  // i.e. a rect/arrow or a pointless stroke). Recomputed over the FULL sweep each frame
+  // — bbox-prefiltered — so the preview always reflects the whole gesture, not a delta.
+  computeErase(g) {
+    const sweep = g.sweep
+    if (!sweep.length) return []
+    const sweepBounds = boundsOf(sweep).expandBy(ERASER_RADIUS)
+    const affected = []
+    for (const cluster of this.clusters) {
+      for (const shape of cluster.shapes) {
+        const outline = worldOutline(shape)
+        const b = boundsOf(outline)
+        if (!b || !rectsOverlap(b, sweepBounds)) continue
+        const splittable = shape.type === 'freeform' && shape.points && shape.points.length >= 2
+        if (!splittable) {
+          if (polylineNearPolyline(outline, sweep, ERASER_RADIUS)) affected.push({ shape, runs: [] })
+        } else {
+          const runs = splitStroke(shape.points, sweep, ERASER_RADIUS)
+          if (runs !== null) affected.push({ shape, runs })
+        }
+      }
+    }
+    return affected
+  }
+
+  // Grey the doomed strokes (dim the real element) and draw the survivors bright on top,
+  // so what stays vs. what goes is legible before you release.
+  previewErase(g) {
+    const affected = this.computeErase(g)
+    const now = new Set(affected.map(a => a.shape))
+    for (const s of g.dimmed) if (!now.has(s)) s.el.classList.remove('lively-toolbelt-erasing')
+    for (const { shape } of affected) shape.el.classList.add('lively-toolbelt-erasing')
+    g.dimmed = affected.map(a => a.shape)
+
+    const paths = []
+    let bounds = null
+    for (const { shape, runs } of affected) {
+      const ob = boundsOf(worldOutline(shape))
+      if (ob) bounds = bounds ? bounds.union(ob) : ob
+      for (const run of runs) {
+        paths.push({ d: strokePath(run, shape.brush, { last: true }), color: shape.color || this.color })
+      }
+    }
+    this.selection.setErasePreview(paths, bounds)
+  }
+
+  makeFragment(shape, run, cluster) {
+    return {
+      type: 'freeform',
+      el: makeShapeEl('freeform', shape.color || this.color),
+      points: run,
+      origin: cluster.frame,
+      brush: shape.brush,
+      brushName: shape.brushName,
+      color: shape.color || this.color,
+      strokeWidth: shape.strokeWidth,
+      pointerType: shape.pointerType,
+    }
+  }
+
+  // pointerup: do the cut for real, once, as a single undo entry.
+  commitErase(g) {
+    this.selection.hideEraserCursor()
+    this.selection.clearErasePreview()
+    for (const s of g.dimmed) s.el.classList.remove('lively-toolbelt-erasing')
+
+    const affected = this.computeErase(g)
+    const removed = [], added = []
+    for (const { shape, runs } of affected) {
+      const cluster = shape.cluster
+      removed.push({ shape, cluster })
+      this.detachShape(shape)
+      for (const run of runs) {
+        const frag = this.makeFragment(shape, run, cluster)
+        this.attachShape(frag, cluster)
+        added.push({ shape: frag, cluster })
+      }
+    }
+    this.selection.prune(s => !!s.cluster)
+    if (!removed.length) return
+    this.undoStack.push({ type: 'erase', removed, added })
+    this.redoStack = []
+    this.host.refreshDrawingButtons?.()
+  }
+
+  // Escape: drop the preview, leaving every stroke exactly as it was (nothing was cut).
+  abortErase(g) {
+    this.selection.hideEraserCursor()
+    this.selection.clearErasePreview()
+    for (const s of g.dimmed) s.el.classList.remove('lively-toolbelt-erasing')
+  }
+
+  /*MD ## Delete MD*/
+  deleteSelection() {
+    const removed = this.selection.shapes.map(s => ({ shape: s, cluster: s.cluster }))
+    if (!removed.length) return
+    this.selection.clear()
+    for (const { shape } of removed) this.detachShape(shape)
+    this.undoStack.push({ type: 'erase', removed, added: [] })
+    this.redoStack = []
+    this.host.refreshDrawingButtons?.()
+  }
+
+  // Swallow the click a tap emits while a mode is active (except over toolbelt UI,
+  // whose clicks switch modes / pick menu items) so it can't select/grab a drawing.
   onClick(evt) {
     if (!this.mode) return
     if (this.isUiTarget(evt)) return
@@ -360,12 +793,33 @@ class DrawingController {
     evt.stopImmediatePropagation()
   }
 
-  abortStroke() {
+  // Cancel the active gesture, leaving the world as it was before it started. Reached
+  // by Escape (onKeyDown) and by leaving the mode. Never commits.
+  abortGesture() {
     if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null }
     if (this.activePointerId !== null) this.endStroke(this.activePointerId)
-    // Drop an unfinished draft shape.
-    if (this.current) { this.current.el.remove(); this.current = null }
+    const g = this.gesture
+    this.gesture = null
+    if (!g) { this.selection.clearMarquee(); this.clearCanvases(); return }
+    if (g.kind === 'draw') g.shape.el.remove()
+    else if (g.kind === 'move' || g.kind === 'resize') {
+      // Drop the preview transform; the real points were never changed.
+      for (const e of g.entries) e.shape.el.removeAttribute('transform')
+      this.selection.refresh()
+    } else if (g.kind === 'erase') {
+      this.abortErase(g)
+    }
+    this.selection.clearMarquee()
     this.clearCanvases()
+  }
+
+  // Escape aborts the gesture in progress. Only claimed while a gesture is live, so a
+  // stray Escape elsewhere is left alone.
+  onKeyDown(evt) {
+    if (evt.key !== 'Escape' || !this.gesture) return
+    evt.preventDefault()
+    evt.stopImmediatePropagation()
+    this.abortGesture()
   }
 
   endStroke(pointerId) {
@@ -376,34 +830,43 @@ class DrawingController {
 
   /*MD ## Clustering & commit MD*/
   async commit(shape) {
-    this.current = null
     const cluster = await this.resolveCluster(shape.points[0])
-    // Re-render relative to the cluster's fixed frame, then move into its group.
-    shape.origin = cluster.frame
-    renderShape(shape, this.baseWidth)
-    shape.el.remove()
-    cluster.group.appendChild(shape.el)
-    cluster.shapes.push(shape)
+    shape.el.remove() // detach from the draft layer before re-parenting
+    this.attachShape(shape, cluster)
     cluster.lastTime = performance.now()
     this.active = cluster
-    this.layoutCluster(cluster)
 
     // Record for undo; a fresh commit invalidates the redo branch.
-    this.undoStack.push({ shape, cluster })
+    this.undoStack.push({ type: 'draw', shape, cluster })
     this.redoStack = []
     this.host.refreshDrawingButtons?.()
   }
 
-  /*MD ## Undo / redo MD*/
-  undo() {
-    const action = this.undoStack.pop()
-    if (!action) return
-    const { shape, cluster } = action
+  // Add a shape to a cluster (re-creating the figure if a previous undo removed it),
+  // re-render it in the cluster's frame, and persist its centerline.
+  attachShape(shape, cluster) {
+    if (!this.clusters.includes(cluster)) {
+      this.clusters.push(cluster)
+      document.body.appendChild(cluster.figure)
+    }
+    if (!cluster.shapes.includes(shape)) cluster.shapes.push(shape)
+    shape.cluster = cluster
+    shape.origin = cluster.frame
+    cluster.group.appendChild(shape.el)
+    renderShape(shape)
+    this.persistShape(shape)
+    this.layoutCluster(cluster)
+  }
+
+  // Remove a shape from its cluster, dropping the figure if that emptied it.
+  detachShape(shape) {
+    const cluster = shape.cluster
+    shape.el.remove()
+    shape.cluster = null
+    if (!cluster) return
     const i = cluster.shapes.indexOf(shape)
     if (i >= 0) cluster.shapes.splice(i, 1)
-    shape.el.remove()
     if (cluster.shapes.length === 0) {
-      // The shape had created this cluster — drop the (now empty) figure.
       cluster.figure.remove()
       const ci = this.clusters.indexOf(cluster)
       if (ci >= 0) this.clusters.splice(ci, 1)
@@ -411,25 +874,128 @@ class DrawingController {
     } else {
       this.layoutCluster(cluster)
     }
-    this.redoStack.push(action)
-    this.host.refreshDrawingButtons?.()
   }
 
-  redo() {
+  // Write the centerline (and the settings needed to re-render it) onto the element,
+  // so a stroke stays splittable and transformable across a page reload.
+  persistShape(shape) {
+    const el = shape.el
+    if (shape.points && shape.points.length) {
+      el.setAttribute('data-points', serializePoints(shape.points, shape.origin))
+      if (shape.pointerType) el.setAttribute('data-pointer-type', shape.pointerType)
+    }
+    if (shape.type === 'freeform' && shape.brush) {
+      if (shape.brushName) el.setAttribute('data-brush', shape.brushName)
+      el.setAttribute('data-brush-size', round(shape.brush.size, 2))
+    }
+  }
+
+  allShapes() {
+    return this.clusters.flatMap(c => c.shapes)
+  }
+
+  /*MD ## Reconciling with the DOM MD*/
+  // THE DOM IS THE TRUTH. In normal mode Lively's halos can delete a stroke, or a whole
+  // cluster figure, without telling this controller. Acting on the stale model then
+  // RESURRECTS that geometry, because attachShape re-appends the element — which is how
+  // erasing could suddenly bring a deleted line back as fragments.
+  //
+  // So reconcile before every gesture: drop shapes whose element left the document (or
+  // was reparented), drop clusters whose figure is gone or which are now empty, and
+  // adopt figures that appeared from elsewhere.
+  syncWithDom() {
+    const dropped = []
+    for (const cluster of [...this.clusters]) {
+      const figureGone = !cluster.figure.isConnected
+      const alive = figureGone ? [] : cluster.shapes.filter(s =>
+        s.el.isConnected && s.el.parentNode === cluster.group)
+      if (alive.length !== cluster.shapes.length) {
+        dropped.push(...cluster.shapes.filter(s => !alive.includes(s)))
+        cluster.shapes = alive
+      }
+      if (figureGone || !cluster.shapes.length) {
+        if (!figureGone) cluster.figure.remove()
+        this.clusters.splice(this.clusters.indexOf(cluster), 1)
+        if (this.active === cluster) this.active = null
+      }
+    }
+    if (dropped.length) {
+      const gone = new Set(dropped)
+      for (const s of dropped) s.cluster = null
+      // History referencing vanished shapes has to go too, or an unrelated undo would
+      // put externally deleted geometry back.
+      const refs = a => a.type === 'draw' ? [a.shape]
+        : a.type === 'erase' ? [...a.removed, ...a.added].map(x => x.shape)
+        : a.entries.map(e => e.shape)
+      this.undoStack = this.undoStack.filter(a => !refs(a).some(s => gone.has(s)))
+      this.redoStack = this.redoStack.filter(a => !refs(a).some(s => gone.has(s)))
+      this.selection.prune(s => !gone.has(s))
+      this.host.refreshDrawingButtons?.()
+    }
+    this.adoptExistingClusters()
+    return dropped.length
+  }
+
+  /*MD ## Undo / redo MD*/
+  // Entries are typed actions, so draw, erase, delete, move and resize are all
+  // reversible through the same two methods.
+  async undo() {
+    const action = this.undoStack.pop()
+    if (!action) return
+    this.revertAction(action)
+    this.redoStack.push(action)
+    this.afterHistoryChange()
+  }
+
+  async redo() {
     const action = this.redoStack.pop()
     if (!action) return
-    const { shape, cluster } = action
-    if (!this.clusters.includes(cluster)) {
-      // Re-attach the figure this shape had created.
-      this.clusters.push(cluster)
-      document.body.appendChild(cluster.figure)
-    }
-    cluster.group.appendChild(shape.el)
-    cluster.shapes.push(shape)
-    renderShape(shape, this.baseWidth)
-    this.layoutCluster(cluster)
-    this.active = cluster
+    this.applyAction(action)
     this.undoStack.push(action)
+    this.afterHistoryChange()
+  }
+
+  // Every cluster an action refers to already exists (it was captured when the action
+  // was recorded), so replaying one never needs to create a figure — hence no await.
+  applyAction(action) {
+    if (action.type === 'draw') {
+      this.attachShape(action.shape, action.cluster)
+      this.active = action.cluster
+    } else if (action.type === 'erase') {
+      for (const { shape } of action.removed) this.detachShape(shape)
+      for (const { shape, cluster } of action.added) this.attachShape(shape, cluster)
+    } else {
+      this.applyTransform(action.entries, 'to')
+    }
+  }
+
+  revertAction(action) {
+    if (action.type === 'draw') {
+      this.detachShape(action.shape)
+    } else if (action.type === 'erase') {
+      for (const { shape } of action.added) this.detachShape(shape)
+      for (const { shape, cluster } of action.removed) this.attachShape(shape, cluster)
+    } else {
+      this.applyTransform(action.entries, 'from')
+    }
+  }
+
+  applyTransform(entries, dir) {
+    for (const e of entries) {
+      const shape = e.shape
+      this.detachShape(shape)
+      shape.points = dir === 'to' ? e.toPoints : e.fromPoints
+      const size = dir === 'to' ? e.toBrushSize : e.fromBrushSize
+      if (shape.brush && size != null) shape.brush = { ...shape.brush, size }
+      shape.strokeWidth = dir === 'to' ? e.toStrokeWidth : e.fromStrokeWidth
+      this.attachShape(shape, dir === 'to' ? e.toCluster : e.fromCluster)
+    }
+  }
+
+  afterHistoryChange() {
+    // A selected shape may have just been detached (or re-attached) by the action.
+    this.selection.prune(s => !!s.cluster)
+    this.selection.refresh()
     this.host.refreshDrawingButtons?.()
   }
 
@@ -437,19 +1003,31 @@ class DrawingController {
   async resolveCluster(startWorld) {
     const now = performance.now()
     if (this.active && now - this.active.lastTime < JOIN_MS) return this.active
+    return this.nearestCluster(startWorld) || this.createCluster(startWorld)
+  }
 
+  // Like resolveCluster but WITHOUT the recency shortcut, which is meaningless for a
+  // move: where the strokes land is the only thing that should decide their cluster.
+  async resolveClusterAt(worldPoint) {
+    return this.nearestCluster(worldPoint) || this.createCluster(worldPoint)
+  }
+
+  nearestCluster(startWorld) {
     let best = null, bestDist = Infinity
     for (const c of this.clusters) {
+      if (!c.shapes.length) continue
       const d = distPointToRect(startWorld, this.worldBounds(c))
       if (d < JOIN_DIST && d < bestDist) { best = c; bestDist = d }
     }
-    if (best) return best
-
-    return this.createCluster(startWorld)
+    return best
   }
 
   async createCluster(startWorld) {
     const figure = await lively.create('lively-figure')
+    return this.initCluster(figure, startWorld)
+  }
+
+  initCluster(figure, startWorld) {
     figure.classList.add('lively-content')
     figure.setAttribute('data-toolbelt-cluster', '') // marker for rehydration after reload
     figure.style.position = 'absolute'
@@ -479,17 +1057,39 @@ class DrawingController {
       const shapeEls = [...group.children].filter(el => /^(path|rect|line)$/i.test(el.tagName))
       if (!shapeEls.length) continue
 
-      // points are unknown for restored shapes (only their SVG geometry survives);
-      // bounds/joining use getBBox, so an empty points array is fine.
-      const shapes = shapeEls.map(el => ({ type: shapeTypeOf(el), el, points: [], origin: null, restored: true }))
+      const shapes = shapeEls.map(el => ({ type: shapeTypeOf(el), el, points: [], origin: null }))
       const cluster = { figure, svg, group, frame: { x: 0, y: 0 }, shapes, lastTime: 0 }
       // figurePos === frame + localBounds.topLeft  =>  frame = figurePos - topLeft
       const b = this.localBounds(cluster)
       const wx = parseFloat(figure.style.left) || 0
       const wy = parseFloat(figure.style.top) || 0
       cluster.frame = { x: wx - (b ? b.x : 0), y: wy - (b ? b.y : 0) }
-      for (const s of shapes) s.origin = cluster.frame
+      for (const s of shapes) {
+        s.origin = cluster.frame
+        s.cluster = cluster
+        this.restoreShape(s)
+      }
       this.clusters.push(cluster)
+    }
+  }
+
+  // Read back what persistShape wrote. Strokes committed before P6 have no
+  // data-points: they keep an empty point list and degrade gracefully (selectable and
+  // deletable, but not splittable or transformable).
+  restoreShape(shape) {
+    const el = shape.el
+    shape.pointerType = el.getAttribute('data-pointer-type') || 'mouse'
+    shape.color = el.getAttribute('fill') !== 'none' && el.getAttribute('fill')
+      ? el.getAttribute('fill')
+      : (el.getAttribute('stroke') || this.color)
+    shape.strokeWidth = parseFloat(el.getAttribute('stroke-width')) || this.baseWidth
+    shape.points = parsePoints(el.getAttribute('data-points'), shape.cluster.frame, shape.pointerType)
+    if (shape.type === 'freeform') {
+      const name = el.getAttribute('data-brush') || 'balanced'
+      const size = parseFloat(el.getAttribute('data-brush-size'))
+      const preset = BRUSH_PRESETS[name] || DEFAULT_BRUSH
+      shape.brushName = name
+      shape.brush = Number.isFinite(size) ? { ...preset, size } : preset
     }
   }
 
@@ -543,7 +1143,7 @@ class DrawingController {
       // altitudeAngle (rad, π/2 = upright) for tilt→width; fall back from tilt if absent.
       altitude: evt.altitudeAngle != null
         ? evt.altitudeAngle
-        : (Math.PI / 2 - Math.hypot(evt.tiltX || 0, evt.tiltY || 0) * Math.PI / 180),
+        : (HALF_PI - Math.hypot(evt.tiltX || 0, evt.tiltY || 0) * Math.PI / 180),
       t: evt.timeStamp, // for velocity dynamics (P5)
       pointerType: evt.pointerType,
     }
@@ -571,8 +1171,13 @@ function makeShapeEl(type, color) {
   }
 }
 
-function renderShape(shape, baseWidth) {
+function renderShape(shape) {
   const { type, el, points, origin } = shape
+  // A shape restored from before P6 has no centerline; its geometry only lives in the
+  // element. Re-rendering it would blank the element, so leave it exactly as it is
+  // (this path is reached when such a shape is erased and then undone).
+  if (!points || points.length < 2) return
+  const width = shape.strokeWidth == null ? 2.5 : shape.strokeWidth
   const P = points.map(p => ({
     x: p.x - origin.x, y: p.y - origin.y,
     pressure: p.pressure, t: p.t, altitude: p.altitude, pointerType: p.pointerType,
@@ -583,14 +1188,14 @@ function renderShape(shape, baseWidth) {
     el.setAttribute('d', strokePath(P, shape.brush ?? DEFAULT_BRUSH, { last: true }))
   } else if (type === 'rectangle') {
     const a = P[0], b = P[P.length - 1]
-    el.setAttribute('stroke-width', baseWidth)
+    el.setAttribute('stroke-width', width)
     el.setAttribute('x', Math.min(a.x, b.x))
     el.setAttribute('y', Math.min(a.y, b.y))
     el.setAttribute('width', Math.abs(b.x - a.x))
     el.setAttribute('height', Math.abs(b.y - a.y))
   } else if (type === 'arrow') {
     const a = P[0], b = P[P.length - 1]
-    el.setAttribute('stroke-width', baseWidth)
+    el.setAttribute('stroke-width', width)
     el.setAttribute('x1', a.x); el.setAttribute('y1', a.y)
     el.setAttribute('x2', b.x); el.setAttribute('y2', b.y)
   }

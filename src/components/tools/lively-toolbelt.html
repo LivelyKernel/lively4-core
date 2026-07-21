@@ -216,7 +216,8 @@
     :host([mode='freeform']) #mode-normal,
     :host([mode='rectangle']) #mode-normal,
     :host([mode='arrow']) #mode-normal,
-    :host([mode='eraser']) #mode-normal {
+    :host([mode='eraser']) #mode-normal,
+    :host([mode='select']) #mode-normal {
       background: none;
       color: #000000e5;
     }
@@ -227,6 +228,7 @@
     :host([mode='rectangle']) #mode-rectangle,
     :host([mode='arrow']) #mode-arrow,
     :host([mode='eraser']) #mode-eraser,
+    :host([mode='select']) #mode-select,
     :host(.audio) #audio-mode {
       background: var(--accent-color);
       color: white;
@@ -266,6 +268,8 @@
           <button id="mode-rectangle" title='Rectangle'><i class='fa fa-square-o'></i></button>
           <button id="mode-arrow" title='Arrow'><i class='fa fa-long-arrow-right'></i></button>
           <button id="mode-eraser" title='Eraser'><i class='fa fa-eraser'></i></button>
+          <button id="mode-select" title='Select'><i class='fa fa-circle-o-notch'></i></button>
+          <button id="more-select" class='more' title='Selection Shape'><i class='fa fa-angle-down'></i></button>
         </div>
         <button id="audio-mode" title='Audio Mode'><i class='fa fa-microphone'></i></button>
         <button id="ai" title='AI Assistant'><i class='fa fa-magic'></i></button>
