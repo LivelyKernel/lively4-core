@@ -76,6 +76,12 @@ const ERASER_RADIUS = 20
 // Pointer travel (px) below which a select gesture counts as a click, not a marquee.
 const CLICK_SLOP = 4
 
+// Two-finger tap = undo (redo stays on the toolbelt button). Only while a drawing mode
+// is active — in normal mode two fingers stay Lively's pan/zoom. Strict, so a pinch or
+// drag never fires it: all fingers down-and-up within TAP_MS, each moving under TAP_MOVE.
+const TAP_MS = 300
+const TAP_MOVE = 12
+
 // Cursor shown per corner handle while hovering it.
 const HANDLE_CURSOR = {
   topLeft: 'nwse-resize', bottomRight: 'nwse-resize',
@@ -183,6 +189,14 @@ class DrawingController {
     this.activePointerId = null
     this.gesture = null
 
+    // Multi-finger-tap (undo/redo) bookkeeping. activeTouches holds the non-palm touch
+    // pointers currently down; the max simultaneous count + whether any moved decide the
+    // gesture when the last finger lifts.
+    this.activeTouches = new Map()
+    this.touchTapMax = 0
+    this.touchTapMoved = false
+    this.touchTapStart = 0
+
     // Point the permanent first-in-line stubs (lively-toolbelt-input.js) at this
     // controller; overwriting the global handler set makes any older controller
     // inert (self-healing by replacement). Handlers are gated by `this.mode`.
@@ -208,6 +222,15 @@ class DrawingController {
     if (window.__toolbeltKeydown) document.removeEventListener('keydown', window.__toolbeltKeydown, true)
     window.__toolbeltKeydown = this.onKeyDown
     document.addEventListener('keydown', window.__toolbeltKeydown, true)
+
+    // Same slot pattern for contextmenu: a two-finger tap (and the pen barrel button)
+    // emits `contextmenu`, which the pointer stubs don't cover — so it would slip
+    // through to Lively's world menu mid-gesture, and opening that menu can scroll the
+    // viewport. Swallowed while any drawing mode is active (see onContextMenu).
+    this.onContextMenu = this.onContextMenu.bind(this)
+    if (window.__toolbeltContextMenu) document.removeEventListener('contextmenu', window.__toolbeltContextMenu, true)
+    window.__toolbeltContextMenu = this.onContextMenu
+    document.addEventListener('contextmenu', window.__toolbeltContextMenu, true)
 
     // Rehydrate clusters from lively-figures that lively-content persistence
     // restored, so new strokes can join drawings that survived a page reload.
@@ -297,6 +320,9 @@ class DrawingController {
     // the tint class, which must never linger into persisted content).
     if (mode !== 'select') this.selection.clear()
     if (!active) this.abortGesture()
+    // Drop any in-flight multi-finger tracking so a mode switch can't strand a finger.
+    this.activeTouches.clear()
+    this.touchTapMax = 0
     this.host.refreshDrawingButtons?.()
   }
 
@@ -341,8 +367,43 @@ class DrawingController {
     return true
   }
 
+  /*MD ## Multi-finger tap (undo/redo) MD*/
+  // Tracked BEFORE shouldDraw, because the 2nd/3rd finger would fail shouldDraw (a
+  // pointer is already active) and never reach the draw path. The first finger starts a
+  // normal draw; when a second lands we recognise a multi-finger gesture, cancel that
+  // in-progress draw, and claim the touches so Lively doesn't pan. Palms (large contact)
+  // are excluded so a resting palm can't inflate the finger count.
+  onTouchDown(evt) {
+    if (evt.width > PALM_CONTACT && evt.height > PALM_CONTACT) return false // palm, not a finger
+    if (this.activeTouches.size === 0) {
+      this.touchTapStart = performance.now()
+      this.touchTapMoved = false
+      this.touchTapMax = 0
+    }
+    this.activeTouches.set(evt.pointerId, { x0: evt.clientX, y0: evt.clientY })
+    this.touchTapMax = Math.max(this.touchTapMax, this.activeTouches.size)
+    if (this.activeTouches.size >= 2) {
+      this.abortGesture() // the first finger's draft draw is not a stroke, it's a tap
+      evt.preventDefault(); evt.stopImmediatePropagation()
+      return true
+    }
+    return false
+  }
+
+  // Fired when the last finger of a multi-finger sequence lifts. EXACTLY two fingers
+  // undo; redo lives on the toolbelt button (three-finger taps are unreliable — the OS
+  // eats the third touch as a system gesture on this hardware). Strict: quick + still.
+  fireTouchTap() {
+    const dur = performance.now() - this.touchTapStart
+    const max = this.touchTapMax
+    this.touchTapMax = 0
+    if (max !== 2 || this.touchTapMoved || dur > TAP_MS) return
+    this.undo()
+  }
+
   /*MD ## Pointer handling MD*/
   onPointerDown(evt) {
+    if (this.mode && evt.pointerType === 'touch' && this.onTouchDown(evt)) return
     if (!this.shouldDraw(evt)) return // let Lively handle non-claimed gestures
     // Starting a gesture (outside any menu — shouldDraw excludes UI) closes an open
     // toolbelt popup, so the brush menu doesn't linger while you draw.
@@ -366,6 +427,13 @@ class DrawingController {
   }
 
   onPointerMove(evt) {
+    // Multi-finger tap tracking: note movement (a moved finger disqualifies the tap),
+    // and once we're multi-finger, swallow the moves so Lively can't pan/pinch.
+    if (this.mode && evt.pointerType === 'touch' && this.activeTouches.has(evt.pointerId)) {
+      const t = this.activeTouches.get(evt.pointerId)
+      if (Math.hypot(evt.clientX - t.x0, evt.clientY - t.y0) > TAP_MOVE) this.touchTapMoved = true
+      if (this.touchTapMax >= 2) { evt.preventDefault(); evt.stopImmediatePropagation(); return }
+    }
     // Hover (no active gesture): only update cursors/affordances, never claim. Limited
     // to the two modes that have hover affordances — the drawing modes would otherwise
     // pay for a world-coordinate conversion on every mousemove across the page.
@@ -386,6 +454,16 @@ class DrawingController {
   }
 
   async onPointerUp(evt) {
+    // Multi-finger tap: bookkeeping runs BEFORE the activePointerId guard (these fingers
+    // aren't the active drawing pointer). When the last finger of a >=2 sequence lifts,
+    // fire undo/redo. `claim` covers the tail-end frames after count drops back to 1.
+    if (this.mode && evt.pointerType === 'touch' && this.activeTouches.has(evt.pointerId)) {
+      const claim = this.touchTapMax >= 2
+      this.activeTouches.delete(evt.pointerId)
+      if (claim) { evt.preventDefault(); evt.stopImmediatePropagation() }
+      if (this.activeTouches.size === 0) this.fireTouchTap()
+      if (claim) return
+    }
     if (evt.pointerId !== this.activePointerId) return
     evt.stopImmediatePropagation()
     const g = this.gesture
@@ -820,6 +898,15 @@ class DrawingController {
     evt.preventDefault()
     evt.stopImmediatePropagation()
     this.abortGesture()
+  }
+
+  // While a drawing mode is active, right-click / two-finger tap / barrel button must
+  // not open Lively's world menu (it pops mid-gesture and can scroll the viewport).
+  // Outside a mode it is left alone.
+  onContextMenu(evt) {
+    if (!this.mode) return
+    evt.preventDefault()
+    evt.stopImmediatePropagation()
   }
 
   endStroke(pointerId) {
