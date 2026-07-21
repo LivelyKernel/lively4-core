@@ -196,6 +196,9 @@ class DrawingController {
     this.touchTapMax = 0
     this.touchTapMoved = false
     this.touchTapStart = 0
+    // Two-finger pan: last centroid (for incremental world drag) + whether we panned.
+    this.panCentroid = null
+    this.panned = false
 
     // Point the permanent first-in-line stubs (lively-toolbelt-input.js) at this
     // controller; overwriting the global handler set makes any older controller
@@ -323,6 +326,8 @@ class DrawingController {
     // Drop any in-flight multi-finger tracking so a mode switch can't strand a finger.
     this.activeTouches.clear()
     this.touchTapMax = 0
+    this.panCentroid = null
+    this.panned = false
     this.host.refreshDrawingButtons?.()
   }
 
@@ -380,23 +385,51 @@ class DrawingController {
       this.touchTapMoved = false
       this.touchTapMax = 0
     }
-    this.activeTouches.set(evt.pointerId, { x0: evt.clientX, y0: evt.clientY })
+    this.activeTouches.set(evt.pointerId, { x0: evt.clientX, y0: evt.clientY, x: evt.clientX, y: evt.clientY })
     this.touchTapMax = Math.max(this.touchTapMax, this.activeTouches.size)
     if (this.activeTouches.size >= 2) {
-      this.abortGesture() // the first finger's draft draw is not a stroke, it's a tap
+      this.abortGesture() // the first finger's draft draw is not a stroke, it's a tap/pan
+      // Reset the pan reference to the new centroid so adding a finger doesn't jump.
+      this.panCentroid = this.touchCentroid()
       evt.preventDefault(); evt.stopImmediatePropagation()
       return true
     }
     return false
   }
 
-  // Fired when the last finger of a multi-finger sequence lifts. EXACTLY two fingers
-  // undo; redo lives on the toolbelt button (three-finger taps are unreliable — the OS
-  // eats the third touch as a system gesture on this hardware). Strict: quick + still.
+  // Centroid of the currently-down fingers (client coords), or null if none.
+  touchCentroid() {
+    let sx = 0, sy = 0, n = 0
+    for (const t of this.activeTouches.values()) { sx += t.x; sy += t.y; n++ }
+    return n ? { x: sx / n, y: sy / n } : null
+  }
+
+  // Two-finger drag pans the world by scrolling. We scroll by the NEGATIVE centroid
+  // delta so content follows the fingers (grab-the-paper). Lively already re-aligns the
+  // background grid on its own scroll listener (ViewNav), so nothing else is needed.
+  // Incremental (vs. an absolute anchor) so adding or lifting a finger mid-drag just
+  // resets the reference without a jump.
+  panWorld() {
+    const c = this.touchCentroid()
+    if (this.panCentroid && c) {
+      const dx = c.x - this.panCentroid.x, dy = c.y - this.panCentroid.y
+      if (dx || dy) {
+        window.scrollBy(-dx, -dy)
+        this.panned = true
+      }
+    }
+    this.panCentroid = c
+  }
+
+  // Fired when the last finger of a multi-finger sequence lifts. A two-finger DRAG pans
+  // (handled per-move); a still two-finger TAP undoes. Redo lives on the toolbelt button
+  // (three-finger taps are unreliable — the OS eats the third touch on this hardware).
+  // Strict: quick + still.
   fireTouchTap() {
     const dur = performance.now() - this.touchTapStart
     const max = this.touchTapMax
     this.touchTapMax = 0
+    if (this.panned) { this.panned = false; return } // a drag is never also an undo
     if (max !== 2 || this.touchTapMoved || dur > TAP_MS) return
     this.undo()
   }
@@ -427,12 +460,14 @@ class DrawingController {
   }
 
   onPointerMove(evt) {
-    // Multi-finger tap tracking: note movement (a moved finger disqualifies the tap),
-    // and once we're multi-finger, swallow the moves so Lively can't pan/pinch.
+    // Multi-finger tracking: record this finger's position (a moved finger disqualifies
+    // the tap), and once we're multi-finger, pan the world by the centroid delta and
+    // swallow the event so Lively doesn't also pan/pinch.
     if (this.mode && evt.pointerType === 'touch' && this.activeTouches.has(evt.pointerId)) {
       const t = this.activeTouches.get(evt.pointerId)
+      t.x = evt.clientX; t.y = evt.clientY
       if (Math.hypot(evt.clientX - t.x0, evt.clientY - t.y0) > TAP_MOVE) this.touchTapMoved = true
-      if (this.touchTapMax >= 2) { evt.preventDefault(); evt.stopImmediatePropagation(); return }
+      if (this.touchTapMax >= 2) { this.panWorld(); evt.preventDefault(); evt.stopImmediatePropagation(); return }
     }
     // Hover (no active gesture): only update cursors/affordances, never claim. Limited
     // to the two modes that have hover affordances — the drawing modes would otherwise
@@ -462,6 +497,8 @@ class DrawingController {
       this.activeTouches.delete(evt.pointerId)
       if (claim) { evt.preventDefault(); evt.stopImmediatePropagation() }
       if (this.activeTouches.size === 0) this.fireTouchTap()
+      // A finger lifted but others remain: reset the pan reference to avoid a jump.
+      else this.panCentroid = this.touchCentroid()
       if (claim) return
     }
     if (evt.pointerId !== this.activePointerId) return
