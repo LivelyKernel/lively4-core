@@ -76,6 +76,9 @@ const ERASER_RADIUS = 20
 // Pointer travel (px) below which a select gesture counts as a click, not a marquee.
 const CLICK_SLOP = 4
 
+// World-px nudge for a duplicated selection, so copies are visibly distinct.
+const DUPLICATE_OFFSET = 16
+
 // Two-finger tap = undo (redo stays on the toolbelt button). Only while a drawing mode
 // is active — in normal mode two fingers stay Lively's pan/zoom. Strict, so a pinch or
 // drag never fires it: all fingers down-and-up within TAP_MS, each moving under TAP_MOVE.
@@ -902,6 +905,41 @@ class DrawingController {
     this.undoStack.push({ type: 'erase', removed, added: [] })
     this.redoStack = []
     this.host.refreshDrawingButtons?.()
+  }
+
+  /*MD ## Duplicate MD*/
+  // Copy the selection nudged down-right; the copies become the new selection (ready to
+  // drag). Purely additive, so it reuses the erase action shape (removed empty) and gets
+  // undo/redo for free. Shapes without a centerline (pre-P6) can't be re-rendered at an
+  // offset, so they're skipped.
+  async duplicateSelection() {
+    const originals = this.selection.shapes.filter(s => s.points && s.points.length >= 2)
+    if (!originals.length) return
+    const offset = pt(DUPLICATE_OFFSET, DUPLICATE_OFFSET)
+    const copies = originals.map(s => this.copyShape(s, offset))
+    // One target cluster for the whole batch, by where the copies land, so a multi-stroke
+    // duplicate stays together (they land near the source, so they usually rejoin it).
+    const target = await this.resolveClusterAt(boundsOf(copies.flatMap(c => c.points)).topLeft())
+    const added = []
+    for (const copy of copies) { this.attachShape(copy, target); added.push({ shape: copy, cluster: target }) }
+    this.selection.set(copies)
+    this.undoStack.push({ type: 'erase', removed: [], added })
+    this.redoStack = []
+    this.host.refreshDrawingButtons?.()
+  }
+
+  copyShape(shape, offset) {
+    return {
+      type: shape.type,
+      el: makeShapeEl(shape.type, shape.color || this.color),
+      points: translatePoints(shape.points, offset),
+      origin: null, // set by attachShape
+      brush: shape.brush,
+      brushName: shape.brushName,
+      color: shape.color || this.color,
+      strokeWidth: shape.strokeWidth,
+      pointerType: shape.pointerType,
+    }
   }
 
   // Swallow the click a tap emits while a mode is active (except over toolbelt UI,

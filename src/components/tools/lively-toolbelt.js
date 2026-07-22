@@ -289,6 +289,7 @@ export default class LivelyToolbelt extends Morph {
   onUndo(evt) { this.drawingController().undo() }
   onRedo(evt) { this.drawingController().redo() }
   onDeleteSelection(evt) { this.drawingController().deleteSelection() }
+  onDuplicateSelection(evt) { this.drawingController().duplicateSelection() }
 
   // The drawing controller (created + cached on the host, adopts existing drawings).
   drawingController() {
@@ -301,10 +302,16 @@ export default class LivelyToolbelt extends Morph {
     const undo = this.get('#undo'), redo = this.get('#redo')
     if (undo) undo.disabled = !(c && c.undoStack && c.undoStack.length)
     if (redo) redo.disabled = !(c && c.redoStack && c.redoStack.length)
+    const hasSelection = !!(c && c.selection && !c.selection.isEmpty)
     const del = this.get('#delete-selection')
     if (del) {
-      del.disabled = !(c && c.selection && !c.selection.isEmpty)
+      del.disabled = !hasSelection
       del.title = del.disabled ? 'Delete (select something first)' : 'Delete selection'
+    }
+    const dup = this.get('#duplicate-selection')
+    if (dup) {
+      dup.disabled = !hasSelection
+      dup.title = dup.disabled ? 'Duplicate (select something first)' : 'Duplicate selection'
     }
   }
 
