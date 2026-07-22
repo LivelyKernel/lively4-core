@@ -409,9 +409,14 @@ class DrawingController {
   // background grid on its own scroll listener (ViewNav), so nothing else is needed.
   // Incremental (vs. an absolute anchor) so adding or lifting a finger mid-drag just
   // resets the reference without a jump.
+  //
+  // Gated on touchTapMoved: a resting two-finger TAP still jitters a few pixels between
+  // samples, which would otherwise scroll a hair and — worse — set `panned`, killing the
+  // undo. So we only pan once the gesture has clearly moved (past TAP_MOVE), while still
+  // advancing the reference every frame so panning begins without a jump.
   panWorld() {
     const c = this.touchCentroid()
-    if (this.panCentroid && c) {
+    if (this.panCentroid && c && this.touchTapMoved) {
       const dx = c.x - this.panCentroid.x, dy = c.y - this.panCentroid.y
       if (dx || dy) {
         window.scrollBy(-dx, -dy)
