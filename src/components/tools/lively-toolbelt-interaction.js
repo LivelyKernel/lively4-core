@@ -79,6 +79,21 @@ const CLICK_SLOP = 4
 // World-px nudge for a duplicated selection, so copies are visibly distinct.
 const DUPLICATE_OFFSET = 16
 
+// Quasimode keys. A quick TAP switches into the mode (toggles back to normal if you're
+// already in it); a HOLD lets you draw in it and reverts to the previous mode on release.
+// "Reverts" fires when you drew while holding OR held longer than SPRING_MS — a slow tap
+// without drawing still switches.
+//
+// F and S overlap graffle's freehand/shape hold-keys. Per Stefan: while the toolbelt is
+// present it wins — so these run in CAPTURE phase (document-capture fires before graffle's
+// body-capture) and stopPropagation, keeping graffle from also seeing the key. Still
+// skipped when focus is in a field, so typing is never stolen. With no toolbelt in the
+// world the listener isn't installed and graffle keeps the keys.
+const MODE_KEYS = { f: 'freeform', r: 'rectangle', a: 'arrow', s: 'select', e: 'eraser' }
+// Instant-action keys (not modes, so no spring/hold): fire once on keydown.
+const ACTION_KEYS = { z: 'undo', y: 'redo' }
+const SPRING_MS = 250
+
 // Two-finger tap = undo (redo stays on the toolbelt button). Only while a drawing mode
 // is active — in normal mode two fingers stay Lively's pan/zoom. Strict, so a pinch or
 // drag never fires it: all fingers down-and-up within TAP_MS, each moving under TAP_MOVE.
@@ -95,6 +110,20 @@ function svgEl(tag, attrs = {}) {
   const el = document.createElementNS(SVGNS, tag)
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
   return el
+}
+
+// Is a key event headed for a text-editable target — i.e. the user is typing, so a mode
+// key must NOT be stolen? Everything else (world, the toolbelt itself, a focused morph)
+// is fair game. `composedPath()[0]` on a composed key event is the innermost target, so
+// it sees through shadow DOM into editors. This deliberately replaces graffle's stricter
+// isGlobalKeyboardFocusElement, which only accepts document.body and so rejected the
+// common case where the toolbelt (a focusable morph) holds focus after a reload.
+function isTypingTarget(el) {
+  if (!el || !el.tagName) return false
+  const tag = el.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true
+  if (el.isContentEditable) return true
+  return el.getAttribute && el.getAttribute('role') === 'textbox'
 }
 
 // Sub-frame pointer samples. A real move always reports at least itself, but a
@@ -203,6 +232,10 @@ class DrawingController {
     this.panCentroid = null
     this.panned = false
 
+    // Quasimode key state: the held mode key + a revert deferred past an active stroke.
+    this.spring = null
+    this.pendingRevert = null
+
     // Point the permanent first-in-line stubs (lively-toolbelt-input.js) at this
     // controller; overwriting the global handler set makes any older controller
     // inert (self-healing by replacement). Handlers are gated by `this.mode`.
@@ -237,6 +270,18 @@ class DrawingController {
     if (window.__toolbeltContextMenu) document.removeEventListener('contextmenu', window.__toolbeltContextMenu, true)
     window.__toolbeltContextMenu = this.onContextMenu
     document.addEventListener('contextmenu', window.__toolbeltContextMenu, true)
+
+    // Quasimode keys (F/R/A/S) — CAPTURE phase on document, which fires before graffle's
+    // body-capture handler, so the toolbelt wins the overlapping keys (see MODE_KEYS).
+    // Same self-healing window slots.
+    this.onModeKeyDown = this.onModeKeyDown.bind(this)
+    this.onModeKeyUp = this.onModeKeyUp.bind(this)
+    if (window.__toolbeltModeKeyDown) document.removeEventListener('keydown', window.__toolbeltModeKeyDown, true)
+    if (window.__toolbeltModeKeyUp) document.removeEventListener('keyup', window.__toolbeltModeKeyUp, true)
+    window.__toolbeltModeKeyDown = this.onModeKeyDown
+    window.__toolbeltModeKeyUp = this.onModeKeyUp
+    document.addEventListener('keydown', window.__toolbeltModeKeyDown, true)
+    document.addEventListener('keyup', window.__toolbeltModeKeyUp, true)
 
     // Rehydrate clusters from lively-figures that lively-content persistence
     // restored, so new strokes can join drawings that survived a page reload.
@@ -368,8 +413,13 @@ class DrawingController {
   // palm. (The `activePointerId` guard only rejects a second pointer once one is
   // already active, so it can't catch a palm that lands first — hence the size test.)
   shouldDraw(evt) {
-    if (!this.mode || this.activePointerId !== null) return false
+    if (this.activePointerId !== null) return false
     if (evt.button !== 0 && evt.button !== 5) return false
+    // The pen's eraser tip (button 5 / buttons 32) works from ANY mode, including normal:
+    // flipping the pen to erase shouldn't require first entering a drawing mode. Every
+    // other gesture needs an active mode — otherwise normal mode belongs to Lively.
+    const eraserTip = evt.button === 5 || (evt.buttons & 32)
+    if (!this.mode && !eraserTip) return false
     if (this.isUiTarget(evt)) return false
     if (evt.pointerType === 'touch' && evt.width > PALM_CONTACT && evt.height > PALM_CONTACT) return false
     return true
@@ -442,8 +492,23 @@ class DrawingController {
     this.undo()
   }
 
+  // Block native pan/scroll while a pen is near the surface, so a pen drag (notably the
+  // eraser from NORMAL mode, where touch-action is otherwise auto) can't scroll the world.
+  // Armed PROACTIVELY on pen hover — setting touch-action inside pointerdown is too late,
+  // the browser has already committed to the scroll — and released a beat after the pen
+  // leaves (each pen event resets the idle timer). setMode's own touch-action still wins
+  // while a drawing mode is active.
+  armPenScrollBlock() {
+    document.documentElement.style.touchAction = 'none'
+    clearTimeout(this._penIdleTimer)
+    this._penIdleTimer = setTimeout(() => {
+      if (this.activePointerId === null) document.documentElement.style.touchAction = this.mode ? 'none' : ''
+    }, 700)
+  }
+
   /*MD ## Pointer handling MD*/
   onPointerDown(evt) {
+    if (evt.pointerType === 'pen') this.armPenScrollBlock()
     if (this.mode && evt.pointerType === 'touch' && this.onTouchDown(evt)) return
     if (!this.shouldDraw(evt)) return // let Lively handle non-claimed gestures
     // Starting a gesture (outside any menu — shouldDraw excludes UI) closes an open
@@ -461,6 +526,7 @@ class DrawingController {
     window.getSelection?.()?.removeAllRanges() // pen can otherwise start a selection
 
     const mode = this.effectiveMode(evt)
+    if (this.spring) this.spring.used = true // drawing while a mode key is held = "used it"
     const p = this.worldPoint(evt)
     if (mode === 'select') return this.beginSelectGesture(evt, p)
     if (mode === 'eraser') return this.beginEraseGesture(p)
@@ -468,6 +534,8 @@ class DrawingController {
   }
 
   onPointerMove(evt) {
+    // Keep native scroll blocked while the pen hovers (arms before it ever touches down).
+    if (evt.pointerType === 'pen') this.armPenScrollBlock()
     // Multi-finger tracking: record this finger's position (a moved finger disqualifies
     // the tap), and once we're multi-finger, pan the world by the centroid delta and
     // swallow the event so Lively doesn't also pan/pinch.
@@ -515,7 +583,7 @@ class DrawingController {
     this.gesture = null
     if (this.rafId != null) { cancelAnimationFrame(this.rafId); this.rafId = null }
     this.endStroke(evt.pointerId)
-    if (!g) return
+    if (!g) return this.applyPendingRevert()
     if (g.kind === 'draw') {
       if (evt.type !== 'pointercancel') g.shape.points.push(this.worldPoint(evt))
       if (g.shape.type === 'freeform') { g.shape.predicted = []; this.clearCanvases() }
@@ -525,6 +593,15 @@ class DrawingController {
     } else {
       this.finishSelectGesture(g)
     }
+    // A mode-key release during the stroke was deferred to here so it couldn't abort it.
+    this.applyPendingRevert()
+  }
+
+  applyPendingRevert() {
+    if (this.pendingRevert == null) return
+    const m = this.pendingRevert
+    this.pendingRevert = null
+    this.host.enterMode(m)
   }
 
   /*MD ## Drawing gesture MD*/
@@ -989,10 +1066,67 @@ class DrawingController {
     evt.stopImmediatePropagation()
   }
 
+  /*MD ## Quasimode keys MD*/
+  // A bare (no ctrl/alt/meta/shift) toolbelt key while not typing — i.e. ours to claim.
+  // Returns the lowercase key (in MODE_KEYS or ACTION_KEYS), else null.
+  claimedKey(evt) {
+    if (evt.ctrlKey || evt.altKey || evt.metaKey || evt.shiftKey) return null
+    const k = evt.key && evt.key.toLowerCase()
+    if (!MODE_KEYS[k] && !ACTION_KEYS[k]) return null
+    if (isTypingTarget(evt.composedPath()[0])) return null
+    return k
+  }
+
+  // Mode keys (F/R/A/S/E): tap to switch (tapping the current mode's key toggles back to
+  // normal), hold to draw in it and revert on release. Action keys (Z/Y): undo/redo, fired
+  // once per press.
+  //
+  // CLAIM FIRST, decide second: preventDefault + stopPropagation happen before any early
+  // return, so graffle (whose freehand/shape keys are F/S) never sees the key even on
+  // auto-repeat or when a prior spring is still set. Bailing before claiming was the bug
+  // that let a stuck spring (from a missed keyup) leak every subsequent key to graffle.
+  onModeKeyDown(evt) {
+    const k = this.claimedKey(evt)
+    if (!k) return
+    evt.preventDefault()
+    evt.stopPropagation()
+    if (ACTION_KEYS[k]) {
+      if (!evt.repeat) (ACTION_KEYS[k] === 'undo' ? this.undo() : this.redo())
+      return
+    }
+    if (evt.repeat) return // held: the OS auto-repeats keydown; nothing new to do
+    // A fresh press replaces any stale spring (e.g. a hold whose keyup was lost to a
+    // window blur), so mode switching can't get wedged.
+    const mode = MODE_KEYS[k] === this.host.mode ? 'normal' : MODE_KEYS[k] // toggle out of the current mode
+    this.spring = { key: k, prevMode: this.host.mode, start: performance.now(), used: false }
+    this.host.enterMode(mode) // switch now, so a hold draws in it
+  }
+
+  onModeKeyUp(evt) {
+    const k = this.claimedKey(evt)
+    if (!k) return
+    evt.preventDefault()
+    evt.stopPropagation()
+    if (!this.spring || k !== this.spring.key) return
+    const held = performance.now() - this.spring.start
+    const revert = this.spring.used || held > SPRING_MS
+    const prevMode = this.spring.prevMode
+    this.spring = null
+    if (revert) {
+      // Don't yank the mode out from under an in-progress stroke (releasing the key mid-
+      // draw would abort it) — defer the revert until the stroke finishes (onPointerUp).
+      if (this.gesture) this.pendingRevert = prevMode
+      else this.host.enterMode(prevMode)
+    }
+  }
+
   endStroke(pointerId) {
     const root = document.documentElement
     if (root.hasPointerCapture?.(pointerId)) root.releasePointerCapture(pointerId)
     this.activePointerId = null
+    // touch-action restore is owned by the pen idle-timer (armPenScrollBlock): while the
+    // pen keeps hovering it stays blocked, and it reverts to the mode baseline a beat
+    // after the pen leaves. A drawing mode's own touch-action:none (setMode) is unaffected.
   }
 
   /*MD ## Clustering & commit MD*/

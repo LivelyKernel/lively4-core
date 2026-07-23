@@ -50,6 +50,10 @@ export default class LivelyToolbelt extends Morph {
     })
     ro.observe(inner)
 
+    // Ensure the drawing controller exists from the start, even in normal mode: it
+    // installs the global quasimode-key listeners (S/R/A), so tapping a key can enter a
+    // mode from normal. The controller stays inert until a mode is active.
+    this.drawingController()
     // Re-apply the active mode on startup / reload so a persisted drawing mode
     // loads its interaction layer. Normal needs nothing.
     if (this.mode !== 'normal') this.applyMode(this.mode)
