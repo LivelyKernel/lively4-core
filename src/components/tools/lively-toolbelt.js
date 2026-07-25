@@ -278,7 +278,9 @@ export default class LivelyToolbelt extends Morph {
   applyMode(mode) {
     if (LivelyToolbelt.drawingModes.includes(mode)) {
       interaction.activate(this, mode)
-    } else {
+    } else if (mode !== 'normal') {
+      // 'normal' needs no toast — the #mode-normal button lights up on its own, and the
+      // quasimode revert enters normal often enough that a notify would be spam.
       lively.notify(`Entered ${mode} mode`)
     }
   }
