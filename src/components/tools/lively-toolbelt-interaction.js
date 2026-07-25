@@ -615,6 +615,8 @@ class DrawingController {
     if (this.pendingRevert == null) return
     const m = this.pendingRevert
     this.pendingRevert = null
+    // The marquee has now set the selection; if it grabbed something, stay in select.
+    if (this.keepsSelectionOnRelease()) return
     this.host.enterMode(m)
   }
 
@@ -1130,11 +1132,22 @@ class DrawingController {
     const prevMode = this.spring.prevMode
     this.spring = null
     if (revert) {
+      // A quasimode 'select' that captured something stays put — see keepsSelectionOnRelease.
+      if (this.keepsSelectionOnRelease()) return
       // Don't yank the mode out from under an in-progress stroke (releasing the key mid-
       // draw would abort it) — defer the revert until the stroke finishes (onPointerUp).
       if (this.gesture) this.pendingRevert = prevMode
       else this.host.enterMode(prevMode)
     }
+  }
+
+  // A quasimode 'select' that captured a non-empty selection must survive the key
+  // release: you held S to pick strokes, and releasing must not drop them — you still
+  // want to delete/duplicate/move what you grabbed. An empty select (or any other
+  // quasimode) reverts as usual. Checked both on key-up and when a deferred revert
+  // flushes at pointerup (by which point the marquee has set the selection).
+  keepsSelectionOnRelease() {
+    return this.host.mode === 'select' && !this.selection.isEmpty
   }
 
   endStroke(pointerId) {
