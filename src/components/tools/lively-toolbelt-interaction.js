@@ -79,6 +79,12 @@ const CLICK_SLOP = 4
 // World-px nudge for a duplicated selection, so copies are visibly distinct.
 const DUPLICATE_OFFSET = 16
 
+// Ink floats above the window band (lively-window z-indices climb from ~200 into the
+// low hundreds) but below the toolbelt (1001), the live canvases (1000), halos (9999+)
+// and menus (10000): drawings overlay windows and tools, yet you can still halo-grab a
+// stroke or right-click over it.
+const INK_Z_INDEX = 900
+
 // Quasimode keys. A quick TAP switches into the mode (toggles back to normal if you're
 // already in it); a HOLD lets you draw in it and reverts to the previous mode on release.
 // "Reverts" fires when you drew while holding OR held longer than SPRING_MS — a slow tap
@@ -209,6 +215,9 @@ class DrawingController {
     document.body.appendChild(this.liveCanvas)
     this.rafId = null
 
+    // Lift committed ink above windows/tools (see INK_Z_INDEX).
+    this.ensureInkStyle()
+
     // Selection state + its world-space overlay (P6).
     this.selection = new Selection()
 
@@ -313,6 +322,30 @@ class DrawingController {
       pointerEvents: 'none', zIndex,
     })
     return canvas
+  }
+
+  // One head stylesheet lifts every drawing cluster above the window band AND makes it
+  // click-through except on the actual ink. Kept out of the figures' inline style (like
+  // the selection tint) so none of it serializes into persisted lively-content.
+  //
+  // The figure box now floats over windows, so pointer-events:none on the figure stops
+  // its (mostly empty) bounding rect from stealing clicks meant for the window beneath;
+  // the shapes opt back in with visiblePainted, so only the painted ink is hit — the
+  // filled freeform path, the rect's outline (its hollow interior passes through), the
+  // arrow's line. A Ctrl+click on ink still finds the enclosing figure for its halo.
+  // Rewrites the rule every call (never bails on existence) so a hot-swapped rule can't
+  // go stale.
+  ensureInkStyle() {
+    let style = document.getElementById('lively-toolbelt-ink-style')
+    if (!style) {
+      style = document.createElement('style')
+      style.id = 'lively-toolbelt-ink-style'
+      document.head.appendChild(style)
+    }
+    style.textContent = `
+      lively-figure[data-toolbelt-cluster] { z-index: ${INK_Z_INDEX}; pointer-events: none; }
+      lively-figure[data-toolbelt-cluster] svg :is(path, rect, line) { pointer-events: visiblePainted; }
+    `
   }
 
   // Size the live canvas from its ACTUAL rendered rect (getBoundingClientRect,
@@ -1388,6 +1421,8 @@ class DrawingController {
       const shapeEls = [...group.children].filter(el => /^(path|rect|line)$/i.test(el.tagName))
       if (!shapeEls.length) continue
 
+      // Ensure the marker so the ink z-index rule lifts even figures persisted before it existed.
+      figure.setAttribute('data-toolbelt-cluster', '')
       const shapes = shapeEls.map(el => ({ type: shapeTypeOf(el), el, points: [], origin: null }))
       const cluster = { figure, svg, group, frame: { x: 0, y: 0 }, shapes, lastTime: 0 }
       // figurePos === frame + localBounds.topLeft  =>  frame = figurePos - topLeft
