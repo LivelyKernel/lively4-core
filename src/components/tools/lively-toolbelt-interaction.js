@@ -89,7 +89,9 @@ const DUPLICATE_OFFSET = 16
 // body-capture) and stopPropagation, keeping graffle from also seeing the key. Still
 // skipped when focus is in a field, so typing is never stolen. With no toolbelt in the
 // world the listener isn't installed and graffle keeps the keys.
-const MODE_KEYS = { f: 'freeform', r: 'rectangle', a: 'arrow', s: 'select', e: 'eraser' }
+// N is the exception: 'normal' has nothing to hold-draw in, so it switches instantly
+// (no spring) — see onModeKeyDown.
+const MODE_KEYS = { n: 'normal', f: 'freeform', r: 'rectangle', a: 'arrow', s: 'select', e: 'eraser' }
 // Instant-action keys (not modes, so no spring/hold): fire once on keydown.
 const ACTION_KEYS = { z: 'undo', y: 'redo' }
 const SPRING_MS = 250
@@ -392,12 +394,24 @@ class DrawingController {
     root.style.cursor = 'crosshair'
   }
 
-  // A pointer is over toolbelt UI (the toolbelt itself, or a popup menu tagged with
-  // .lively-toolbelt-ui) — such gestures interact with the UI, they never draw. This
-  // is what makes the brush-preset menu touchable while in a drawing mode.
+  // A pointer is over toolbelt UI (the interactive icon bar / actions panel, or a
+  // popup menu tagged with .lively-toolbelt-ui) — such gestures interact with the UI,
+  // they never draw. This is what makes the brush-preset menu touchable mid-draw.
+  //
+  // NOTE: we key on the actual interactive boxes — the #container icon bar and the
+  // .actions-panel — NOT the host or #stack. The host's #wrapper carries a wide
+  // invisible hover-buffer (the ::before/::after flex items, 100px each side); and
+  // #stack, centering a narrow actions panel above the wider icon bar, leaves
+  // transparent flanks beside the panel that span the icon-bar width. Both share
+  // pointer-events:auto, so keying on either made those regions un-drawable. The
+  // buffer targets #wrapper and the flanks target #stack/#actions — none of which
+  // are #container or .actions-panel — so only the real controls block drawing.
   isUiTarget(evt) {
-    return evt.composedPath().some(el =>
-      el === this.host || (el.classList && el.classList.contains('lively-toolbelt-ui')))
+    const path = evt.composedPath()
+    if (path.some(el => el.classList && el.classList.contains('lively-toolbelt-ui'))) return true
+    if (!path.includes(this.host)) return false
+    return path.some(el => el.id === 'container' ||
+      (el.classList && el.classList.contains('actions-panel')))
   }
 
   // The pen's ERASER TIP reports button 5 / buttons 32. Flipping the pen erases
@@ -1095,6 +1109,9 @@ class DrawingController {
       return
     }
     if (evt.repeat) return // held: the OS auto-repeats keydown; nothing new to do
+    // Normal mode is NOT a quasimode — there's nothing to hold-draw in it. Just switch
+    // once, and clear any pending spring so a stale hold-revert can't yank us back out.
+    if (MODE_KEYS[k] === 'normal') { this.spring = null; this.host.enterMode('normal'); return }
     // A fresh press replaces any stale spring (e.g. a hold whose keyup was lost to a
     // window blur), so mode switching can't get wedged.
     const mode = MODE_KEYS[k] === this.host.mode ? 'normal' : MODE_KEYS[k] // toggle out of the current mode

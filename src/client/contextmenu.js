@@ -670,6 +670,19 @@ export default class ContextMenu {
           "",'<i class="fa fa-file" aria-hidden="true"></i>'],
         ["Drawboard", evt => this.openComponentInWindow("lively-drawboard", evt, worldContext),
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
+        ["Toolbelt", async evt => {
+          // Singleton body-appended overlay — toggle it, opening pinned (expanded).
+          const existing = document.body.querySelector(':scope > lively-toolbelt')
+          if (existing) {
+            existing.remove()
+            lively.notify("Toolbelt hidden")
+          } else {
+            const toolbelt = await lively.create("lively-toolbelt")
+            toolbelt.classList.add("pinned")
+            document.body.append(toolbelt)
+          }
+          this.hide();
+        }, "", '<i class="fa fa-paint-brush" aria-hidden="true"></i>'],
         ["Storage Setup", evt => this.openComponentInWindow("lively-filesystems", evt, worldContext),
           "", '<i class="fa fa-cloud" aria-hidden="true"></i>'],
         ["Graph Control", evt => this.openComponentInWindow("graph-control", evt, worldContext),
