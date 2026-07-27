@@ -345,6 +345,26 @@ class DrawingController {
     style.textContent = `
       lively-figure[data-toolbelt-cluster] { z-index: ${INK_Z_INDEX}; pointer-events: none; }
       lively-figure[data-toolbelt-cluster] svg :is(path, rect, line) { pointer-events: visiblePainted; }
+
+      /* While any toolbelt is in a drawing mode, suppress native scroll/pan so a pen/touch
+         drag DRAWS instead of scrolling a nested scroller (e.g. CodeMirror, whose own
+         touch-action the root's :none can't override — a drag there otherwise fires
+         pointercancel mid-stroke and scrolls the editor).
+
+         The trigger is a ground-truth :has() rule that sets an INHERITED custom property,
+         so it CANNOT strand touch-action:none: the instant the toolbelt leaves a drawing
+         mode (mode attr dropped) or is removed from the DOM, the browser re-evaluates :has()
+         and --lively-draw-touch reverts — no JS toggle, no class, nothing to get stuck even
+         if a gesture throws in between. Custom properties inherit THROUGH shadow boundaries,
+         so a matching \`* { touch-action: var(--lively-draw-touch, auto) }\` in each shadow
+         root's shared CSS (lively.css / livelystyle.css) picks it up — that's how the rule
+         reaches CodeMirror's shadow scroller, which a document stylesheet can't. The
+         consumer line below covers light-DOM scrollers (windows, panels, the world). All of
+         it is inert when idle (the property is auto, i.e. the default). Programmatic
+         scrolling (the two-finger pan's window.scrollBy) is unaffected by touch-action. */
+      :root { --lively-draw-touch: auto; }
+      html:has(lively-toolbelt[mode]) { --lively-draw-touch: none; }
+      * { touch-action: var(--lively-draw-touch, auto); }
     `
   }
 
