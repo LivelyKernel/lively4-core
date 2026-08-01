@@ -1,0 +1,42 @@
+/*
+ * Shared design tokens + primitives for Lively's Figma-style floating tools.
+ * Included by both lively-toolbelt and lively-voice-compose via
+ *   <style data-src="/src/components/tools/lively-tool-panel.css"></style>
+ * so the accent, radius, shadow, border, and button all have one source.
+ *
+ * Loaded into a component's shadow root, so :host targets that component.
+ */
+:host {
+  --accent-color: rgb(255 149 0);
+  --tool-ink: #000000e5;
+  --tool-bg: #fff;
+  --tool-radius: .8125rem;
+  --tool-btn-radius: .3125rem;
+  --tool-border: .3px solid darkgray;
+  --tool-hover: #f5f5f5;
+  --tool-divider: darkgray;
+  --tool-shadow:
+    0px 0px .5px rgba(0,0,0,.18),
+    0px 3px 8px rgba(0,0,0,.1),
+    0px 1px 3px rgba(0,0,0,.1),
+    inset 0px .5px 0px rgba(0,0,0,.08),
+    inset 0px 0px .5px rgba(0,0,0,.1);
+}
+
+/* The Figma-style icon button — one definition for every tool. */
+.tool-button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--tool-ink);
+  border-radius: var(--tool-btn-radius);
+  cursor: pointer;
+}
+.tool-button:hover { background: var(--tool-hover); }
+.tool-button:disabled { opacity: .35; cursor: default; }
+.tool-button:disabled:hover { background: none; }

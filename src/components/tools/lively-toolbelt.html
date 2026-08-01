@@ -1,6 +1,7 @@
 <template id="lively-toolbelt" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/components/tools/lively-tool-panel.css"></style>
   <style>
     :host {
       position: fixed;
@@ -15,7 +16,7 @@
       pointer-events: none;
       
       --padding: 8px;
-      --accent-color: rgb(255 149 0);
+      /* --accent-color now comes from the shared lively-tool-panel.css */
       --transition-time: 1300ms;
       --transition-tween: ease;
     }

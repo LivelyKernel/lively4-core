@@ -1,0 +1,150 @@
+<template id="lively-voice-compose">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/src/components/tools/lively-tool-panel.css"></style>
+<style>
+:host {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  width: 256px;
+  max-height: 42vh;
+  z-index: 1000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--tool-bg);
+  color: var(--tool-ink);
+  border: var(--tool-border);
+  border-radius: var(--tool-radius);
+  box-shadow: var(--tool-shadow);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 12.5px;
+  overflow: hidden;
+}
+
+#header { padding: 10px 12px 4px; }
+#title { font-weight: 600; font-size: 13px; letter-spacing: -.01em; }
+
+#list {
+  flex: 1;
+  min-height: 44px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 6px 12px 10px;
+}
+.empty {
+  color: #0000005e;
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  padding: 16px 8px;
+}
+
+.msg {
+  position: relative;
+  background: #f6f6f5;
+  border-radius: 11px 11px 11px 4px;
+  padding: 8px 10px;
+}
+.msg-text { line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+.msg-tier {
+  margin-top: 5px;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #00000047;
+  font-family: monospace;
+}
+.msg-actions {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  display: flex;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.msg:hover .msg-actions { opacity: 1; }
+.msg-actions .tool-button {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #00000099;
+  background: rgba(246,246,245,.82);
+}
+.msg-actions .fa { font-size: 12px; }
+
+.msg.pending { background: color-mix(in srgb, var(--accent-color) 8%, #f6f6f5); }
+.msg.pending .msg-text { color: #00000099; font-style: italic; }
+.typing { display: inline-flex; gap: 3px; margin-left: 5px; vertical-align: middle; }
+.typing i {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent-color);
+  animation: vc-bounce 1.1s infinite ease-in-out;
+}
+.typing i:nth-child(2) { animation-delay: .15s; }
+.typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes vc-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .4; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+#composer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-top: .3px solid #00000014;
+  background: #fcfbf9;
+}
+#recordButton {
+  width: 32px; height: 32px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: none;
+  cursor: pointer;
+  background: #f1efeb;
+  color: #000000bf;
+  box-shadow: 0 1px 2px rgba(0,0,0,.07);
+  transition: background .15s ease;
+}
+#recordButton:hover { background: #eae7e1; }
+#recordButton .fa { font-size: 15px; }
+:host(.recording) #recordButton {
+  background: var(--accent-color);
+  color: #fff;
+  animation: vc-halo 1.5s ease-out infinite;
+}
+@keyframes vc-halo {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 42%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent-color) 0%, transparent); }
+}
+#status {
+  flex: 1;
+  min-width: 0;
+  color: #00000082;
+  font-size: 12px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#composer .tool-button { color: #000000a1; }
+#composer .fa { font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  #recordButton, .typing i { animation: none; }
+}
+</style>
+<div id="header"><span id="title">Voice Chat</span></div>
+<div id="list"></div>
+<div id="composer">
+  <button id="recordButton" title="Record"><i class="fa fa-microphone"></i></button>
+  <span id="status"></span>
+  <button id="clearButton" class="tool-button" title="Clear"><i class="fa fa-trash-o"></i></button>
+  <button id="sendButton" class="tool-button" title="Send"><i class="fa fa-paper-plane"></i></button>
+</div>
+</template>
