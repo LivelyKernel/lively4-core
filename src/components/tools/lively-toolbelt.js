@@ -141,12 +141,12 @@ export default class LivelyToolbelt extends Morph {
 
   // #Perf------------
   async onPerformancePanel(evt) {
-    if (!document.body.querySelector('ivu-performance-panel')) {
+    if (!document.body.querySelector('lively-performance-panel')) {
       lively.notify('add panel')
-      document.body.append(await lively.create('ivu-performance-panel'))
+      document.body.append(await lively.create('lively-performance-panel'))
     } else {
       lively.notify('remove panel')
-      document.body.querySelector('ivu-performance-panel').remove()
+      document.body.querySelector('lively-performance-panel').remove()
     }
   }
   onPerformanceLoadTester(evt) {
@@ -391,7 +391,7 @@ export default class LivelyToolbelt extends Morph {
       ...extract('events', anyOf('event-receiver.js'), startsWith('pdp-notification-receiver')),
       ...extract('web sockets', anyOf('event-receiver.js'), startsWith('ws-json-')),
       ...extract('load testing', startsWith('pdp-event-performance-load-tester-2'), startsWith('sram-data-fetcher')),
-      ...extract('debug', startsWith('ivu-performance-panel'), anyOf('debug.js', 'menu.js', 'option.js', 'panel.js', 'performance.js')),
+      ...extract('debug', startsWith('lively-performance-panel')),
       ...extract('misc', startsWith('ivu-inline-stats'), anyOf('index-style.css', 'utils.js')),
     ]
 
