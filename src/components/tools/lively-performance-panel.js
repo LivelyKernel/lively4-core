@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { PausableLoop } from 'utils'
-import $ from "https://cdn.jsdelivr.net/npm/jquery@3.7.1/+esm";
+import $ from 'src/external/jquery.js';
 
 // This component was ported from the standalone `ivu/` sources (debug.js, menu.js,
 // option.js, panel.js, performance.js). Those helper modules are inlined below as
