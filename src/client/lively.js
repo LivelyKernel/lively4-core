@@ -19,6 +19,7 @@ import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import preferences from './preferences.js';
 import persistence from './persistence.js';
+import './media-monitor.js'; // passive mic/camera privacy indicator (side-effect only)
 import html from './html.js';
 import * as reflection from './reflection.js';
 import files from './files.js';
