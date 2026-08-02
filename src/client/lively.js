@@ -778,6 +778,17 @@ export default class Lively {
     return ul;
   }
 
+  // Reload the page programmatically WITHOUT the native "Reload site? Changes you made may
+  // not be saved." confirmation. boot.js installs a window.onbeforeunload handler on every
+  // (non-Electron) page, so a plain location.reload() pops that dialog and stalls waiting for
+  // a click — which blocks unattended / MCP-driven reloads. Clearing the property handler
+  // first lets the reload just happen. (Handlers added via addEventListener('beforeunload')
+  // are not cleared here — but the boot property handler is the usual culprit.)
+  static reloadPage() {
+    window.onbeforeunload = null;
+    location.reload();
+  }
+
   static openWorkspace(string, pos, worldContext) {
     string = string || "";
     var name = "lively-code-mirror";
