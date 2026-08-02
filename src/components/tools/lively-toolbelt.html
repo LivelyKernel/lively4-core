@@ -230,7 +230,8 @@
     :host([mode='arrow']) #mode-arrow,
     :host([mode='eraser']) #mode-eraser,
     :host([mode='select']) #mode-select,
-    :host(.audio) #audio-mode {
+    :host(.audio) #audio-mode,
+    :host(.voice-open) #voice-command {
       background: var(--accent-color);
       color: white;
     }
@@ -276,6 +277,7 @@
         <button id="ai" title='AI Assistant'><i class='fa fa-magic'></i></button>
         <span class='divider'></span>
         <button id="data-loader" title='Data Loader'><i class='fa fa-download'></i></button>
+        <button id="voice-command" title='Voice Command'><i class='fa fa-commenting-o'></i></button>
         <div class='tool-group'>
           <button id="viewer" title='V2 WebGPU Viewer'><i class='fa fa-desktop'></i></button>
           <button id="more-viewers" class='more' title='More Viewers'><i class='fa fa-angle-down'></i></button>

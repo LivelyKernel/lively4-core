@@ -69,6 +69,21 @@ export default class LivelyToolbelt extends Morph {
   onDataLoader(evt) {
     lively.openComponentInWindow('pdp-data-loader', undefined, lively.pt(1100, 926))
   }
+  // Toggle the floating voice-command dock. Closing it also aborts any live mic /
+  // SpeechRecognition session so nothing keeps listening in the background (the dock's
+  // own disconnectedCallback is a second safety net).
+  async onVoiceCommand(evt) {
+    const existing = document.body.querySelector(':scope > lively-voice-compose')
+    if (existing) {
+      if (existing.capture) existing.capture.abort()
+      existing.remove()
+      this.classList.remove('voice-open')
+      return
+    }
+    const el = await lively.create('lively-voice-compose')
+    document.body.appendChild(el)
+    this.classList.add('voice-open')
+  }
   onViewer(evt) {
     lively.openComponentInWindow('ivu2-webgpu-viewer', undefined, lively.pt(1100, 800))
   }

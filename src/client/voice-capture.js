@@ -151,6 +151,21 @@ export class VoiceCapture {
     return { text: "", tier: "none" }
   }
 
+  // Immediately stop all listening (mic tracks + SpeechRecognition) without transcribing.
+  // Used when the dock is closed so nothing keeps the microphone open. Idempotent.
+  async abort() {
+    const rec = this.recognition
+    this.recognition = null
+    if (rec) {
+      rec.onresult = null
+      rec.onend = null
+      rec.onerror = null
+      try { rec.abort() } catch (e) {}
+    }
+    try { await this.recorder.stopRecording() } catch (e) {}
+    this._recordedForWhisper = false
+  }
+
   _startWebSpeech() {
     if (!VoiceCapture.webSpeechUsable) return
     const rec = new window.SpeechRecognition()

@@ -32,6 +32,13 @@ export default class LivelyVoiceCompose extends Morph {
     this.setStatus()
   }
 
+  disconnectedCallback() {
+    // Closing the dock (toggling it off from the toolbelt, or any other removal) must not
+    // leave the microphone or a SpeechRecognition session listening in the background.
+    this.classList.remove('recording')
+    if (this.capture) this.capture.abort()
+  }
+
   get list() { return this.get('#list') }
   get statusEl() { return this.get('#status') }
   get isRecording() { return this.classList.contains('recording') }
