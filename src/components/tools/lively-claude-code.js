@@ -367,8 +367,11 @@ export default class LivelyClaudeCode extends Morph {
       const currentProject = this.getCurrentProject();
       // Get flattened project name for Claude sessions
       const projectRoot = this.getProjectRoot();
-      const absoluteRoot = projectRoot.startsWith('~/') ? 
-        projectRoot.replace('~/', '/home/jens/') : projectRoot;
+      // Resolve "~"-relative/default roots from the running server (any user, Windows or POSIX);
+      // honor an explicit absolute projectRoot attribute as-is.
+      const absoluteRoot = (projectRoot.startsWith('~') || projectRoot.startsWith('.'))
+        ? await ClaudeSessions.resolveServedRoot()
+        : projectRoot;
       const fullPath = absoluteRoot + "/" + currentProject;
       const flattenedProjectName = ClaudeSessions.flattenPath(fullPath);
       
