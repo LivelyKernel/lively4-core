@@ -16,10 +16,21 @@ export function serialize(obj, outerReplacer) {
         return;
       }
       seenOnce.add(value);
-      
-      // Recursively count references for object properties
-      for (let key of Object.keys(value)) {
-        countReferences(value[key]);
+
+      if (value instanceof Set) {
+        for (const entry of value) {
+          countReferences(entry);
+        }
+      } else if (value instanceof Map) {
+        for (const [mapKey, mapValue] of value) {
+          countReferences(mapKey);
+          countReferences(mapValue);
+        }
+      } else {
+        // Recursively count references for object properties
+        for (let key of Object.keys(value)) {
+          countReferences(value[key]);
+        }
       }
     }
     return value;
@@ -33,8 +44,13 @@ export function serialize(obj, outerReplacer) {
       value = outerReplacer.call(this, key, value);
     }
 
-    if (key === '$array') {
+    if (key === '$array' || key === '$set' || key === '$map') {
       return value;
+    }
+
+    // JSON.stringify flattens Infinity/-Infinity/NaN to null; encode them so they round-trip.
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      return { $num: value !== value ? 'NaN' : value > 0 ? 'Infinity' : '-Infinity' };
     }
 
     if (value instanceof Object && !(value instanceof Function)) {
@@ -49,6 +65,14 @@ export function serialize(obj, outerReplacer) {
 
         if (Array.isArray(value)) {
           return needsId ? { $id: id, $array: [...value] } : value;
+        } else if (value instanceof Set) {
+          const result = needsId ? { $id: id } : {};
+          result.$set = [...value];
+          return result;
+        } else if (value instanceof Map) {
+          const result = needsId ? { $id: id } : {};
+          result.$map = [...value];
+          return result;
         } else {
           const result = Object.assign(needsId ? { $id: id } : {}, value);
 
@@ -64,6 +88,10 @@ export function serialize(obj, outerReplacer) {
 
         if (Array.isArray(value)) {
           reference.$isArray = true;
+        } else if (value instanceof Set) {
+          reference.$isSet = true;
+        } else if (value instanceof Map) {
+          reference.$isMap = true;
         }
 
         return reference;
@@ -73,7 +101,22 @@ export function serialize(obj, outerReplacer) {
     return value;
   }
 
-  return JSON.stringify(obj, replacer, 2);
+  // core-js (bundled with the transpiler) installs the withdrawn Set/Map.prototype.toJSON proposal,
+  // which flattens Sets/Maps into plain arrays inside JSON.stringify *before* the replacer above can
+  // run — losing collection type and shared-reference identity. It is (re)installed by ordinary
+  // transpilation/workspace activity, so it can't be reliably dropped once at boot. Neutralize it
+  // just for this stringify pass, restoring the exact descriptors afterwards (synchronous, so no
+  // interleaving). Nothing relies on the non-standard behaviour (a Set stringifies to {} per spec).
+  const setToJSON = Object.getOwnPropertyDescriptor(Set.prototype, 'toJSON');
+  const mapToJSON = Object.getOwnPropertyDescriptor(Map.prototype, 'toJSON');
+  if (setToJSON) delete Set.prototype.toJSON;
+  if (mapToJSON) delete Map.prototype.toJSON;
+  try {
+    return JSON.stringify(obj, replacer, 2);
+  } finally {
+    if (setToJSON) Object.defineProperty(Set.prototype, 'toJSON', setToJSON);
+    if (mapToJSON) Object.defineProperty(Map.prototype, 'toJSON', mapToJSON);
+  }
 }
 
 /**
@@ -87,9 +130,17 @@ export function deserialize(json, classes = {}, outerReviver) {
       return value;
     }
 
+    if (typeof value.$num === 'string') {
+      return value.$num === 'NaN' ? NaN : Number(value.$num);
+    }
+
     if (value.$ref) {
       // we have a ref before its definition -> create a stub based on the type
-      return idToObj.getOrCreate(value.$ref, () => value.$isArray ? [] : {});
+      return idToObj.getOrCreate(value.$ref, () =>
+        value.$isArray ? [] :
+        value.$isSet ? new Set() :
+        value.$isMap ? new Map() :
+        {});
     }
 
     if (value.$id) {
@@ -97,6 +148,8 @@ export function deserialize(json, classes = {}, outerReviver) {
       delete value.$id;
 
       const array = value.$array;
+      const set = value.$set;
+      const map = value.$map;
 
       if (idToObj.has(id)) {
         const proxy = idToObj.get(id);
@@ -104,15 +157,29 @@ export function deserialize(json, classes = {}, outerReviver) {
         if (array) {
           proxy.push(...array);
           value = proxy;
+        } else if (set) {
+          for (const entry of set) proxy.add(entry);
+          value = proxy;
+        } else if (map) {
+          for (const [mapKey, mapValue] of map) proxy.set(mapKey, mapValue);
+          value = proxy;
         } else {
           value = Object.assign(proxy, value);
         }
       } else {
         if (array) {
           value = array;
+        } else if (set) {
+          value = new Set(set);
+        } else if (map) {
+          value = new Map(map);
         }
         idToObj.set(id, value);
       }
+    } else if (value.$set) {
+      value = new Set(value.$set);
+    } else if (value.$map) {
+      value = new Map(value.$map);
     }
 
     if (value.$class) {

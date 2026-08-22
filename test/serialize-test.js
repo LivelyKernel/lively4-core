@@ -265,4 +265,126 @@ describe('simple serialization with JSON.{parse,stringify}', () => {
     });
   });
 
+  describe('Sets and Maps', () => {
+
+    it('restore a Set (real Set, own entries, fresh instance)', () => {
+      const o = { set: new Set([1, 2, 3]) };
+      const o2 = deserialize(serialize(o));
+
+      expect(o2.set instanceof Set).to.be.true;
+      expect(o2.set).to.not.equal(o.set);
+      // set-equality: nothing is in one but not the other (order-independent)
+      expect(o2.set.symmetricDifference(o.set).size).to.equal(0);
+    });
+
+    it('restore a Map (real Map, own entries, fresh instance)', () => {
+      const o = { map: new Map([['a', 1], ['b', 2]]) };
+      const o2 = deserialize(serialize(o));
+
+      expect(o2.map instanceof Map).to.be.true;
+      expect(o2.map).to.not.equal(o.map);
+      expect([...o2.map]).to.deep.equal([['a', 1], ['b', 2]]);
+    });
+
+    it('empty Set and Map', () => {
+      const o2 = deserialize(serialize({ set: new Set(), map: new Map() }));
+
+      expect(o2.set instanceof Set).to.be.true;
+      expect(o2.map instanceof Map).to.be.true;
+      expect(o2.set.size).to.equal(0);
+      expect(o2.map.size).to.equal(0);
+    });
+
+    it('top-level Set', () => {
+      const s2 = deserialize(serialize(new Set([1, 2, 3])));
+
+      expect(s2 instanceof Set).to.be.true;
+      expect([...s2]).to.deep.equal([1, 2, 3]);
+    });
+
+    it('a Set shared by two references stays a single instance and keeps its entries', () => {
+      const shared = new Set([1, 2]);
+      const o = { a: shared, b: shared };
+      const o2 = deserialize(serialize(o));
+
+      expect(o2.a instanceof Set).to.be.true;
+      expect(o2.a).to.equal(o2.b);            // identity preserved
+      expect([...o2.a]).to.deep.equal([1, 2]); // contents preserved
+    });
+
+    it('a Map shared by two references stays a single instance and keeps its entries', () => {
+      const shared = new Map([['k', 'v']]);
+      const o = { a: shared, b: shared };
+      const o2 = deserialize(serialize(o));
+
+      expect(o2.a instanceof Map).to.be.true;
+      expect(o2.a).to.equal(o2.b);
+      expect([...o2.a]).to.deep.equal([['k', 'v']]);
+    });
+
+    it('an object entry inside a Set is the same instance as elsewhere in the graph', () => {
+      const obj = { id: 1 };
+      const o = { set: new Set([obj]), obj };
+      const o2 = deserialize(serialize(o));
+
+      expect([...o2.set][0]).to.equal(o2.obj);
+    });
+
+    it('an object key inside a Map keeps its identity and is usable as a key', () => {
+      const key = { k: 1 };
+      const o = { map: new Map([[key, 'v']]), key };
+      const o2 = deserialize(serialize(o));
+
+      expect([...o2.map.keys()][0]).to.equal(o2.key);
+      expect(o2.map.get(o2.key)).to.equal('v');
+    });
+
+    it('a Set that contains itself', () => {
+      const s = new Set();
+      s.add(s);
+      const o2 = deserialize(serialize({ s }));
+
+      expect(o2.s instanceof Set).to.be.true;
+      expect(o2.s.has(o2.s)).to.be.true;
+    });
+
+    it('does not leak $set/$map/$id helper keys onto restored collections', () => {
+      const shared = new Set([1]);
+      const o2 = deserialize(serialize({ a: shared, b: shared }));
+
+      expect(o2).not.to.have.property('$set');
+      expect(o2.a).not.to.have.property('$id');
+      expect(o2.a).not.to.have.property('$set');
+    });
+
+  });
+
+  describe('non-finite numbers', () => {
+
+    it('round-trips Infinity, -Infinity and NaN', () => {
+      const o = deserialize(serialize({ pos: Infinity, neg: -Infinity, nan: NaN, normal: 42 }));
+
+      expect(o.pos).to.equal(Infinity);
+      expect(o.neg).to.equal(-Infinity);
+      expect(Number.isNaN(o.nan)).to.be.true;
+      expect(o.normal).to.equal(42);
+    });
+
+    it('round-trips non-finite numbers inside arrays', () => {
+      const o2 = deserialize(serialize({ arr: [Infinity, NaN, -Infinity] }));
+
+      expect(o2.arr[0]).to.equal(Infinity);
+      expect(Number.isNaN(o2.arr[1])).to.be.true;
+      expect(o2.arr[2]).to.equal(-Infinity);
+    });
+
+    it('top-level non-finite numbers', () => {
+      expect(deserialize(serialize(Infinity))).to.equal(Infinity);
+      expect(deserialize(serialize(-Infinity))).to.equal(-Infinity);
+      expect(Number.isNaN(deserialize(serialize(NaN)))).to.be.true;
+      expect(deserialize(serialize(42))).to.equal(42);
+    });
+
+  });
+
 });
