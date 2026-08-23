@@ -1,10 +1,9 @@
-import { uuid } from 'utils';
-
 /**
  * @param outerReplacer: gets called BEFORE serialization, with same key, value, and this reference as the original replacer would
  */
 export function serialize(obj, outerReplacer) {
   const references = new Map();
+  let nextId = 1; // $id/$ref only need to be unique within this one call; a counter is ~free vs a crypto uuid()
 
   const seenOnce = new Set();
   const seenManyTimes = new Set();
@@ -59,7 +58,7 @@ export function serialize(obj, outerReplacer) {
         let id
         if (needsId) {
           // 1st occurence of many: remember you saw that one
-          id = uuid();
+          id = nextId++;
           references.set(value, id);
         }
 
