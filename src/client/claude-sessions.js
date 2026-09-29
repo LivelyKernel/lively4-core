@@ -475,10 +475,12 @@ export default class ClaudeSessions {
     
     if (projectName && projectName.trim() !== '') {
       // Filter to specific project - show all .jsonl files in that project
-      command = `find ~/.claude/projects/${projectName} -type f -name '*.jsonl' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
+      command = `find ~/.claude/projects/${projectName} -type f -name '*.jsonl' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\\t%s\\t%p\\n' | sort -r`;
     } else {
-      // Show all projects - original pattern for lively4-core compatibility
-      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
+      // Any lively4 project. Was '*-lively4-core/*', but on Windows Claude runs from the
+      // repo parent so the flattened dir is '…-lively4' (no '-lively4-core'); '*lively4*'
+      // matches both that and Linux's '-lively4-core'.
+      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*lively4*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\\t%s\\t%p\\n' | sort -r`;
     }
     
     const result = await terminal.run(command);
@@ -515,12 +517,14 @@ export default class ClaudeSessions {
     // Build command to get file info and line counts in one go
     let command;
     
+    // Quoted ';' terminator, not '\;': cmd.exe (Windows) passes '\;' through literally and
+    // find rejects it ("missing argument to -exec"); the quoted form works on both shells.
     if (projectName && projectName.trim() !== '') {
       // Get file stats and line counts for specific project
-      command = `find ~/.claude/projects/${projectName} -type f -name '*.jsonl' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} \\; | sort -nr`;
+      command = `find ~/.claude/projects/${projectName} -type f -name '*.jsonl' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} ';' | sort -nr`;
     } else {
-      // Get file stats and line counts for lively4-core project
-      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} \\; | sort -nr`;
+      // Any lively4 project (see discoverSessions for the '*lively4*' rationale)
+      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*lively4*' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} ';' | sort -nr`;
     }
     
     const result = await terminal.run(command);
@@ -1077,8 +1081,11 @@ export default class ClaudeSessions {
     try {
       const terminal = this.getTerminal();
       
-      // List directory names in ~/.claude/projects
-      const command = `ls -1 ~/.claude/projects/ 2>/dev/null | grep -v '^\\.$' | grep -v '^\\.\\.$' || echo ""`;
+      // List directory names in ~/.claude/projects. Kept shell-minimal: no `2>/dev/null`
+      // (cmd.exe on Windows treats /dev/null as a path and aborts the whole command) and no
+      // grep for '.'/'..' (ls -1 never lists them); the JS filter below drops dotfiles, and a
+      // missing dir surfaces via result.error.
+      const command = `ls -1 ~/.claude/projects/`;
       const result = await terminal.run(command);
       
       if (result.error && !result.stdout.trim()) {
@@ -1094,27 +1101,47 @@ export default class ClaudeSessions {
   }
 
   /**
+   * Native absolute path of the served root (the parent directory of the project dirs),
+   * spelled the way the OS does — which is what Claude uses when flattening project paths
+   * into ~/.claude/projects names. Derived from the running server, so it needs no hardcoded
+   * home and works for any user on Windows and POSIX. Cached after first resolution.
+   * @returns {Promise<string>} e.g. "C:\\Users\\Stefan\\lively\\lively4" or "/home/alice/lively4"
+   */
+  static async resolveServedRoot() {
+    if (this._servedRoot) return this._servedRoot;
+    const terminal = this.getTerminal();
+    // Windows cmd.exe expands %CD% to a native path; POSIX shells leave it literal (still
+    // contains '%'), so fall back to pwd there.
+    let root = ((await terminal.run('echo %CD%')).stdout || '').trim();
+    if (!root || root.includes('%')) {
+      root = ((await terminal.run('pwd')).stdout || '').trim();
+    }
+    this._servedRoot = root;
+    return root;
+  }
+
+  /**
    * Filter file system directories to only those that have Claude projects
    * @param {Array} directories - Array of directory names from file system
-   * @param {string} projectRoot - Root path for projects (e.g., "~/lively4" or "/home/jens/lively4")
+   * @param {string} projectRoot - Root path for projects. Pass an absolute path to override;
+   *   a "~"-relative or missing value is resolved from the running server (see resolveServedRoot).
    * @returns {Array} Filtered array of directory names that have Claude projects
    */
   static async filterDirectoriesWithClaudeProjects(directories, projectRoot = "~/lively4") {
     try {
       const claudeProjects = await this.getClaudeProjectNames();
-      
+
       if (claudeProjects.length === 0) {
         // If no Claude projects found, return all directories as fallback
         return directories;
       }
-      
-      // Convert tilde path to absolute path if needed
-      let absoluteRoot = projectRoot;
-      if (projectRoot.startsWith('~/')) {
-        // For now, assume /home/jens as default - could be made more dynamic later
-        absoluteRoot = projectRoot.replace('~/', '/home/jens/');
-      }
-      
+
+      // Resolve the absolute root. Honor an explicit absolute path from the caller; otherwise
+      // (a "~"-relative default) derive it from the running server so it works for any user/OS.
+      const absoluteRoot = (projectRoot && !projectRoot.startsWith('~') && !projectRoot.startsWith('.'))
+        ? projectRoot
+        : await this.resolveServedRoot();
+
       // Filter directories that have corresponding Claude projects
       const filteredDirs = directories.filter(dirName => {
         const fullPath = absoluteRoot + "/" + dirName;
@@ -1135,9 +1162,11 @@ export default class ClaudeSessions {
    * @returns {string} Flattened path matching Claude's naming convention
    */
   static flattenPath(projectPath) {
-    // Convert full path to Claude's flattened format
-    // e.g., "~/lively4/lively4-core" -> "~-lively4-lively4-core"
-    return projectPath.replace(/\//g, '-');
+    // Convert full path to Claude's flattened format.
+    // Linux: "/home/jens/lively4/lively4-core" -> "-home-jens-lively4-lively4-core"
+    // Windows: "C:\Users\Stefan\lively\lively4" -> "C--Users-Stefan-lively-lively4"
+    // (both the drive colon and backslashes collapse to '-', so match / \ and :).
+    return projectPath.replace(/[/\\:]/g, '-');
   }
 
   

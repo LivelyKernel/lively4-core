@@ -182,6 +182,18 @@ export class Point {
     return pt(this.x / r, this.y / r);
   }
 
+  // Like normalized(), but a zero-length vector has no direction, so return `fallback`
+  // instead of pt(NaN, NaN).
+  safeNormalized(fallback = pt(1, 0)) {
+    var r = this.r();
+    return r > 0 ? pt(this.x / r, this.y / r) : fallback;
+  }
+
+  // The left-hand perpendicular: this vector turned 90° counter-clockwise, same length.
+  perpendicular() {
+    return pt(-this.y, this.x);
+  }
+
   fastNormalized() {
     var r = this.fastR();
     return pt(this.x / r, this.y / r);

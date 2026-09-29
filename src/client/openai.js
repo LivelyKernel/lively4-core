@@ -128,25 +128,32 @@ export class Speech {
     audio.play();
   }
 
-  static async transcript(audioFile) {
+  // Transcribe an audio blob. Defaults to OpenAI Whisper (unchanged for existing
+  // callers). Pass options to target a local whisper.cpp server instead:
+  //   { url: 'http://127.0.0.1:8080/inference', apiKey: null, filename: 'audio.wav' }
+  // apiKey:null skips the Authorization header (local servers take no key).
+  static async transcript(audioFile, options = {}) {
+    const transcriptUrl = options.url || "https://api.openai.com/v1/audio/transcriptions"
 
-    let transcriptKey = await OpenAI.ensureSubscriptionKey()
-    const transcriptUrl = "https://api.openai.com/v1/audio/transcriptions"
+    const headers = {}
+    if (options.apiKey !== null) {
+      const key = options.apiKey || await OpenAI.ensureSubscriptionKey()
+      headers["Authorization"] = `Bearer ${key}`
+    }
 
     const formData = new FormData();
-    formData.append('file', audioFile, 'audio.ogg');
-    formData.append('model', 'whisper-1');
+    formData.append('file', audioFile, options.filename || 'audio.ogg');
+    formData.append('model', options.model || 'whisper-1');
+    formData.append('response_format', 'json'); // whisper.cpp /inference; OpenAI accepts it too
+    // language 'auto' → detect + transcribe in the spoken language (whisper.cpp
+    // defaults to 'en', which force-decodes German as English). prompt seeds the
+    // initial context to bias identifier spelling. Both are omitted by default,
+    // so the OpenAI path (no options) is unchanged.
+    if (options.language) formData.append('language', options.language)
+    if (options.prompt) formData.append('prompt', options.prompt)
 
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${transcriptKey}`,
-
-      },
-      body: formData
-    };
-
-    let result = await fetch(transcriptUrl, requestOptions).then(r => r.json())
+    const result = await fetch(transcriptUrl, { method: "POST", headers, body: formData })
+      .then(r => r.json())
     return result;
   }
 }

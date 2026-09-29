@@ -19,6 +19,7 @@ import * as scripts from './script-manager.js';
 import * as messaging from './messaging.js';
 import preferences from './preferences.js';
 import persistence from './persistence.js';
+import './media-monitor.js'; // passive mic/camera privacy indicator (side-effect only)
 import html from './html.js';
 import * as reflection from './reflection.js';
 import files from './files.js';
@@ -42,6 +43,7 @@ import Stack from 'src/client/utils/stack.js';
 /* expose external modules */
 // import color from '../external/tinycolor.js';
 import focalStorage from '../external/focalStorage.js';
+import 'src/components/tools/lively-toolbelt-input.js'; // must precede Selection/graffle so its pointer stubs register first
 import Selection from 'src/components/halo/lively-selection.js';
 import windows from "src/components/widgets/lively-window.js";
 
@@ -774,6 +776,17 @@ export default class Lively {
       ul.appendChild(item);
     });
     return ul;
+  }
+
+  // Reload the page programmatically WITHOUT the native "Reload site? Changes you made may
+  // not be saved." confirmation. boot.js installs a window.onbeforeunload handler on every
+  // (non-Electron) page, so a plain location.reload() pops that dialog and stalls waiting for
+  // a click — which blocks unattended / MCP-driven reloads. Clearing the property handler
+  // first lets the reload just happen. (Handlers added via addEventListener('beforeunload')
+  // are not cleared here — but the boot property handler is the usual culprit.)
+  static reloadPage() {
+    window.onbeforeunload = null;
+    location.reload();
   }
 
   static openWorkspace(string, pos, worldContext) {

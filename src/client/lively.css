@@ -17,6 +17,14 @@ html, body {
   user-select: auto;
 }
 
+/* lively-toolbelt drawing: while a drawing mode is active it sets --lively-draw-touch:none
+   on :root via a ground-truth :has() rule; the custom property inherits THROUGH shadow
+   boundaries, so this line (loaded into each component's shadow root) lets a pen/touch drag
+   DRAW over the component instead of scrolling a nested scroller. Inert otherwise — the
+   property defaults to `auto`, the initial value. See ensureInkStyle in
+   lively-toolbelt-interaction.js. */
+* { touch-action: var(--lively-draw-touch, auto); }
+
 @font-face {
   font-family: Virgil;
   src: url(../../src/external/fonts/Virgil.woff2);
