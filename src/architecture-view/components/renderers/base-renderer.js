@@ -3,9 +3,8 @@
 
 Provides shared tree building from FileIndex and modification-time color coding
 MD*/
-import d3 from "src/external/d3.v5.js";
-import moment from "src/external/moment.js";
 import FileIndex from "src/client/fileindex.js";
+import { getColoringMode, ownerOf } from "./coloring-modes.js";
 
 export default class BaseRenderer {
   constructor(diagram) {
@@ -101,22 +100,25 @@ export default class BaseRenderer {
   }
 
   /**
-   * Calculate node color based on file modification time.
-   * Works for both flextree nodes (node.data.index) and d3-hierarchy nodes (d.data.index).
+   * Normalize a renderer node into the descriptor consumed by coloring strategies.
+   * Works for both flextree nodes and d3-hierarchy nodes (both expose `.data`).
+   */
+  descriptorFor(node) {
+    const data = (node && node.data) || {};
+    const index = data.index || {};
+    const url = data.url || (data.classInfo && data.classInfo.url) || '';
+    const size = (node && node.value != null)
+      ? node.value
+      : (data.end != null && data.start != null ? data.end - data.start : 0);
+    return { name: data.name, url, size, modified: index.modified, owner: ownerOf(url) };
+  }
+
+  /**
+   * Fill color for a node according to the diagram's active coloring mode.
+   * (Kept as `dataColor` for backward compatibility with existing renderers.)
    */
   dataColor(node) {
-    if (!node.data || !node.data.index) return "gray";
-
-    const now = moment(Date.now());
-    const modified = moment(node.data.index.modified);
-    const days = moment.duration(now.diff(modified)).asDays();
-
-    const colorScale = d3.scaleLinear()
-      .range(['#aaccff', '#808080'])
-      .domain([10, 365])
-      .interpolate(d3.interpolateHcl);
-
-    return colorScale(days);
+    return getColoringMode(this.diagram.coloringMode).color(this.descriptorFor(node));
   }
 
   dispose() {

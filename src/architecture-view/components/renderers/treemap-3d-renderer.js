@@ -8,6 +8,7 @@ Classes and methods shown as 3D blocks with volume = LOC, color = LOC.
 
 MD*/
 import BaseRenderer from "./base-renderer.js";
+import { getColoringMode, ownerOf, ownerHash, ageDays } from "./coloring-modes.js";
 
 export default class Treemap3DRenderer extends BaseRenderer {
   constructor(diagram) {
@@ -24,11 +25,18 @@ export default class Treemap3DRenderer extends BaseRenderer {
     const FileIndex = await System.import('src/client/fileindex.js').then(m => m.default);
     const fileIndex = FileIndex.current();
     
+    // Modification times per file, used to derive the recency coloring attribute.
+    const fileModified = new Map();
+    await fileIndex.db.files.each(f => fileModified.set(f.url, f.modified));
+    
     for (const url of this.diagram._modules) {
       await fileIndex.db.classes.where("url").equals(url).each(classInfo => {
         const classLoc = classInfo.end - classInfo.start;
         const sqrtLoc = Math.sqrt(Math.max(classLoc, 1));
         const nom = classInfo.methods ? classInfo.methods.length : 0;
+        // Numeric channels for the alternative coloring modes (see coloring-modes.js)
+        const ownerColor = ownerHash(ownerOf(url));
+        const age = ageDays(fileModified.get(classInfo.url));
         
         const methodChildren = [];
         if (classInfo.methods && classInfo.methods.length > 0) {
@@ -41,6 +49,8 @@ export default class Treemap3DRenderer extends BaseRenderer {
               loc: methodLoc,
               sqrt_loc: methodSqrtLoc,
               nom: 0,
+              owner_hash: ownerColor,
+              age_days: age,
               url: url,
               methodInfo: { ...method, url: url, class: classInfo.name }
             };
@@ -56,6 +66,8 @@ export default class Treemap3DRenderer extends BaseRenderer {
           loc: classLoc,
           sqrt_loc: sqrtLoc,
           nom: nom,
+          owner_hash: ownerColor,
+          age_days: age,
           classInfo: classInfo,
           children: methodChildren.length > 0 ? methodChildren : undefined
         };
@@ -70,9 +82,11 @@ export default class Treemap3DRenderer extends BaseRenderer {
 
   async render(target) {
     try {
+      this._target = target;
       target.innerHTML = '<div style="padding: 20px;">Building 3D treemap...</div>';
       
       const classData = await this.prepareTreemapData();
+      this._classData = classData;
       
       if (classData.length === 0) {
         target.innerHTML = '<div style="padding: 20px;">No classes to display</div>';
@@ -107,15 +121,16 @@ export default class Treemap3DRenderer extends BaseRenderer {
       
       await lively.sleep(200);
       
+      const mode = getColoringMode(this.diagram.coloringMode);
       treemap.setData({
         data: classData,
         weightAttributeName: "sqrt_loc",
         heightAttributeName: "sqrt_loc",
-        colorAttributeName: "loc",
+        colorAttributeName: mode.treemapAttribute,
         labelAttributeName: "name"
       });
       
-      treemap.setColorScheme("viridis");
+      treemap.setColorScheme(mode.treemapScheme);
       
       treemap.setNodeSelectFunction(async (event) => {
         if (!event || event.node === undefined) return;
@@ -189,6 +204,19 @@ export default class Treemap3DRenderer extends BaseRenderer {
       console.error('[Treemap3DRenderer] Rendering error:', error);
       target.innerHTML = `<pre style="color: red;">Error rendering 3D treemap:\n${error.message}\n${error.stack}</pre>`;
     }
+  }
+
+  // Re-map only the color channel of the existing geometry (no scene rebuild).
+  async applyColoring(mode) {
+    if (!this.treemapComponent || !this._classData) return this.render(this._target);
+    this.treemapComponent.setData({
+      data: this._classData,
+      weightAttributeName: "sqrt_loc",
+      heightAttributeName: "sqrt_loc",
+      colorAttributeName: mode.treemapAttribute,
+      labelAttributeName: "name"
+    });
+    this.treemapComponent.setColorScheme(mode.treemapScheme);
   }
 
   async onResize() {
