@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js";
 import Strings from "src/client/strings.js";
 import ServerAuth from 'src/client/server-auth.js';
+import Terminal from 'src/client/terminal.js';
 
 /*MD # Github Sync Tool
 
@@ -301,6 +302,18 @@ export default class Sync extends Morph {
   
   onPullButton() {
     alert("hi")
+  }
+  
+  // Plain "git push" for repositories that authenticate themselves, e.g. GitLab via ssh keys.
+  // Goes through the server's generic command execution, so no GitHub credentials are
+  // handed to git at all. Prompting is disabled, a prompt would hang the server's exec.
+  async onPushButton() {
+    this.clearLog()
+    var repository = this.getRepository()
+    this.log("git push " + repository + "\n")
+    var result = await new Terminal().run(
+      `cd '${repository}' && GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND='ssh -o BatchMode=yes' git push`)
+    this.log(new Filter().toHtml(((result.stdout || "") + (result.stderr || "")).replace(/</g, "&lt;")))
   }
   
   onBranchButton() {
