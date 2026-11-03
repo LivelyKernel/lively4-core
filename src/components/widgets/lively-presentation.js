@@ -254,10 +254,26 @@ export default class LivelyPresentation extends Morph {
     if (pageNumber) pageNumber.textContent = this.currentSlideNumber()
   }
   
+  // Widens every slide so that its whole box, padding included, has this
+  // ratio (e.g. 16/9). The height stays, so text sizes keep their meaning
+  // and fullscreen fills a screen of that ratio.
+  setAspectRatio(ratio) {
+    this.slides().forEach(ea => {
+      var style = getComputedStyle(ea)
+      var paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+      var paddingY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+      var height = parseFloat(style.height)
+      ea.style.width = ((height + paddingY) * ratio - paddingX) + "px"
+    })
+  }
+  
   static async config(ctx, config={}) {
     await lively.sleep(500)
     var presentation = lively.query(ctx, "lively-presentation")
     if (presentation && presentation.slides) {
+      if (config.aspectRatio) {
+        presentation.setAspectRatio(config.aspectRatio)
+      }
       presentation.slides().forEach(ea => {
         if(config.logo) {
           var img = document.createElement("img")
