@@ -2674,7 +2674,13 @@ export default class Container extends Morph {
   
   async scrollToAnchor(anchor, preventRecursion=false) {
     if (anchor) {
-      var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
+      var rawName = anchor.replace(/#/,"")
+      var encodedName = decodeURI(rawName).replace(/\n/g,"")
+      try {
+        var name = decodeURIComponent(rawName).replace(/\n/g,"")
+      } catch(e) {
+        name = encodedName // malformed escape sequences
+      }
       if (this.isEditing()) {
         
         // use Navbar and it's structural knowledge to find the right name
@@ -2708,9 +2714,16 @@ export default class Container extends Morph {
       
       // 1. search by id
       try {
-        var element = root.querySelector(`#${name.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+        var element = root.querySelector(`#${CSS.escape(name)}`)
       } catch(e) {
         // ignore
+      }
+      if (!element) {
+        try {
+          element = root.querySelector(`#${encodedName.replace(/"/g,"%22").replace(/%2F/g,"\\/")}`)
+        } catch(e) {
+          // ignore
+        }
       }
       // 2. search for exactly matching anchors
       if (!element) {
