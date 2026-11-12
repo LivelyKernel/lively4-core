@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import FileIndex from 'src/client/fileindex.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import { COLORING_MODES, DEFAULT_COLORING_MODE, getColoringMode } from './renderers/coloring-modes.js';
 
 export default class LivelyClassDiagram extends Morph {
   async initialize() {
@@ -17,6 +18,9 @@ export default class LivelyClassDiagram extends Morph {
     
     // Read look attribute (default to handDrawn)
     this._look = this.getAttribute('look') || 'handDrawn';
+    
+    // Coloring mode for renderer node colors (default: by last changed)
+    this._coloringMode = this.getAttribute('coloring') || DEFAULT_COLORING_MODE;
     
     // Initialize renderer (default to Mermaid)
     this._rendererType = this.getAttribute('renderer') || 'mermaid';
@@ -53,6 +57,11 @@ export default class LivelyClassDiagram extends Morph {
       // Restore renderer type if saved
       if (config.rendererType && config.rendererType !== this._rendererType) {
         await this.setRenderer(config.rendererType);
+      }
+      
+      // Restore coloring mode if saved
+      if (config.coloringMode) {
+        this.coloringMode = config.coloringMode;
       }
       
       // IMPORTANT: Restore collapsed state BEFORE replaying operations
@@ -626,6 +635,56 @@ export default class LivelyClassDiagram extends Morph {
     return this.look === 'handDrawn';
   }
   
+  get coloringMode() {
+    return this._coloringMode || DEFAULT_COLORING_MODE;
+  }
+  
+  set coloringMode(id) {
+    this._coloringMode = id;
+    this.setAttribute('coloring', id);
+  }
+  
+  /**
+   * Switch the node coloring strategy and re-color the current renderer in place.
+   */
+  async setColoringMode(id, item) {
+    this.coloringMode = id;
+    await this.applyColoring();
+    this.livelyPrepareSave();
+    
+    // Immediate checkmark feedback on the clicked menu item
+    if (item) {
+      item.querySelector(".icon").innerHTML = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>';
+    }
+    lively.notify(`Coloring: ${getColoringMode(id).label}`);
+  }
+  
+  /**
+   * Update coloring on the active renderer without a full reload.
+   * Renderers may implement applyColoring() for in-place updates; otherwise re-render.
+   */
+  async applyColoring() {
+    if (this._renderer && this._renderer.applyColoring) {
+      await this._renderer.applyColoring(getColoringMode(this.coloringMode));
+    } else {
+      await this.render();
+    }
+  }
+  
+  /**
+   * Build the 'Coloring' submenu items (shared with lively-architecture-viewer).
+   */
+  coloringMenuItems() {
+    const chosen = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>';
+    const unchosen = '<i class="fa fa-circle-o" aria-hidden="true"></i>';
+    return COLORING_MODES.map(mode => [
+      mode.label,
+      (evt, item) => this.setColoringMode(mode.id, item),
+      '',
+      this.coloringMode === mode.id ? chosen : unchosen
+    ]);
+  }
+  
   /**
    * Toggle between hand-drawn and classic rendering styles
    * @param {Event} evt - Optional event for icon updates
@@ -686,7 +745,8 @@ export default class LivelyClassDiagram extends Morph {
          this._rendererType === 'treemap' ? chosenIcon : unchosenIcon],
         ['3D Treemap', () => this.setRenderer('treemap3d').then(() => { this.render(); this.livelyPrepareSave(); }), '', 
          this._rendererType === 'treemap3d' ? chosenIcon : unchosenIcon],
-      ]]
+      ]],
+      ['Coloring', this.coloringMenuItems()]
     ];
 
     const menu = new ContextMenu(this, menuItems);
@@ -792,6 +852,7 @@ export default class LivelyClassDiagram extends Morph {
     const config = {
       version: "1.0",
       rendererType: this._rendererType || 'mermaid',
+      coloringMode: this.coloringMode,
       operations: this._operations || [],
       collapsedClasses: Array.from(this._collapsedClasses || []),
       compositionRelationships: Array.from(this._compositionRelationships || []).map(([parent, children]) => ({
@@ -812,6 +873,7 @@ export default class LivelyClassDiagram extends Morph {
     this._collapsedClasses = other._collapsedClasses || new Set();
     this._compositionRelationships = other._compositionRelationships || new Map();
     this._look = other._look || 'handDrawn';
+    this._coloringMode = other._coloringMode || DEFAULT_COLORING_MODE;
     this._renderer = other._renderer;
     this._rendererType = other._rendererType;
     

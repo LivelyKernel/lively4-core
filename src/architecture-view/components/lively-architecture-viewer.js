@@ -321,6 +321,11 @@ export default class LivelyArchitectureViewer extends Morph {
     let menuItems = [
       ['Hand-Drawn Style', (evt, item) => this._diagram?.toggleHandDrawn(evt, item), '', icon]
     ];
+    
+    // Reuse the diagram's coloring menu (single source of truth)
+    if (this._diagram) {
+      menuItems.push(['Coloring', this._diagram.coloringMenuItems()]);
+    }
 
     const menu = new ContextMenu(this, menuItems);
     menu.openIn(document.body, evt, this);

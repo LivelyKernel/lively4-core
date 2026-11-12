@@ -1036,6 +1036,18 @@ export default class LivelyContainerNavbar extends Morph {
         element.classList.add("method");
       }
       
+      if (m[1].match(/MOVED/)) {
+        element.classList.add("comment");
+      }
+      
+      if (m[1].match(/DELETED/)) {
+        element.classList.add("comment");
+      }
+      
+      if (m[1].match(/NOTE/)) {
+        element.classList.add("comment");
+      }
+      
       if (m[1].match(/%%%%%/)) {
        element.classList.add("comment");
       }

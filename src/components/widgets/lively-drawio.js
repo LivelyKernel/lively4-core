@@ -269,7 +269,7 @@ export default class LivelyDrawio extends Morph {
         var root = this.get(".mxgraph")
         
         try {
-          await new Promise(resolve => {
+          this.viewer = await new Promise(resolve => {
               GraphViewer.createViewerForElement(root, resolve);
           })
         } catch(e) {
@@ -371,6 +371,119 @@ export default class LivelyDrawio extends Morph {
     lively.notify("saved " + name)
   }
   
+  /*MD
+  ## Dynamic content
+
+  Behind the rendered SVG sits a live mxGraph. It lets us address cells by the
+  id they have in the drawio file and change how they look at runtime. All of
+  this is purely visual: the `.drawio` file is never written to.
+  MD*/
+
+  // the live mxGraph, available once #update has rendered, see #viewer
+  get graph() {
+    return this.viewer && this.viewer.graph
+  }
+
+  // resolves once the figure is rendered and #graph can be used
+  async ready(timeout = 5000) {
+    await lively.sleepUntil(() => this.graph, timeout)
+    return this.graph
+  }
+
+  // the SVG nodes of a cell: its shape plus its (possibly HTML) label
+  cellNodes(id) {
+    var graph = this.graph
+    if (!graph) return []
+    var cell = graph.model.getCell(id)
+    var state = cell && graph.view.getState(cell)
+    if (!state) return []
+    return [state.shape, state.text]
+      .filter(shape => shape && shape.node)
+      .map(shape => shape.node)
+  }
+
+  allCellNodes() {
+    var graph = this.graph
+    if (!graph) return []
+    return Object.keys(graph.model.cells)
+      .reduce((all, id) => all.concat(this.cellNodes(id)), [])
+  }
+
+  clearHighlight() {
+    this.allCellNodes().forEach(node => node.style.opacity = "")
+  }
+
+  // emphasize the given cells by fading everything else down to #dim
+  highlight(ids, dim = 0.3) {
+    this.clearHighlight()
+    if (!ids || ids.length == 0) return
+    this.allCellNodes().forEach(node => node.style.opacity = dim)
+    for (let id of ids) {
+      this.cellNodes(id).forEach(node => node.style.opacity = 1)
+    }
+  }
+
+  /*MD
+  ### Stepping through a figure
+
+  A step is a list of cell ids that get emphasized together. Passing an object
+  instead of an array works too, which lets a document name the roles:
+  `{circle: "step1", arrow: "eAliceMobile", note: "wire1"}`. A role may hold
+  several ids: `{circle: "step7", arrows: ["eTunnel", "eSvcTlsC"]}`.
+
+  The first cell of a step doubles as its clickable handle, so a circled
+  number in the figure jumps straight to its own step.
+  MD*/
+  stepCellIds(step) {
+    return (Array.isArray(step) ? step : Object.values(step)).flat()
+  }
+
+  async stepper(steps, options = {}) {
+    var dim = options.dim === undefined ? 0.3 : options.dim
+    var overview = options.overviewLabel || "overview"
+    await this.ready()
+
+    var counter = <span style="font-family: monospace; padding: 0 4px;">{overview}</span>
+    var stepper = {
+      current: 0, // 0 = overview, 1..n = the step being emphasized
+      steps: steps,
+      show: async n => {
+        // re-resolve, because a re-render invalidates the previous graph
+        await this.ready()
+        stepper.current = Math.max(0, Math.min(steps.length, n))
+        this.highlight(stepper.current == 0 ?
+          [] : this.stepCellIds(steps[stepper.current - 1]), dim)
+        counter.textContent = stepper.current == 0 ?
+          overview : stepper.current + " / " + steps.length
+        this.wireStepHandles(stepper)
+        return stepper
+      },
+      next: () => stepper.show(stepper.current + 1),
+      prev: () => stepper.show(stepper.current - 1),
+      reset: () => stepper.show(0)
+    }
+    stepper.ui = <div style="display: flex; align-items: center; gap: 6px; margin: 8px 0;">
+        <button click={() => stepper.prev()}>&lt; prev</button>
+        <button click={() => stepper.next()}>next &gt;</button>
+        {counter}
+        <button click={() => stepper.reset()}>reset</button>
+      </div>
+    await stepper.show(options.start || 0)
+    return stepper
+  }
+
+  // wired lazily, because every re-render produces fresh SVG nodes
+  wireStepHandles(stepper) {
+    stepper.steps.forEach((step, i) => {
+      this.cellNodes(this.stepCellIds(step)[0]).forEach(node => {
+        if (node.livelyStepHandle) return
+        node.livelyStepHandle = true
+        node.style.cursor = "pointer"
+        node.addEventListener("click", () => stepper.show(i + 1))
+      })
+    })
+  }
+
   get src() {
     return this.getAttribute("src")
   }
