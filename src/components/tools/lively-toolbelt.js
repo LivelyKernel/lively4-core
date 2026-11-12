@@ -87,6 +87,25 @@ export default class LivelyToolbelt extends Morph {
   onViewer(evt) {
     lively.openComponentInWindow('ivu2-webgpu-viewer', undefined, lively.pt(1100, 800))
   }
+  // Toggle the TIM game window (encounter list + combat) and keep the button lit while it's open (like
+  // the voice dock). Unlike the voice dock — a bare body child toggled purely here — this lives in a
+  // lively-window the user can also close via its own chrome, so we hook afterWindowClosed
+  // to clear the highlight in that case and keep the button in sync.
+  async onTimGame(evt) {
+    const existing = document.body.querySelector('tim-game')
+    if (existing) {
+      const win = existing.parentElement
+      win && win.onCloseButtonClicked ? win.onCloseButtonClicked(evt) : existing.remove()
+      this.classList.remove('tim-game-open')
+      return
+    }
+    // Always open at the game's natural size (combat + its 26px bar), wherever the window lands.
+    const comp = await lively.openComponentInWindow('tim-game', undefined, lively.pt(1100, 726))
+    this.classList.add('tim-game-open')
+    const win = comp.parentElement
+    if (win) win.afterWindowClosed = () => this.classList.remove('tim-game-open')
+  }
+
   async onMoreViewers(e) {
     function groupAbcNumberedFiles(files) {
       // ABC + (digits) + (rest of filename, must exist)

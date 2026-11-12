@@ -231,7 +231,8 @@
     :host([mode='eraser']) #mode-eraser,
     :host([mode='select']) #mode-select,
     :host(.audio) #audio-mode,
-    :host(.voice-open) #voice-command {
+    :host(.voice-open) #voice-command,
+    :host(.tim-game-open) #tim-game {
       background: var(--accent-color);
       color: white;
     }
@@ -282,6 +283,7 @@
           <button id="viewer" title='V2 WebGPU Viewer'><i class='fa fa-desktop'></i></button>
           <button id="more-viewers" class='more' title='More Viewers'><i class='fa fa-angle-down'></i></button>
         </div>
+        <button id="tim-game" title="TIM"><i class='fa fa-gamepad'></i></button>
         <span class='divider'></span>
         <button id="performance-panel" title='Performance Panel'><i class='fa fa-area-chart'></i></button>
         <div class='tool-group'>
